@@ -5,8 +5,6 @@ Este projeto tem como objetivo fornecer uma plataforma para monitoramento e aná
 
 ## 📌 Tecnologias Utilizadas
 
----
-
 Next.js - Framework para React
 
 TypeScript - Tipagem estática para melhor manutenção do código
