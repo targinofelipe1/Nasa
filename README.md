@@ -21,7 +21,7 @@ GitHub Actions - Automatização de deploy
 
 ## 🔗 Rotas e Funcionalidades
 
-🌍 /
+### 🌍 /
 
 Página inicial com uma visão geral do sistema e principais funcionalidades.
 
@@ -33,7 +33,7 @@ Selecionar municípios e visualizar seus dados.
 
 Destacar regionais e filtrar informações.
 
-📊 /dashboard-estadual
+### 📊 /dashboard-estadual
 
 Painel de indicadores estaduais com gráficos e estatísticas sobre:
 
@@ -45,7 +45,7 @@ Infraestrutura
 
 Educação
 
-📊 /dashboard-municipal
+### 📊 /dashboard-municipal
 
 Painel de indicadores municipais, permitindo:
 
@@ -55,7 +55,7 @@ Comparação entre municípios
 
 Exibição detalhada de indicadores
 
-📑 /relatorio-municipal
+### 📑 /relatorio-municipal
 
 Relatórios detalhados sobre cada município, incluindo:
 
@@ -65,7 +65,7 @@ Indicadores sociais e econômicos
 
 Infraestrutura disponível
 
-📑 /relatorios-estadual
+### 📑 /relatorios-estadual
 
 Relatórios consolidados a nível estadual, permitindo análise macro dos dados coletados.
 
