@@ -86,7 +86,7 @@ npm run dev
 
 Acesse a aplicação em http://localhost:3000
 
-## Sugestoões de Nomes
+## Sugestões de Nomes
 
 1. Paraíba Social – Plataforma integrada para análise de indicadores sociais no estado;
 2. Desenvolve PB – Monitoramento social para um futuro melhor;
