@@ -20,13 +20,12 @@ API Google Sheets - Fonte de dados dinâmica
 GitHub Actions - Automatização de deploy
 
 ## 🔗 Rotas e Funcionalidades
----
 
 🌍 /
 
 Página inicial com uma visão geral do sistema e principais funcionalidades.
 
-🗺️ /map-rga
+### 🗺️ /map-rga
 
 Mapa interativo da Paraíba com divisão por regionais administrativas (RGA). Permite:
 
@@ -70,7 +69,7 @@ Infraestrutura disponível
 
 Relatórios consolidados a nível estadual, permitindo análise macro dos dados coletados.
 
-📥 Como Executar o Projeto
+## 📥 Como Executar o Projeto
 
 Clone o repositório:
 
