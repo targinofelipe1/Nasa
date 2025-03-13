@@ -2,7 +2,12 @@
 
 Este projeto tem como objetivo fornecer uma plataforma para monitoramento e análise de indicadores sociais da Secretaria de Estado do Desenvolvimento Humano (SEDH). A aplicação permite visualizar dados estatísticos de municípios, regionais e programas sociais, além de apresentar mapas interativos e filtros para facilitar a análise.
 
-#📌 Tecnologias Utilizadas
+---
+
+## 📌 Tecnologias Utilizadas
+
+---
+
 
 Next.js - Framework para React
 
