@@ -85,3 +85,22 @@ Inicie o servidor de desenvolvimento:
 npm run dev
 
 Acesse a aplicação em http://localhost:3000
+
+## Sugestoões de Nomes
+
+1. Paraíba Social – Plataforma integrada para análise de indicadores sociais no estado;
+2. Desenvolve PB – Monitoramento social para um futuro melhor;
+3. Paraíba Cidadã – Sistema de inteligência social voltado para o bem-estar da população;
+4. PB Social – Monitoramento de políticas e indicadores sociais no estado;
+5. Paraíba em Desenvolvimento – Sistema de análise do avanço social no estado;
+6. Paraíba Mais – Plataforma para uma Paraíba mais desenvolvida;
+7. AvançaPB – Monitoramento do progresso social da Paraíba;
+8. SocialPB – Indicadores sociais para políticas públicas;
+9. Desenvolvimento em Foco – Monitoramento social para um futuro sustentável;
+10. Paraíba em Foco – Dados e estratégias para transformar realidades;
+11. Paraíba em Movimento – Desenvolvimento humano e social em evolução;
+12. Mapeando o Futuro – Informação para políticas mais eficientes;
+13. Monitor Social – Acompanhamento estratégico de indicadores;
+14. PB em Ação – Dados estratégicos para políticas públicas eficazes;
+15. Paraíba + Humana – Tecnologia a serviço da cidadania;
+
