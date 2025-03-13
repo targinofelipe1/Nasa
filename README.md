@@ -46,9 +46,11 @@ GitHub Actions - Automatização de deploy
 
 #### Mapa interativo da Paraíba com divisão por regionais administrativas (RGA). Permite:
 
-###### Selecionar municípios e visualizar seus dados.
+###### Indetificar Regionais.
 
-###### Destacar regionais e filtrar informações.
+###### Selecionar municípios.
+
+###### Destacar a quantidade município por regional. 
 
 ### 📊 /dashboard-estadual
 
@@ -71,6 +73,14 @@ GitHub Actions - Automatização de deploy
 ###### Comparação entre municípios
 
 ###### Exibição detalhada de indicadores
+
+### 🗺️ /maps
+
+#### Mapa interativo da Paraíba com divisão por programas sociais. Permite:
+
+###### Selecionar municípios.
+
+###### Destacar a quantidade programas sociais por município.
 
 ### 📑 /relatorio-municipal
 
