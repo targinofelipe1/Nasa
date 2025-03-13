@@ -1,0 +1,65 @@
+html, body {
+  overflow-x: hidden; /* Mantém a remoção da barra de rolagem horizontal */
+  width: 100vw; 
+  height: 100vh; 
+}
+
+body {
+  background-color: #ffffff !important; /* Força fundo branco */
+}
+
+* {
+  color: black !important; /* Garante que nenhuma cor seja convertida para oklch */
+}
+
+.force-standard-colors * {
+  color: black !important;
+  background-color: white !important;
+  border-color: black !important;
+}
+
+@media print {
+  body * {
+    visibility: hidden; /* Oculta tudo por padrão */
+  }
+  
+  #relatorio {
+    visibility: visible; /* Mantém apenas o relatório visível */
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
+
+@media screen {
+  .print-only {
+    display: none !important; /* Oculta na tela */
+  }
+}
+
+@media print {
+  .print-only {
+    display: block !important; /* Exibe apenas na impressão */
+  }
+}
+
+@media print {
+  body {
+    counter-reset: page;
+  }
+
+  @page {
+    size: A4;
+    margin: 20mm;
+  }
+
+  @media print {
+    .page-break + .page-break {
+      display: none !important;
+    }
+  }
+  
+}
+
+

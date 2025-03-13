@@ -1,0 +1,13 @@
+{
+  "type": "service_account",
+  "project_id": "sedh-next-api",
+  "private_key_id": "64604d824ea4e4a2894bb11076334bc40d681175",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQCVloyx4sjfzWBS\n+qDvnZNYFIrSfGU69yHj5gBFahABHHL5rYudhjgNQ6WNH4zP57JWDAS4Tm1pKa8W\nsJOZnFHW0yhph52sPkVe26/bF60GYfScSfFld5Zf8Swb6uocM5/ksNy4ESLc6MTX\nILBvzctvsWiF1tefbVKqirnOjRZc8rM2qJUx68z8lUtLI7ajyN6HIa9NKZYGaePG\n3GXYY7mkoWYIYL0Fw1vzY/m5UQJp5Q4ChnRGoh4BsIiaLUxuyr1qa1pOlXtANISO\nwTXnhlMu4kBGLvBHVZC3H7YBIbQjMhLSIs2agi1Qf63DPpGTBKwrKaTHFpw8Y7fa\nMmTGt6zDAgMBAAECggEABD5AAW/AaPDHcbMgS4u5uT7j7TKQIIsQEAnfKhjnGVD4\nRfLRSgeboWywzn79nIwi9+PhYmT/H4OKLueVWD8h5ykYNV4eb9tYVmd+5oUWaF7w\n9Fn4mfs5bcFGkggo2eHxACiwKhx6U6/anYuU1acNxT5QC7Pba+9K8AF9YcmIv9wr\ndROl7o12fgjqp9gvXrSzEHc/yCCfsg707p39tfcEMmejooQHbP4S6UQ5PfLIZ0z1\nEBgEvf88KFeGzDjvZz8ZVFHWT6LdZh2zWEGsK7gh+ktDSFaI/Qm39MVNDGE1B7S+\nIbnCQRXD1BMf2xNEioH35JGZtc88jWWRM4eiNnerIQKBgQDE+jB1uVGOXFo4W12X\nSYXGWOwI5LqF9kn10dyIrWH+6N32OXOobc7Z1N6YFgIf9Puqds4DVaa2C+Sr8NF5\nVulMZjsn0/ilZfsL5ll1+131wsNlaTn5r3XRue1hLYJwJZalk8hM2putmlGgxKXk\nmrTPChDdZ5o/ZntQukmZMsVnswKBgQDCaTW/DCvvGX7egKpGnVEI30JsPj08lim1\nR6KXFJkMeWkYNFNn53tWjnWc1DD0EmaECbZl7CpX6BGpMXOP3dYR8JxZYqCMdNt9\nnwnpUZtkqYFf8cal9HRVkyAtwuyZ7sQStGJ+J5ealjzuzxHpdHRwZ0Kaj7Dq3Q1d\nMj9Pw5wesQKBgQCGJ4u3shacqcN8nKV6c0WcGFXxnK54rIwk0uCracLTVRBPMUPX\nU6pM69EKrfqWf0ikCbQ3yy72z9TXUfWo+Yt9UCc78f9nzrQTn7gQRbnxtstTlz44\nEstgoovM4qzy6nbWoHcL+NuMegzcPPJrZv57//QKhxQj2A1mpumXYF/YRwKBgQC8\nbj8ywjhfEiYewTTJJrehUsvNoHG4JI+ebiVQLB2/snnDhQwGXJ32IjQq4pvkJWWJ\nuuQ4W7Qa6gscI5svqUNQthbEqEyWdrk7RAfWRkvIQGbuOKhit9J+ExEQaarr9DnF\nK2N/hR5zLgU3LirdTQuC2wL6TiWbLtBCMW6eACl0sQKBgQCHTrHDpwsBOd9ZEAFW\n/8YTUL/kW/8nDewlXVGq0uUzkpgR684SEsdvWe35fuSox4moOY1omxkobi5sTm5E\nlfn9eFbuG65ePmBIMXcJMDBZ84iy+HusgMtQ3JRJMGFZZUisWjlpDOK/+MnALhUA\niaDg/fmjI7Hgm61/9Kt/Y39IcQ==\n-----END PRIVATE KEY-----\n",
+  "client_email": "sedh-next-sheets@sedh-next-api.iam.gserviceaccount.com",
+  "client_id": "101904045563132957227",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/sedh-next-sheets%40sedh-next-api.iam.gserviceaccount.com",
+  "universe_domain": "googleapis.com"
+}
