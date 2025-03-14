@@ -9,6 +9,7 @@ import Indicators from "./Indicators";
 import Charts from "./Charts";
 import Metrics from "./Metrics";
 import Ranking from "./Ranking";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 
 export default function Dashboard() {
   const [data, setData] = useState<{ RGA: string }[]>([]);
@@ -52,19 +53,21 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="flex w-screen h-screen bg-white"> {/* Força fundo branco */}
-      <Sidebar />
-      <main className="flex-1 p-6 overflow-x-hidden">
-        <Navbar />
-        <DashboardHeader />
+    <ProtectedRoute>
+      <div className="flex w-screen h-screen bg-white"> {/* Força fundo branco */}
+        <Sidebar />
+        <main className="flex-1 p-6 overflow-x-hidden">
+          <Navbar />
+          <DashboardHeader />
 
-        {data.length > 0 && <Filters data={data} onFilterChange={handleFilterChange} />}
+          {data.length > 0 && <Filters data={data} onFilterChange={handleFilterChange} />}
 
-        {/* 🔹 Passamos a função para atualizar o estado do modal */}
-        <Indicators data={filteredData} setIsModalOpen={setIsModalOpen} />
-        <Charts data={filteredData}/>
-        <Ranking data={filteredData} />
-      </main>
-    </div>
+          {/* 🔹 Passamos a função para atualizar o estado do modal */}
+          <Indicators data={filteredData} setIsModalOpen={setIsModalOpen} />
+          <Charts data={filteredData}/>
+          <Ranking data={filteredData} />
+        </main>
+      </div>
+    </ProtectedRoute>
   );
 }

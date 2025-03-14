@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import MapaParaiba from "./MapaParaiba";
 import Filters from "./Filters";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 
 export default function MapsPage() {
   const [apiData, setApiData] = useState<any[]>([]);
@@ -45,31 +46,33 @@ export default function MapsPage() {
   };
 
   return (
-    <div className="flex h-screen">
-      {/* Sidebar à esquerda */}
-      <Sidebar />
+     <ProtectedRoute>
+      <div className="flex h-screen">
+        {/* Sidebar à esquerda */}
+        <Sidebar />
 
-      {/* Conteúdo principal */}
-      <div className="flex flex-row w-full h-full p-4">
-        {/* 🔹 Área dos filtros */}
-        <div className="w-1/4 pr-4">
-          <Filters data={apiData} onFilterChange={handleFilterChange} />
-        </div>
+        {/* Conteúdo principal */}
+        <div className="flex flex-row w-full h-full p-4">
+          {/* 🔹 Área dos filtros */}
+          <div className="w-1/4 pr-4">
+            <Filters data={apiData} onFilterChange={handleFilterChange} />
+          </div>
 
-        {/* 🔹 Mapa interativo */}
-        <div className="flex-1">
-        <h1 className="text-2xl font-bold mb-4 text-center">Mapa Interativo de Programas da Paraíba</h1>
-          {apiData.length > 0 ? (
-            <MapaParaiba 
-              apiData={apiData} 
-              filteredMunicipalities={filteredMunicipalities} 
-              setFilteredMunicipalities={setFilteredMunicipalities} 
-            />
-          ) : (
-            <p className="text-center text-gray-500">Carregando dados do mapa...</p>
-          )}
+          {/* 🔹 Mapa interativo */}
+          <div className="flex-1">
+          <h1 className="text-2xl font-bold mb-4 text-center">Mapa Interativo de Programas da Paraíba</h1>
+            {apiData.length > 0 ? (
+              <MapaParaiba 
+                apiData={apiData} 
+                filteredMunicipalities={filteredMunicipalities} 
+                setFilteredMunicipalities={setFilteredMunicipalities} 
+              />
+            ) : (
+              <p className="text-center text-gray-500">Carregando dados do mapa...</p>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </ProtectedRoute>
   );
 }

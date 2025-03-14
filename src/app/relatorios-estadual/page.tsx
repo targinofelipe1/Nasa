@@ -5,6 +5,7 @@ import Sidebar from "@/components/ui/Sidebar";
 import Reports from "./Reports";
 import FiltersEstadual from "./FiltersEstadual";
 import NoScroll from "@/components/ui/NoScroll";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 
 export default function ReportsPageEstadual() {
   const [apiData, setApiData] = useState<any[]>([]);
@@ -54,34 +55,36 @@ export default function ReportsPageEstadual() {
   }, [selectedRegionals]);
 
   return (
-    <>
-      <NoScroll /> {/* 🔹 Impede a rolagem vertical apenas nesta página */}
+    <ProtectedRoute>
+      <>
+        <NoScroll /> {/* 🔹 Impede a rolagem vertical apenas nesta página */}
 
 
-      <div className="w-full bg-white p-4 shadow-md text-center">
-        <h1 className="text-2xl font-bold">Relatório Estadual</h1>
-      </div>
-
-      <div className="flex h-screen">
-        {/* Sidebar à esquerda */}
-        <Sidebar />
-
-        {/* Layout Flexível: Filtros à esquerda e relatório à direita */}
-        <div className="no-print flex flex-row w-full h-full p-4">
-          {/* 🔹 Área dos filtros ajustada */}
-          <div className="w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
-              <FiltersEstadual data={apiData} onRegionalChange={setSelectedRegionals} />
-          </div>
-
-          {/* 🔹 Área do relatório */}
-          <div className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
-              <Reports data={apiData} selectedRegionals={selectedRegionals} />
-              
-          </div>
-
-
+        <div className="w-full bg-white p-4 shadow-md text-center">
+          <h1 className="text-2xl font-bold">Relatório Estadual</h1>
         </div>
-      </div>
-    </>
+
+        <div className="flex h-screen">
+          {/* Sidebar à esquerda */}
+          <Sidebar />
+
+          {/* Layout Flexível: Filtros à esquerda e relatório à direita */}
+          <div className="no-print flex flex-row w-full h-full p-4">
+            {/* 🔹 Área dos filtros ajustada */}
+            <div className="w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
+                <FiltersEstadual data={apiData} onRegionalChange={setSelectedRegionals} />
+            </div>
+
+            {/* 🔹 Área do relatório */}
+            <div className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
+                <Reports data={apiData} selectedRegionals={selectedRegionals} />
+                
+            </div>
+
+
+          </div>
+        </div>
+      </>
+    </ProtectedRoute>
   );
 }

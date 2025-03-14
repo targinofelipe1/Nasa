@@ -5,6 +5,7 @@ import Sidebar from "@/components/ui/Sidebar";
 import NoScroll from "@/components/ui/NoScroll";
 import Reports from "../relatorios-estadual/Reports";
 import FiltersMunicipal from "./FilterMunicipal";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 
 
 
@@ -58,31 +59,36 @@ export default function ReportsPageMunicipal() {
   );
   
   return (
-    <>
-      <NoScroll /> {/* 🔹 Impede a rolagem vertical apenas nesta página */}
 
-      <div className="w-full bg-white p-4 shadow-md text-center">
-        <h1 className="text-2xl font-bold">Relatório Municipal</h1>
-      </div>
+    <ProtectedRoute>
+      <>
+        <NoScroll /> {/* 🔹 Impede a rolagem vertical apenas nesta página */}
 
-      <div className="flex h-screen">
-        {/* Sidebar à esquerda */}
-        <Sidebar />
+        
 
-        {/* Layout Flexível: Filtros à esquerda e relatório à direita */}
-        <div className="no-print flex flex-row w-full h-full p-4">
-          {/* 🔹 Área dos filtros ajustada */}
-          <div className="w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
-            <FiltersMunicipal data={apiData} onMunicipalChange={setMunicipiosFiltrados} />
-          </div>
+        <div className="w-full bg-white p-4 shadow-md text-center">
+          <h1 className="text-2xl font-bold">Relatório Municipal</h1>
+        </div>
 
-          {/* 🔹 Área do relatório */}
-          <div className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
-            {/* Passa os dados filtrados para o Reports */}
-            <Reports data={filteredData} selectedMunicipals={selectedMunicipals} />
+        <div className="flex h-screen">
+          {/* Sidebar à esquerda */}
+          <Sidebar />
+
+          {/* Layout Flexível: Filtros à esquerda e relatório à direita */}
+          <div className="no-print flex flex-row w-full h-full p-4">
+            {/* 🔹 Área dos filtros ajustada */}
+            <div className="w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
+              <FiltersMunicipal data={apiData} onMunicipalChange={setMunicipiosFiltrados} />
+            </div>
+
+            {/* 🔹 Área do relatório */}
+            <div className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
+              {/* Passa os dados filtrados para o Reports */}
+              <Reports data={filteredData} selectedMunicipals={selectedMunicipals} />
+            </div>
           </div>
         </div>
-      </div>
-    </>
+      </>
+    </ProtectedRoute>
   );
 }
