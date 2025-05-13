@@ -57,8 +57,8 @@ const Sidebar = () => {
                   {user.fullName}
                 </p>
                 <button
-                  onClick={handleLogout} // ✅ Botão para deslogar
-                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium"
+                  onClick={handleLogout} 
+                  className="mt-2 text-red-600 hover:text-red-800 text-sm font-medium cursor-pointer"
                 >
                   Sair
                 </button>

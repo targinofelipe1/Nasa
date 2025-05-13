@@ -53,49 +53,27 @@ const MapaParaiba = ({
       click: (e) => {
         const { lat, lng } = e.latlng;
         console.log(`🖱️ Clique detectado: Latitude ${lat}, Longitude ${lng}`);
-
+  
         if (!geoJsonData || !("features" in geoJsonData)) return;
-
+  
         const pontoClicado = turf.point([lng, lat]);
-
+  
         const municipioEncontrado = (geoJsonData.features as Feature[]).find((feature) => {
           if (!feature.geometry || feature.geometry.type !== "Polygon") return false;
-
-          const nomeMunicipio = feature.properties?.NOME || feature.properties?.name || "Desconhecido";
-
           const poligonoMunicipio = turf.polygon(feature.geometry.coordinates as Polygon["coordinates"]);
           return turf.booleanPointInPolygon(pontoClicado, poligonoMunicipio);
         });
-
+  
         if (municipioEncontrado) {
           const municipioNome = municipioEncontrado.properties?.NOME || municipioEncontrado.properties?.name || "Não encontrado";
-
-          setMunicipioSelecionado(municipioNome);
-
-          console.log(`📍 Município selecionado: ${municipioNome}`);
-
-          if (filteredMunicipalities.length > 0) {
-            // 🔹 Se há filtros ativos, adiciona ou remove normalmente
-            setFilteredMunicipalities((prev) => {
-              const isFiltered = apiData.some(d => d.Município.toUpperCase() === municipioNome.toUpperCase());
-              return isFiltered
-                ? [...new Set([...prev, municipioNome.toUpperCase()])]
-                : prev.filter(m => apiData.some(d => d.Município.toUpperCase() === m));
-            });
-          } else {
-            // 🔹 Se NÃO há filtros ativos, reseta qualquer seleção anterior
-            setMunicipioSelecionado(municipioNome);
-            setFilteredMunicipalities([]); // Garante que apenas um município fica ativo
-          }
-          
-          
-          
-        } else {
-          console.log("❌ Nenhum município encontrado para esse clique.");
+          // Alterna a seleção (se já está selecionado, deseleciona)
+          setMunicipioSelecionado(prev => 
+            prev?.toUpperCase() === municipioNome.toUpperCase() ? null : municipioNome
+          );
         }
       },
     });
-
+  
     return null;
   };
 
@@ -105,29 +83,27 @@ const MapaParaiba = ({
       console.warn("⚠ Município sem nome no GeoJSON:", feature);
       return { fillColor: "gray", color: "white", weight: 1, fillOpacity: 0.7 };
     }
-
+  
     const municipioNormalizado = nomeMunicipio.trim().toUpperCase();
     const isSelected = municipioSelecionado?.toUpperCase() === municipioNormalizado;
-    const isFiltered = filteredMunicipalities.includes(municipioNormalizado) && !isSelected;
-
-
-   let fillColor = "gray";
-
-   if (isSelected) {
-     fillColor = "#14b8a6"; // Município selecionado manualmente
-   } else if (isFiltered) {
-     fillColor = "#3b82f6"; // Município dentro dos filtros ativos
-   }
-
-
-
+    const isFiltered = filteredMunicipalities.includes(municipioNormalizado);
+  
+    let fillColor = "gray"; // Cor padrão para municípios sem programa
+  
+    if (isSelected) {
+      fillColor = "#14b8a6"; // Verde para selecionado (independente de ter programa)
+    } else if (isFiltered) {
+      fillColor = "#3b82f6"; // Azul para municípios com programa
+    }
+  
     return {
-      fillColor: fillColor,
+      fillColor,
       color: "white",
       weight: 1.5,
       fillOpacity: 0.8,
     };
   };
+  
 
   return (
     <div className="relative flex justify-center items-center bg-white">
@@ -151,7 +127,10 @@ const MapaParaiba = ({
       )}
 
       {municipioSelecionado && (
-        <div className="absolute top-4 left-4 bg-white px-4 py-2 rounded-lg shadow-md flex items-center space-x-3 border border-gray-200">
+        <div
+        className="absolute top-4 bg-white p-3 rounded-lg shadow-md border border-gray-200 z-50"
+        style={{ right: "120px" }}
+      >      
           <p className="text-lg font-semibold">
             Município: <span style={{ color: "#14b8a6", fontWeight: "bold" }}>{municipioSelecionado}</span>
           </p>

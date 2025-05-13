@@ -5,7 +5,7 @@ interface Indicator {
   value: number;
   label: string;
   modalContent?: ReactNode;
-  selectOptions?: { id: string; label: string; value: number }[]; // Adicionando a propriedade corretamente
+  selectOptions?: { id: string; label: string; value: number }[]; 
 }
 
 
@@ -47,6 +47,20 @@ export default function Indicators({
 
    
     const totalMunicipios = municipioKey ? data.filter(row => row[municipioKey]).length : 0;
+
+    const renderListaMunicipiosModal = (municipios: string[], total: number) => (
+      <div>
+        <h3 className="font-bold mb-4">Lista Completa de Municípios ({total})</h3>
+        <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+          {municipios.map((municipio, index) => (
+            <div key={index} className="p-2 border-b">
+              {municipio}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+
     const totalPopulacao = populacaoKey
       ? data.reduce((sum, row) => sum + (parseInt(row[populacaoKey]?.toString().replace(/\./g, "")) || 0), 0)
       : 0;
@@ -57,6 +71,19 @@ export default function Indicators({
     const totalMunicipiosSemiarido = semiaridoKey
       ? data.filter(row => row[semiaridoKey]?.trim().toLowerCase() === "x").length
       : 0;
+
+      const renderMunicipiosModal = (municipios: string[]) => (
+        <div>
+          <h3 className="font-bold mb-4">Lista de Municípios do Semiárido ({municipios.length})</h3>
+          <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+            {municipios.map((municipio, index) => (
+              <div key={index} className="p-2 border-b">
+                {municipio}
+              </div>
+            ))}
+          </div>
+        </div>
+      );
 
     const totalFamiliasCadUnico = cadUnicoFamiliasKey
       ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasKey]?.toString().replace(/\./g, "")) || 0), 0)
@@ -297,7 +324,7 @@ export default function Indicators({
     const protecaoSocialEspecialOptions = protecaoSocialEspecialKeys
       .map(({ key, label, binary }) => {
         const keyFound = findKey(key);
-         if (!keyFound) return null; // Ignorar colunas inexistentes
+         if (!keyFound) return null; 
 
         let value = data.reduce((sum, row) => {
           const fieldValue = row[keyFound];
@@ -308,7 +335,7 @@ export default function Indicators({
           return { id: key, label, value };
         }
 
-        return null; // Remove itens com valor 0
+        return null; 
       })
       .filter((item): item is { id: string; label: string; value: number } => item !== null);
 
@@ -316,9 +343,9 @@ export default function Indicators({
     
 
     const segurancaAlimentarKeys = [
-      { key: 'Segurança Alimentar - Programa "Tá na mesa" (municípios)', label: 'Programa "Tá na Mesa"', binary: true },
+      { key: 'Segurança Alimentar - Programa "Tá na mesa" (municípios)', label: 'Programa Tá na Mesa', binary: true },
       { key: "Segurança Alimentar - Cartão Alimentação (municípios)", label: "Cartão Alimentação", binary: true },
-      { key: "Segurança Alimentar - Restaurante Popular (municípios)", label: "Restaurante Popular", binary: true },
+      { key: "Segurança Alimentar - Restaurante Popular (municípios)", label: "Restaurante Popular"},
       { key: "Segurança Alimentar - PAA LEITE (municípios)", label: "PAA LEITE", binary: true },
       { key: "Segurança Alimentar - PAA CDS (municípios)", label: "PAA CDS", binary: true },
     ];
@@ -523,14 +550,63 @@ export default function Indicators({
       const totalCasaCidadania = casaCidadaniaKey
         ? data.reduce((sum, row) => sum + (parseInt(row[casaCidadaniaKey]?.toString().replace(/\./g, "")) || 0), 0)
         : 0;
+
+        const renderListaCidadesModal = (dados: {cidade: string, quantidade: number}[]) => (
+          <div>
+            <h3 className="font-bold mb-4">Cidades com Casa da Cidadania ({dados.length})</h3>
+            <div className="grid grid-cols-2 gap-2 max-h-96 overflow-y-auto">
+              {dados.map((item, index) => (
+                <div key={index} className="p-2 border-b">
+                  <div>{item.cidade}</div>
+                  {item.quantidade > 1 && (
+                    <div className="text-xs text-gray-500">  
+                      {item.quantidade} unidades
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        );
       
     setIndicators([
-      { value: totalMunicipios, label: "Total de Municípios" },
+      {
+        value: totalMunicipios,
+        label: "Total de Municípios",
+        modalContent: renderListaMunicipiosModal(
+          data
+            .filter(row => row[municipioKey])
+            .map(row => row[municipioKey] || "")
+            .filter(Boolean), // Remove valores vazios
+          totalMunicipios
+        )
+      },
       { value: parseFloat(mediaIDH.toFixed(3)), label: "Média do IDH (2010)" },
-      { value: totalMunicipiosSemiarido, label: "Municípios do Semiárido" },
+      {
+        value: totalMunicipiosSemiarido,
+        label: "Municípios do Semiárido",
+        modalContent: renderMunicipiosModal(
+          data
+            .filter(row => row[semiaridoKey]?.trim().toLowerCase() === "x")
+            .map(row => row[municipioKey] || "")
+            .filter(Boolean)
+        )
+      },
       {
         value: totalCasaCidadania,
         label: "Quantidade de Casa da Cidadania",
+        modalContent: renderListaCidadesModal(
+          data
+            .filter(row => {
+              const qtd = parseInt(row[casaCidadaniaKey]?.toString() || "0");
+              return qtd > 0;
+            })
+            .map(row => ({
+              cidade: row[municipioKey] || "",
+              quantidade: parseInt(row[casaCidadaniaKey]?.toString() || "0")
+            }))
+            .filter(item => item.cidade) 
+        )
       },
       {
         value: totalPopulacao,

@@ -15,12 +15,10 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/Input-otp";
 
-// Habilitar logs no navegador
 if (typeof window !== "undefined") {
   window.CLERK_DEBUG = true;
 }
 
-// Esquema de validação
 const formSchema = z.object({
   email: z.string().email({ message: "E-mail inválido" }),
   code: z.string().optional(),

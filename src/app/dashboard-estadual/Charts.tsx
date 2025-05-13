@@ -126,11 +126,13 @@ export default function Charts({ data = [] }: { data?: any[] }) {
         const escolarizadosCorrigido = Math.min(escolarizados, populacao2010);
 
 
-  const formatPercent = (value: number) => {
-    return value > 0 ? `(+${value.toFixed(1)}%)` : `(${value.toFixed(1)}%)`;
-  };
-
-
+        const formatPercent = (value: number) => {
+          if (value === 0) return "0";
+          const sinal = value > 0 ? "+" : "-";
+          return `${sinal} ${Math.abs(value).toFixed(3)}%`;
+        };
+        
+        
 
   const chartOptions = {
     responsive: true,

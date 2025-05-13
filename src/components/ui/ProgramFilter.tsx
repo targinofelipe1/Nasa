@@ -28,7 +28,7 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
     { value: "Proteção Social Especial - Unidades de Acolhimento (Municipal)", label: "Acolhimento Municipal" },
     { value: "Proteção Social Especial - Municípios com Serviço de Família Acolhedora", label: "Família Acolhedora" },
     { value: "Proteção Social Especial - Projeto Acolher (municípios)", label: "Projeto Acolher" },
-    { value: "Segurança Alimentar - Programa 'Tá na mesa' (municípios)", label: "Tá na Mesa" },
+    { value: 'Segurança Alimentar - Programa "Tá na mesa" (municípios)', label: "Tá na Mesa" },
     { value: "Segurança Alimentar - Cartão Alimentação (municípios)", label: "Cartão Alimentação" },
     { value: "Segurança Alimentar - Restaurante Popular (municípios)", label: "Restaurante Popular" },
     { value: "Segurança Alimentar - PAA LEITE (municípios)", label: "PAA Leite" },

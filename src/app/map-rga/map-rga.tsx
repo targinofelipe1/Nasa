@@ -15,7 +15,7 @@ const loadGeoJson = async (): Promise<GeoJsonObject> => {
   return res.json();
 };
 
-const MapaParaibaRGA = ({ apiData }: { apiData: any[] }) => {
+const MapaParaibaRGA = ({ apiData, exibirLegenda = true }: { apiData: any[], exibirLegenda?: boolean }) => {
   const [geoJsonData, setGeoJsonData] = useState<GeoJsonObject | null>(null);
   const [municipioSelecionado, setMunicipioSelecionado] = useState<string | null>(null);
   const [rgaSelecionada, setRgaSelecionada] = useState<string | null>(null);
@@ -30,7 +30,7 @@ const MapaParaibaRGA = ({ apiData }: { apiData: any[] }) => {
     "RGA 5": "#9467bd",
     "RGA 6": "#8c564b",
     "RGA 7": "#e377c2",
-    "RGA 8": "#7f7f7f",
+    "RGA 8": "#2a9d8f",
     "RGA 9": "#bcbd22",
     "RGA 10": "#17becf",
     "RGA 11": "#aec7e8",
@@ -175,7 +175,7 @@ const MapaParaibaRGA = ({ apiData }: { apiData: any[] }) => {
         </div>
       )}
 
-      <LegendaRGA />
+      {exibirLegenda && <LegendaRGA />}
     </div>
   );
 };

@@ -7,31 +7,49 @@ const getTituloRelatorio = () => {
     : "Relatório Estadual";
 };
 
-// Função para renderizar o cabeçalho do relatório
-const LogoHeader = (selectedRegionals: string[], selectedMunicipios: string[]): string => {
+const LogoHeader = (
+  selectedRegionals: string[],
+  selectedMunicipios: string[],
+  data: any[]
+): string => {
+  const titulo = getTituloRelatorio();
+
+  const municipiosDoEstadual =
+    titulo === "Relatório Estadual" && selectedRegionals.length > 0
+      ? data
+          .filter((row) => selectedRegionals.includes(row.RGA))
+          .map((row) => row.Município)
+          .sort()
+      : [];
+
   return `
     <div id="print-header" style="
-      text-align: center; 
-      margin-bottom: 20px; 
-      display: flex; 
-      flex-direction: column; 
-      justify-content: center; 
-      align-items: center; 
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
       height: 100vh;
-      width: 100%; 
+      width: 100%;
       padding: 20px;
-      page-break-after: avoid;">
+      page-break-after: avoid;
+      text-align: center;
+    ">
       
-      <h1 style="font-size: 32px; font-weight: bold; text-align: center;">${getTituloRelatorio()}</h1>
-      <h2 style="font-size: 24px; text-align: center; margin-top: 10px;">SEDH - Secretaria de Estado do Desenvolvimento Humano</h2>
+      <h1 style="font-size: 32px; font-weight: bold;">${titulo}</h1>
+      <h2 style="font-size: 24px; margin-top: 10px;">SEDH - Secretaria de Estado do Desenvolvimento Humano</h2>
 
-      ${getTituloRelatorio() === "Relatório Estadual" && selectedRegionals.length > 0 
-        ? `<p style="font-size: 18px; font-weight: bold;">Regionais Selecionadas: ${selectedRegionals.join(", ")}</p>` 
-        : ""}
-  
-      ${getTituloRelatorio() === "Relatório Municipal" && selectedMunicipios.length > 0 
-        ? `<p style="font-size: 18px; font-weight: bold;">Municípios Selecionados: ${selectedMunicipios.join(", ")}</p>` 
-        : ""}
+      ${
+        titulo === "Relatório Estadual" && selectedRegionals.length > 0
+          ? `<p style="font-size: 18px; font-weight: bold;">Regionais Selecionadas: ${selectedRegionals.join(", ")}</p>
+             <p style="font-size: 16px;"><strong>Municípios:</strong> ${municipiosDoEstadual.join(", ")}</p>`
+          : ""
+      }
+
+      ${
+        titulo === "Relatório Municipal" && selectedMunicipios.length > 0
+          ? `<p style="font-size: 18px; font-weight: bold;">Municípios Selecionados: ${selectedMunicipios.join(", ")}</p>`
+          : ""
+      }
     </div>
   `;
 };
@@ -39,13 +57,13 @@ const LogoHeader = (selectedRegionals: string[], selectedMunicipios: string[]): 
 const SecretariaHeader = () => {
   return `
     <div class="page-header" style="text-align: center; margin-bottom: 20px; display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh;">
-      <h1 style="font-size: 28px; font-weight: bold; text-align: center;">Pollyanna Werton</h1>
+      <h1 style="font-size: 28px; font-weight: bold; text-align: center;">Pollyanna</h1>
       <h2 style="font-size: 22px; text-align: center; margin-top: 10px;">Secretária de Estado do Desenvolvimento Humano</h2>
     </div>
   `;
 };
 
-const BotaoImpressao = () => {
+const BotaoImpressao = ({ apiData }: { apiData: any[] }) => {
   const [mostrarModal, setMostrarModal] = useState(false);
   const [tabelasSelecionadas, setTabelasSelecionadas] = useState<string[]>([]);
 
@@ -60,14 +78,13 @@ const BotaoImpressao = () => {
       return;
     }
 
-    // 🔹 Obtém os valores ATUALIZADOS no momento da impressão
     const selectedRegionals = JSON.parse(sessionStorage.getItem("selectedRegionals") || "[]");
     const selectedMunicipios = JSON.parse(sessionStorage.getItem("selectedMunicipios") || "[]");
 
     const printContainer = document.createElement("div");
     printContainer.id = "print-container";
 
-    printContainer.innerHTML += LogoHeader(selectedRegionals, selectedMunicipios);
+    printContainer.innerHTML += LogoHeader(selectedRegionals, selectedMunicipios, apiData);
     printContainer.innerHTML += SecretariaHeader();
 
     const pageHeader = `  
@@ -145,7 +162,7 @@ const BotaoImpressao = () => {
     document.head.removeChild(style);
   };
 
-  const todasAsTabelas = ["indicadores", "populacao", "cadastrounico", "bolsafamilia", "protecaobasica", "protecaoepsecial", "segurancaalimentar", "casadacidadania", "abononatalino", "saude", "educacao"];
+  const todasAsTabelas = ["Indicadores", "Populacão", "Cadastro Único", "Bolsa Família", "Protecão Básica", "Protecão Especial", "Segurança Alimentar", "Casas da Cidadanias", "Abono Natalino", "Saúde", "Educacão"];
 
   const toggleSelecionarTodas = () => {
     setTabelasSelecionadas(tabelasSelecionadas.length === todasAsTabelas.length ? [] : todasAsTabelas);

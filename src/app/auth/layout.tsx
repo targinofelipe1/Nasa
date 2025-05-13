@@ -30,7 +30,7 @@ export default function AuthLayout({
       {/* Coluna Direita - Imagem de Fundo */}
       <div className="relative hidden bg-muted lg:block">
         <img
-          src="/img/img.webp"
+          src="/img/img.png"
           alt="Imagem de fundo"
           className="absolute inset-0 h-full w-full object-cover dark:brightness-[0.2] dark:grayscale"
         />

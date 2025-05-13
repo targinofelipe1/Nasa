@@ -41,15 +41,19 @@ const Reports = ({
   const urbana2022PercentKey = findKey("População  CENSO - IBGE/2022 - % Urbana  ref 2010");
   const rural2022PercentKey = findKey("População  CENSO - IBGE/2022 - % Rural  ref 2010");
 
-  const isRegionalSelected = selectedRegionals.length > 0;
+ const isRegionalSelected = selectedRegionals.length > 0;
   const isMunicipalSelected = selectedMunicipals.length > 0;
-  const filteredData = data.filter(
-    (row) =>
-      (isMunicipalSelected && selectedMunicipals.includes(row["Município"])) ||
-      (isRegionalSelected && selectedRegionals.includes(row["RGA"]))
-  );
 
-  const usedData = filteredData.length > 0 ? filteredData : data;
+  const usedData = data.filter((row) => {
+    if (isMunicipalSelected) {
+      return selectedMunicipals.includes(row["Município"]);
+    }
+    if (isRegionalSelected) {
+      return selectedRegionals.includes(row["RGA"]);
+    }
+    return true; 
+  });
+
 
   const total2010 = usedData.reduce((sum, row) => sum + parseNumber(row[total2010Key]), 0);
   const total2022 = usedData.reduce((sum, row) => sum + parseNumber(row[total2022Key]), 0);
@@ -64,32 +68,42 @@ const Reports = ({
     ? Math.round(total2022 * (parseNumber(usedData[0][rural2022PercentKey]) / 100))
     : 0;
 
-  const calcPercentChange = (oldValue: number, newValue: number) => {
-    if (oldValue === 0) return "N/A";
-    const percent = ((newValue - oldValue) / oldValue) * 100;
-    return percent >= 0 ? `+${percent.toFixed(1)}%` : `${percent.toFixed(1)}%`;
-  };
+    const calcPercentChange = (oldValue: number, newValue: number) => {
+      if (oldValue === 0) return "N/A";
+      const percent = ((newValue - oldValue) / oldValue) * 100;
+    
+      if (percent === 0) return "0%";
+      const sinal = percent > 0 ? "+ " : "- ";
+      return `${sinal}${Math.abs(percent).toFixed(3)}%`;
+    };
+    
 
   const generateAnalysisText = () => {
     let analysis = "\n\n";
 
     if (total2022 > total2010) {
-      analysis += `A população total aumentou (${calcPercentChange(total2010, total2022)}) em relação a 2010.\n`;
+      analysis += `A população total aumentou ${calcPercentChange(total2010, total2022)} em relação a 2010.\n`;
+    } else if (total2022 < total2010) {
+      analysis += `A população total reduziu ${calcPercentChange(total2010, total2022)} desde 2010.\n`;
     } else {
-      analysis += `A população total reduziu (${calcPercentChange(total2010, total2022)}) desde 2010.\n`;
+      analysis += `A população total permaneceu estável ${calcPercentChange(total2010, total2022)}.\n`;
     }
-
-    if (urbana2022 < urbana2010) {
-      analysis += `A população urbana diminuiu (${calcPercentChange(urbana2010, urbana2022)}), indicando um possível êxodo urbano.\n`;
+    
+    if (urbana2022 > urbana2010) {
+      analysis += `A população urbana cresceu ${calcPercentChange(urbana2010, urbana2022)}.\n`;
+    } else if (urbana2022 < urbana2010) {
+      analysis += `A população urbana diminuiu ${calcPercentChange(urbana2010, urbana2022)}.\n`;
     } else {
-      analysis += `A população urbana cresceu (${calcPercentChange(urbana2010, urbana2022)}).\n`;
+      analysis += `A população urbana permaneceu estável ${calcPercentChange(urbana2010, urbana2022)}.\n`;
     }
-
+    
     if (rural2022 > rural2010) {
-      analysis += `A população rural aumentou (${calcPercentChange(rural2010, rural2022)}), sugerindo maior fixação no campo.\n`;
+      analysis += `A população rural aumentou ${calcPercentChange(rural2010, rural2022)}, sugerindo maior fixação no campo.\n`;
+    } else if (rural2022 < rural2010) {
+      analysis += `A população rural diminuiu ${calcPercentChange(rural2010, rural2022)}.\n`;
     } else {
-      analysis += `A população rural diminuiu (${calcPercentChange(rural2010, rural2022)}).\n`;
-    }
+      analysis += `A população rural permaneceu estável ${calcPercentChange(rural2010, rural2022)}.\n`;
+    }    
 
     return analysis;
   };
@@ -441,7 +455,7 @@ const mediaIDH = usedData.length > 0
   return (
         <div
             id="relatorio"
-            className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto"
+            className="w-3/4 pl-6 h-screen overflow-auto"
             style={{
               visibility: "visible",
               position: "absolute",
@@ -451,9 +465,10 @@ const mediaIDH = usedData.length > 0
             }}
           >
 
-          <BotaoImpressao />
+    <BotaoImpressao apiData={data} />
 
-          <div id="indicadores" className="mt-4">
+
+          <div id="Indicadores" className="mt-4">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               📊 Indicadores Gerais
             </h2>
@@ -510,16 +525,16 @@ const mediaIDH = usedData.length > 0
 
             <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
               <p className="text-lg font-semibold">📑 Análise: Indicadores Gerais</p>
-              Em 2023, a média do **IDEB** foi de <strong>{mediaIdebIniciais.toFixed(2)}</strong> nos anos iniciais,  
+              Em 2023, a média do IDEB foi de <strong>{mediaIdebIniciais.toFixed(2)}</strong> nos anos iniciais,  
               <strong>{mediaIdebFinais.toFixed(2)}</strong> nos anos finais do ensino fundamental,  
               e <strong>{mediaIdebEnsinoMedio.toFixed(2)}</strong> no ensino médio.  
-              Em 2010, o **Índice de Gini**, que mede a desigualdade social, teve um valor médio de  
-              <strong>{mediaIndiceGini.toFixed(3)}</strong>, enquanto o **IDH Municipal** alcançou <strong>{mediaIDH.toFixed(3)}</strong>.
+              Em 2010, o Índice de Gini, que mede a desigualdade social, teve um valor médio de <strong>{mediaIndiceGini.toFixed(3)}</strong>, 
+              enquanto o IDH Municipal alcançou <strong>{mediaIDH.toFixed(3)}</strong>.
             </div>
           </div>
 
         
-            <div id="populacao" className="mt-4">
+            <div id="População" className="mt-4">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">📊 População</h2>
 
               <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
@@ -566,7 +581,7 @@ const mediaIDH = usedData.length > 0
               </div>
             </div>
 
-        <div id="cadastrounico" className="mt-4">
+        <div id="Cadastro Único" className="mt-4">
           <h2 className="text-2xl font-semibold mt-6 mb-6 flex items-center">
             🏠 Cadastro Único
           </h2>
@@ -850,7 +865,7 @@ const mediaIDH = usedData.length > 0
           </div>
         </div>
 
-        <div id="bolsafamilia" className="mt-4">
+        <div id="Bolsa Família" className="mt-4">
           <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
             💰 Bolsa Família
           </h3>
@@ -948,7 +963,7 @@ const mediaIDH = usedData.length > 0
 
         {/* 🔹 Proteção Social Básica - Renderiza somente se houver dados */}
           {filteredServices.length > 0 && (
-            <div id="portecaobasica" className="mt-4">
+            <div id="Protecão Básica" className="mt-4">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 🛡️ Proteção Social Básica
               </h2>
@@ -978,14 +993,14 @@ const mediaIDH = usedData.length > 0
                 O Programa Primeira Infância no SUAS conta com <strong>{totalPrimeiraInfancia.toLocaleString("pt-BR")}</strong> registros de atendimento.  
                 O Programa Paraíba que Acolhe assiste <strong>{totalOrfaos.toLocaleString("pt-BR")}</strong> crianças órfãs, enquanto o Acessuas Trabalho realizou <strong>{totalAcessuas.toLocaleString("pt-BR")}</strong> atendimentos.  
                 Os Residenciais Cidade Madura possuem <strong>{totalCidadeMadura.toLocaleString("pt-BR")}</strong> unidades em atividade. Já os Centros Sociais Urbanos (CSUs) contabilizam <strong>{totalCSU.toLocaleString("pt-BR")}</strong> unidades operacionais.  
-                Por fim, os **Centros de Convivência** somam <strong>{totalCentrosConvivencia.toLocaleString("pt-BR")}</strong> espaços destinados ao atendimento social e cultural.  
+                Por fim, os Centros de Convivência somam <strong>{totalCentrosConvivencia.toLocaleString("pt-BR")}</strong> espaços destinados ao atendimento social e cultural.  
               </div>
             </div>
           )}
 
           {/* 🔹 Proteção Social Especial - Renderiza somente se houver dados */}
           {filteredServicesEspecial.length > 0 && (
-            <div id="protecaoespecial" className="mt-4">
+            <div id="Protecão Especial" className="mt-4">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 ❤️ Proteção Social Especial
               </h2>
@@ -1024,7 +1039,7 @@ const mediaIDH = usedData.length > 0
           {(filteredServicesTaNaMesa.length > 0 ||
             filteredServicesCartaoAlimentacao.length > 0 ||
             filteredServicesOutrosProgramas.length > 0) && (
-            <div id="segurancaalimentar" className="mt-4">
+            <div id="Segurança Alimentar" className="mt-4">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 🍽️ Segurança Alimentar
               </h2>
@@ -1052,7 +1067,7 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-                  {/* 🔹 Análise Tá na Mesa */}
+                 
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Programa "Tá na Mesa"</p>
                     O Programa "Tá na Mesa" atende <strong>{totalTaNaMesaMunicipios.toLocaleString("pt-BR")}</strong> municípios,  
@@ -1063,7 +1078,7 @@ const mediaIDH = usedData.length > 0
                 </>
               )}
 
-              {/* 🔹 Cartão Alimentação */}
+          
               {filteredServicesCartaoAlimentacao.length > 0 && (
                 <>
                   <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
@@ -1086,7 +1101,7 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-                  {/* 🔹 Análise Cartão Alimentação */}
+               
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Cartão Alimentação</p>
                     O Cartão Alimentação atende <strong>{totalCartaoAlimentacaoMunicipios.toLocaleString("pt-BR")}</strong> municípios,  
@@ -1096,7 +1111,7 @@ const mediaIDH = usedData.length > 0
                 </>
               )}
 
-              {/* 🔹 Outros Programas de Segurança Alimentar */}
+             
               {filteredServicesOutrosProgramas.length > 0 && (
                 <>
                   <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
@@ -1119,7 +1134,7 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-                  {/* 🔹 Análise Outros Programas */}
+                
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Segurança Alimentar - Outros Programas</p>
                     Atualmente, os Restaurantes Populares operam em <strong>{totalRestaurantePopular.toLocaleString("pt-BR")}</strong> municípios.  
@@ -1134,7 +1149,7 @@ const mediaIDH = usedData.length > 0
 
 
           {filteredServicesCasaCidadania.length > 0 && (
-          <div id="casadacidadania" className="mt-4">
+          <div id="Casas da Cidadanias" className="mt-4">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               📇 Casa da Cidadania
             </h2>
@@ -1169,7 +1184,7 @@ const mediaIDH = usedData.length > 0
 
 
 
-        <div id="abononatalino" className="mt-4">
+        <div id="Abono Natalino" className="mt-4">
           <h2 className="text-2xl font-semibold mb-6 flex items-center">
             🎄 Abono Natalino
           </h2>
@@ -1199,7 +1214,7 @@ const mediaIDH = usedData.length > 0
             </div>
         </div>
 
-        <div id="saude" className="mt-4">
+        <div id="Saúde" className="mt-4">
           <h2 className="text-2xl font-semibold mb-6 flex items-center">
             ⚕️ Saúde
           </h2>
@@ -1267,7 +1282,7 @@ const mediaIDH = usedData.length > 0
         </div>
 
 
-        <div id="educacao" className="mt-4">
+        <div id="Educacão" className="mt-4">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               🎓 Educação
             </h2>
@@ -1322,6 +1337,10 @@ const mediaIDH = usedData.length > 0
               representando <strong>{mediaAlfabetizacaoPercent.toFixed(2)}%</strong> da população dessa faixa etária.
             </div>
           </div>
+
+          <div className="mt-5 mb-8 p-5 border rounded-lg bg-gray-50">
+          </div>
+  
 
 
 

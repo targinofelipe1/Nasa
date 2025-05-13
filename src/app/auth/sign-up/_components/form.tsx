@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/Input-otp";
 
-// Esquema de validação com Zod
 const formSchema = z.object({
   nomeCompleto: z.string().min(3, { message: "Nome completo deve ter pelo menos 3 caracteres" }),
   matricula: z.string().min(4, { message: "Matrícula deve ter pelo menos 4 caracteres" }),
@@ -47,7 +46,7 @@ export default function SignUpForm() {
       return;
     }
 
-    console.log("📌 Tentando criar usuário com valores:", values);
+    console.log("Tentando criar usuário com valores:", values);
 
     try {
       const result = await signUp.create({
@@ -60,15 +59,15 @@ export default function SignUpForm() {
 
       await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
 
-      console.log("📩 Código de verificação enviado para:", values.email);
+      console.log("Código de verificação enviado para:", values.email);
 
       setPendingEmailCode(true);
       setEmail(values.email);
     } catch (err) {
-      console.error("❌ Erro ao criar usuário:", err);
+      console.error("Erro ao criar usuário:", err);
       if (typeof err === "object" && err !== null && "errors" in err) {
         toast.error((err as any).errors[0]?.message || "Erro desconhecido");
-        console.log("🛑 Clerk API Error:", err);
+        console.log("Clerk API Error:", err);
       }
     }
   }
@@ -87,12 +86,12 @@ export default function SignUpForm() {
       await setActive({ session: complete.createdSessionId });
       toast.success("Conta verificada com sucesso!");
 
-      router.push("/auth/sign-in");
+      router.push("/");
     } catch (err) {
-      console.error("❌ Erro ao verificar código:", err);
+      console.error("Erro ao verificar código:", err);
       if (typeof err === "object" && err !== null && "errors" in err) {
         toast.error((err as any).errors[0]?.message || "Erro desconhecido");
-        console.log("🛑 Clerk API Error:", err);
+        console.log("Clerk API Error:", err);
       }
     }
   }

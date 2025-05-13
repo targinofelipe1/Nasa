@@ -9,14 +9,14 @@ import Indicators from "../dashboard-estadual/Indicators";
 import Charts from "../dashboard-estadual/Charts";
 import Ranking from "../dashboard-estadual/Ranking";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
-
+import MapaParaiba from "../maps/MapaParaiba";
 
 export default function Dashboard() {
-    const [data, setData] = useState<{ Município: string }[]>([]);
-    const [filteredData, setFilteredData] = useState<{ Município: string }[]>([]);
-    const [isModalOpen, setIsModalOpen] = useState(false); // 🔹 Estado para rastrear o modal
+  const [data, setData] = useState<{ Município: string }[]>([]);
+  const [filteredData, setFilteredData] = useState<{ Município: string }[]>([]);
+  const [filteredMunicipalities, setFilteredMunicipalities] = useState<string[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Buscar dados da planilha ao carregar a página
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -30,11 +30,8 @@ export default function Dashboard() {
               return acc;
             }, {})
           );
-
           setData(formattedData);
           setFilteredData(formattedData);
-        } else {
-          console.error("Erro ao buscar dados:", result.message);
         }
       } catch (error) {
         console.error("Erro ao buscar dados:", error);
@@ -44,27 +41,45 @@ export default function Dashboard() {
     fetchData();
   }, []);
 
-  const handleFilterChange = (selectedRegionals: string[]) => {
-    if (selectedRegionals.length === 0) {
+  const handleFilterChange = (selectedMunicipalities: string[]) => {
+    if (selectedMunicipalities.length === 0) {
       setFilteredData(data);
+      setFilteredMunicipalities([]);
     } else {
-        setFilteredData(data.filter(row => selectedRegionals.includes(row.Município)));
+      const filtered = data.filter((row) => selectedMunicipalities.includes(row.Município));
+      setFilteredData(filtered);
+      setFilteredMunicipalities(selectedMunicipalities);
     }
   };
 
   return (
     <ProtectedRoute>
-      <div className="flex w-screen h-screen bg-white"> {/* Força fundo branco */}
+      <div className="flex w-screen h-screen bg-white">
         <Sidebar />
         <main className="flex-1 p-6 overflow-x-hidden">
           <Navbar />
           <DashboardHeader />
 
-          {data.length > 0 && <Filters data={data} onFilterChange={handleFilterChange} />}
+          {data.length > 0 && (
+            <div className="flex flex-row justify-between gap-6 mb-6 min-h-[360px]">
+              <div className="flex items-center justify-center w-1/3">
+                <div className="w-full max-w-md">
+                  <Filters data={data} onFilterChange={handleFilterChange} />
+                </div>
+              </div>
 
-          {/* 🔹 Passamos a função para atualizar o estado do modal */}
+              <div className="w-3/3 -ml-10">
+                <MapaParaiba
+                  apiData={data}
+                  filteredMunicipalities={filteredMunicipalities}
+                  setFilteredMunicipalities={setFilteredMunicipalities}
+                />
+              </div>
+            </div>
+          )}
+
           <Indicators data={filteredData} setIsModalOpen={setIsModalOpen} />
-          <Charts data={filteredData}/>
+          <Charts data={filteredData} />
           <Ranking data={filteredData} />
         </main>
       </div>
