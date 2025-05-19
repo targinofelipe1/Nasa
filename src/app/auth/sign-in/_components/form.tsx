@@ -111,7 +111,6 @@ export default function LoginPage() {
                 Continuar
               </Button>
 
-              {/* 🔥 Adicionado de volta: Link para criar conta 🔥 */}
               <div className="text-center text-sm">
                 <span className="mr-1">Ainda não possui uma conta?</span>
                 <Link href="/auth/sign-up" className="underline underline-offset-4 font-medium text-primary">
