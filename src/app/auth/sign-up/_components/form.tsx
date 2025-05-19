@@ -9,10 +9,21 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/Form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/Form";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/Input-otp";
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/Input-otp";
 
 const formSchema = z.object({
   nomeCompleto: z.string().min(3, { message: "Nome completo deve ter pelo menos 3 caracteres" }),
@@ -24,6 +35,9 @@ export default function SignUpForm() {
   const { isLoaded, setActive, signUp } = useSignUp();
   const { isSignedIn } = useSession();
   const router = useRouter();
+
+  const [tokenValido, setTokenValido] = useState(false);
+  const [tokenDigitado, setTokenDigitado] = useState("");
   const [email, setEmail] = useState("");
   const [pendingEmailCode, setPendingEmailCode] = useState(false);
   const [code, setCode] = useState("");
@@ -37,6 +51,28 @@ export default function SignUpForm() {
     },
   });
 
+  const validarToken = async () => {
+    try {
+      const res = await fetch("/api/validar-token", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: tokenDigitado }),
+      });
+
+      const data = await res.json();
+
+     if (data.valido) {
+        setTokenValido(true);
+        toast.success("Token validado com sucesso!");
+      } else {
+        toast.error("Token inválido");
+      }
+    } catch (err) {
+      toast.error("Erro ao validar token.");
+      console.error(err);
+    }
+  };
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!isLoaded) return;
 
@@ -46,8 +82,6 @@ export default function SignUpForm() {
       return;
     }
 
-    console.log("Tentando criar usuário com valores:", values);
-
     try {
       const result = await signUp.create({
         emailAddress: values.email,
@@ -55,19 +89,13 @@ export default function SignUpForm() {
         unsafeMetadata: { matricula: values.matricula },
       });
 
-      console.log("✅ Usuário criado com sucesso:", result);
-
-      await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
-
-      console.log("Código de verificação enviado para:", values.email);
-
+     await signUp.prepareEmailAddressVerification({ strategy: "email_code" });
       setPendingEmailCode(true);
       setEmail(values.email);
+      toast.success("Código enviado para o e-mail informado!");
     } catch (err) {
-      console.error("Erro ao criar usuário:", err);
       if (typeof err === "object" && err !== null && "errors" in err) {
         toast.error((err as any).errors[0]?.message || "Erro desconhecido");
-        console.log("Clerk API Error:", err);
       }
     }
   }
@@ -76,24 +104,44 @@ export default function SignUpForm() {
     event.preventDefault();
     if (!isLoaded) return;
 
-    console.log("📌 Tentando verificar código:", code);
-
     try {
       const complete = await signUp.attemptEmailAddressVerification({ code });
-
-      console.log("✅ Código verificado com sucesso:", complete);
-
       await setActive({ session: complete.createdSessionId });
       toast.success("Conta verificada com sucesso!");
-
       router.push("/");
     } catch (err) {
-      console.error("Erro ao verificar código:", err);
       if (typeof err === "object" && err !== null && "errors" in err) {
         toast.error((err as any).errors[0]?.message || "Erro desconhecido");
-        console.log("Clerk API Error:", err);
       }
     }
+  }
+
+  if (!tokenValido) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="space-y-6 w-full max-w-xs">
+          <div className="flex flex-col items-center gap-2 text-center">
+            <h1 className="text-2xl font-bold">Token de Acesso</h1>
+            <p className="text-sm text-muted-foreground">Informe o token fornecido para continuar o cadastro</p>
+          </div>
+          <Input
+            type="password"
+            placeholder="Digite o token de acesso"
+            value={tokenDigitado}
+            onChange={(e) => setTokenDigitado(e.target.value)}
+          />
+          <Button type="button" onClick={validarToken} className="w-full">
+            Validar Token
+          </Button>
+          <div className="text-center text-sm">
+              <span className="mr-1">Já possui uma conta?</span>
+              <Link href="/auth/sign-in" className="underline underline-offset-4 font-medium text-primary">
+                Fazer login
+              </Link>
+            </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -127,7 +175,6 @@ export default function SignUpForm() {
               </FormItem>
             )} />
             <Button type="submit" className="w-full">Cadastrar</Button>
-
             <div className="text-center text-sm">
               <span className="mr-1">Já possui uma conta?</span>
               <Link href="/auth/sign-in" className="underline underline-offset-4 font-medium text-primary">
@@ -140,11 +187,9 @@ export default function SignUpForm() {
             <Button variant="link" type="button" className="flex items-center p-1" onClick={() => setPendingEmailCode(false)}>
               <ChevronLeft className="h-5 w-5" /> Voltar
             </Button>
-
             <h1 className="text-2xl font-bold">Validação da conta</h1>
-            <p className="text-sm">
-              Um código foi enviado para <strong>{email}</strong>. Insira o código abaixo.
-            </p>
+            <p className="text-sm">Um código foi enviado para <strong>{email}</strong>. Insira o código abaixo.</p>
+            <div className="flex justify-center">
             <InputOTP value={code} onChange={setCode} maxLength={6}>
               <InputOTPGroup>
                 {Array.from({ length: 6 }).map((_, index) => (
@@ -152,6 +197,8 @@ export default function SignUpForm() {
                 ))}
               </InputOTPGroup>
             </InputOTP>
+          </div>
+
             <Button type="submit" className="w-full">Verificar Código</Button>
           </form>
         )}

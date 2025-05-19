@@ -10,21 +10,27 @@ import {
   AiOutlineFileText,
   AiOutlineFile,
   AiOutlineHome,
+  AiOutlineUp,
+  AiOutlineDown,
+  AiOutlineFolder,
 } from "react-icons/ai";
-import { MdOutlineMap } from "react-icons/md";
+import { MdEmojiObjects, MdOutlineMap } from "react-icons/md";
+import { BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
-import { useUser, useAuth } from "@clerk/nextjs"; // ✅ Importando Clerk para autenticação
+import { useUser, useAuth } from "@clerk/nextjs"; 
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const { user } = useUser(); // ✅ Obtém o usuário autenticado
-  const { signOut } = useAuth(); // ✅ Para logout
-  const router = useRouter(); // ✅ Roteador para redirecionamento
+  const { user } = useUser(); 
+  const { signOut } = useAuth(); 
+  const router = useRouter(); 
+  const [showPrograms, setShowPrograms] = useState(false);
 
-  // ✅ Função para deslogar e redirecionar para a tela de login
+
+ 
   const handleLogout = async () => {
     await signOut();
-    router.push("/auth/sign-in"); // ✅ Redireciona para a página de login
+    router.push("/auth/sign-in"); 
   };
 
   return (
@@ -43,7 +49,6 @@ const Sidebar = () => {
           <FiMenu size={24} className="text-gray-600" />
         </div>
 
-        {/* Avatar, Nome e Botão de Logout */}
         {user && (
           <div className="flex flex-col items-center mt-12">
             <img
@@ -67,7 +72,6 @@ const Sidebar = () => {
           </div>
         )}
 
-        {/* Itens do menu */}
         <nav className="mt-6 w-full">
           <ul className="space-y-4">
             <li>
@@ -106,6 +110,31 @@ const Sidebar = () => {
                 {isOpen && "Relatórios Municipais"}
               </Link>
             </li>
+            <li className="flex flex-col">
+              <button
+                onClick={() => setShowPrograms(!showPrograms)}
+                className="flex items-center justify-between text-gray-700 hover:text-blue-600 px-4 py-2 w-full"
+              >
+                <div className="flex items-center">
+                  <AiOutlineFolder className="mr-3" size={20} />
+                  {isOpen && "Programas"}
+                </div>
+                {isOpen && (
+                  <span className="ml-auto">
+                    {showPrograms ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
+                  </span>
+                )}
+              </button>
+
+              {showPrograms && isOpen && (
+                <ul className="ml-10 text-gray-600">
+                  <li className="flex items-center py-1 hover:text-blue-500">
+                    <BsBoxArrowInDown className="mr-2" size={16} />
+                    <Link href="/programas/paa-cds">PAA - CDS</Link>
+                  </li>
+                </ul>
+              )}
+            </li>
             <li>
               <Link href="/config" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <AiOutlineSetting className="mr-3" size={20} />
@@ -116,7 +145,7 @@ const Sidebar = () => {
         </nav>
       </div>
 
-      {/* Conteúdo Principal */}
+     
       <div
         className={`transition-all duration-300 flex-1 p-6 overflow-x-hidden`}
         style={{
@@ -124,7 +153,6 @@ const Sidebar = () => {
           transition: "margin-left 0.3s ease-in-out",
         }}
       >
-        {/* Conteúdo dinâmico será renderizado aqui */}
       </div>
     </div>
   );

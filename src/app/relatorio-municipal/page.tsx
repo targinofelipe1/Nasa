@@ -20,7 +20,6 @@ export default function ReportsPageMunicipal() {
     }
   }, [selectedMunicipals]);
 
-  // 🔹 Busca os dados da API ao carregar a página
   useEffect(() => {
     async function fetchData() {
       try {
@@ -30,7 +29,6 @@ export default function ReportsPageMunicipal() {
         if (result.success && result.data.length > 0) {
           const headers = result.data[0];
 
-          // 🔹 Formatando os dados corretamente
           const formattedData = result.data.slice(1).map((row: any[]) =>
             headers.reduce((acc: any, key: string, index: number) => {
               acc[key.trim()] = row[index]?.toString().replace(/\./g, "").trim() || "";

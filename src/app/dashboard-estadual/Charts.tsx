@@ -350,20 +350,20 @@ export default function Charts({ data = [] }: { data?: any[] }) {
             ],
           }}
           options={{
-            indexAxis: "y", // 🔹 Barras horizontais
+            indexAxis: "y", 
             responsive: true,
             maintainAspectRatio: false,
             plugins: {
-              legend: { display: false }, // 🔹 Remove legenda separada
+              legend: { display: false }, 
               tooltip: { enabled: true },
             },
             scales: {
               x: {
-                type: "logarithmic", // 🔹 Usa escala logarítmica para distribuir melhor os valores
-                min: 100, // 🔹 Define um mínimo para evitar achatamento das barras menores
+                type: "logarithmic", 
+                min: 100, 
                 max: Math.max(
-                  1000, // 🔹 Ajuste este valor para testar diferentes escalas
-                  Math.max(...data.map(d => d.value)) * 1.1 // 🔹 Garante que o maior valor fique visível
+                  1000, 
+                  Math.max(...data.map(d => d.value)) * 1.1 
                 ),
                 grid: { display: false },
                 ticks: { font: { size: 12 }, color: "#555" },
