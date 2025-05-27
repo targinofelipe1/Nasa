@@ -25,7 +25,7 @@ const Sidebar = () => {
   const { signOut } = useAuth(); 
   const router = useRouter(); 
   const [showPrograms, setShowPrograms] = useState(false);
-
+  const [showElections, setShowElections] = useState(false);
 
  
   const handleLogout = async () => {
@@ -135,6 +135,36 @@ const Sidebar = () => {
                 </ul>
               )}
             </li>
+          <li className="flex flex-col">
+            <button
+              onClick={() => setShowElections(!showElections)}
+              className="flex items-center justify-between text-gray-700 hover:text-blue-600 px-4 py-2 w-full"
+            >
+              <div className="flex items-center">
+                <AiOutlineFileText className="mr-3" size={20} />
+                {isOpen && "Eleições"}
+              </div>
+              {isOpen && (
+                <span className="ml-auto">
+                  {showElections ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
+                </span>
+              )}
+            </button>
+
+            {showElections && isOpen && (
+              <ul className="ml-10 text-gray-600">
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <AiOutlineFileText className="mr-2" size={16} />
+                  <Link href="/votacao/2018">Eleições 2018</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <AiOutlineFileText className="mr-2" size={16} />
+                  <Link href="/votacao/2022">Eleições 2022</Link>
+                </li>
+              </ul>
+            )}
+          </li>
+
             <li>
               <Link href="/config" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <AiOutlineSetting className="mr-3" size={20} />
