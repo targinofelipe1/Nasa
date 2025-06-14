@@ -1,3 +1,5 @@
+// app/api/sheets/eleicao/[id]/route.ts 
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getSheetData } from '@/services/sheetService';
 
@@ -25,6 +27,8 @@ const PLANILHAS: Record<string, string> = {
   grupo_federal3_2018: '1hc5q5O0p2rBIZMurDsaIEfH1k6iRIDlt3NbomI8OdK8',
   deputado_federaljp_2018: '1NRiwqHPpAAZPWrHJFS6uObvChj7liKJh9IiT_635Ytw',
   locais: '1mk--eC-NvNUkNLq9WPvqTzycDtarByI53DstT-DpJAI',
+  vereador_2024:'1OAliRhLbT3BxDBTz78Q3RKvTHa7QzCO0OLGPFv00f-s',
+  prefeito_2024:'1Lf2NFiId1C7qoguXIfUSi8Ulmx1zkeeDSANa4sLgGcM',
 };
 
 const SHEET_RANGE = 'Sheet1!A:O';
@@ -33,8 +37,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // Await params antes de acessar suas propriedades
-  const { id } = await params; // <--- Alteração aqui
+  // CORREÇÃO: Coloque o 'await' de volta aqui, conforme a mensagem de erro do seu ambiente
+  const { id } = await params; 
   const spreadsheetId = PLANILHAS[id];
 
   if (!spreadsheetId) {
@@ -48,6 +52,7 @@ export async function GET(
     const data = await getSheetData(spreadsheetId, SHEET_RANGE);
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
+    console.error(`Erro ao buscar dados para ID ${id}:`, error);
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }

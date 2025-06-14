@@ -12,20 +12,20 @@ import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import MapaParaibaRGA from "../map-rga/map-rga";
 
 const rgaColors: Record<string, string> = {
-  "RGA 1": "#1f77b4",
-  "RGA 2": "#ff7f0e",
-  "RGA 3": "#2ca02c",
-  "RGA 4": "#d62728",
-  "RGA 5": "#9467bd",
-  "RGA 6": "#8c564b",
-  "RGA 7": "#e377c2",
-  "RGA 8": "#2a9d8f",
-  "RGA 9": "#bcbd22",
-  "RGA 10": "#17becf",
-  "RGA 11": "#aec7e8",
-  "RGA 12": "#ffbb78",
-  "RGA 13": "#98df8a",
-  "RGA 14": "#ff9896",
+  "RGA 1": "#fff205",
+  "RGA 2": "#90c63d",
+  "RGA 3": "#72cef8",
+  "RGA 4": "#ffa64f",
+  "RGA 5": "#ffc901",
+  "RGA 6": "#fbc2d8",
+  "RGA 7": "#e89da4",
+  "RGA 8": "#31b74a",
+  "RGA 9": "#69c3c0",
+  "RGA 10": "#fa8145",
+  "RGA 11": "#fff4a0",
+  "RGA 12": "#b68cc4",
+  "RGA 13": "#028ad6",
+  "RGA 14": "#d3a045",
 };
 
 export default function Dashboard() {
