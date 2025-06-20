@@ -13,6 +13,8 @@ import {
   AiOutlineUp,
   AiOutlineDown,
   AiOutlineFolder,
+  AiOutlineUsergroupAdd,
+  AiOutlineAreaChart,
 } from "react-icons/ai";
 import { MdEmojiObjects, MdOutlineMap } from "react-icons/md";
 import { BsBoxArrowInDown } from "react-icons/bs";
@@ -154,15 +156,19 @@ const Sidebar = () => {
             {showElections && isOpen && (
               <ul className="ml-10 text-gray-600">
                 <li className="flex items-center py-1 hover:text-blue-500">
-                  <AiOutlineFileText className="mr-2" size={16} />
+                  <AiOutlineUsergroupAdd className="mr-2" size={16} />
+                  <Link href="/votacao/eleitorado">Eleitorado</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <AiOutlineAreaChart className="mr-2" size={16} />
                   <Link href="/votacao/2018">Eleições 2018</Link>
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
-                  <AiOutlineFileText className="mr-2" size={16} />
+                  <AiOutlineAreaChart className="mr-2" size={16} />
                   <Link href="/votacao/2022">Eleições 2022</Link>
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
-                  <AiOutlineFileText className="mr-2" size={16} />
+                  <AiOutlineBarChart className="mr-2" size={16} />
                   <Link href="/votacao/2024">Eleições 2024</Link>
                 </li>
               </ul>
