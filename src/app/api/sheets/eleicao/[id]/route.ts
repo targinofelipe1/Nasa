@@ -29,9 +29,21 @@ const PLANILHAS: Record<string, string> = {
   locais: '1mk--eC-NvNUkNLq9WPvqTzycDtarByI53DstT-DpJAI',
   vereador_2024:'1OAliRhLbT3BxDBTz78Q3RKvTHa7QzCO0OLGPFv00f-s',
   prefeito_2024:'1Lf2NFiId1C7qoguXIfUSi8Ulmx1zkeeDSANa4sLgGcM',
+  masculino_divorciado: "1wPNC4RfoQosxZxFHaTQu350_y8hiNDgGvy3muCsBb20",
+  masculino_casado: "1rz8spDVxv3ecetj0vkjmDp7FiiVhYzSJr8J6av9iXaI",
+  masculino_solteiro: "13NJgfeAzHMYjhpMtlJ4jIagqs3WceoiEaookes5YEus",
+  masculino_separado_judicialmente: "1OPOwYAMpYiWJwy8gok2LjV0XUFdJxYmJ3kc316x9pLM",
+  masculino_nao_informado: "1hIExWZ-93coSvjafZBLHnadCRGOpyiaLaADmvDUKH7E",
+  masculino_viuvo: "1aK-Idjhri-RLiE2gvnPCTH5iikULYi5kGWxSFv6z3pQ",
+  feminino_divorciado: "1wV-xn8HAxZO1XDQ95SRHoBslvjxUMXJWg3SQDkHbUg8",
+  feminino_casado: "11a-ye4K7GRXUfiAa800F6Id0xuhM79QZHxX5RJjTL0I",
+  feminino_separado_judicialmente: "1BaAqEJcUO0XXGIbV_JJtLrNn88x61UjVO_e4fT4zp5A",
+  feminino_solteiro: "1GnLhjyUGnFAQ7ITZ5NwRoqQvu97Vi8e4Fat1Ac5x6kQ",
+  feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
+  
 };
 
-const SHEET_RANGE = 'Sheet1!A:O';
+const SHEET_RANGE = 'Sheet1!A:P';
 
 export async function GET(
   req: NextRequest,

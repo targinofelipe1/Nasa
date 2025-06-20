@@ -480,25 +480,18 @@ export default function PainelVotacao() {
     const isAnyFilterApplied = isAnyGeographicFilterApplied || siglaSelecionada !== 'Todas as Siglas' || candidatoSelecionado !== 'Todos os Candidatos';
     setAlgumFiltroAplicado(isAnyFilterApplied);
 
-    // Guardar seleções anteriores (para prevenir resets desnecessários de dropdowns)
-    // As referências de 'AnteriorRef' não são mais estritamente necessárias com a nova lógica de filtro reativa no useEffect,
-    // mas mantê-las não causa problemas.
-    // municipioAnteriorRef.current = municipioSelecionado;
-    // zonaAnteriorRef.current = zonaSelecionada;
-    // localAnteriorRef.current = localSelecionado;
-    // secaoAnteriorRef.current = secaoSelecionada;
-
-    // Começar a filtragem a partir dos dados completos (carregados pela aba)
+  
+  
     let dadosAtuaisFiltrados = [...dadosCompletosParaMapa];
-    let locaisFiltradosParaOpcoes = [...dadosLocais]; // Base de dados de locais
+    let locaisFiltradosParaOpcoes = [...dadosLocais]; 
 
-    // Aplicar filtros de município
+    
     if (municipioSelecionado !== 'Todos os Municípios') {
       dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: any) => dado['Município'] === municipioSelecionado);
       locaisFiltradosParaOpcoes = locaisFiltradosParaOpcoes.filter((local: LocalVotacaoDetalhado) => local['Município'] === municipioSelecionado);
     }
 
-    // Atualizar e aplicar filtros de zona
+  
     const newZonas = (municipioSelecionado !== 'Todos os Municípios')
                             ? getUniqueOptions(locaisFiltradosParaOpcoes, 'Zona Eleitoral', false)
                             : [];
@@ -508,7 +501,7 @@ export default function PainelVotacao() {
         locaisFiltradosParaOpcoes = locaisFiltradosParaOpcoes.filter((local: LocalVotacaoDetalhado) => local['Zona Eleitoral'] === zonaSelecionada);
     }
 
-    // Atualizar e aplicar filtros de local
+   
     const newLocais = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas')
                             ? getUniqueOptions(locaisFiltradosParaOpcoes, 'Local de Votação')
                             : [];
