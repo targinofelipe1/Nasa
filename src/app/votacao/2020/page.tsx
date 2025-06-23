@@ -8,6 +8,7 @@ import MapaParaibaCandidato from '../../../components/ui/MapaParaibaCandidato';
 import CandidatoCard from '@/components/ui/CandidatoCard';
 import VotacaoCards from '@/components/ui/VotacaoCards';
 
+// Interfaces (mantidas as suas definições)
 interface VotoAgregadoCandidato {
   nome: string;
   totalVotos: number;
@@ -59,30 +60,36 @@ interface VotoCandidatoPorLocal {
   porcentagem: number;
 }
 
+// Helper function
 const removerAcentos = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
 export default function PainelVotacao() {
+  // Estados para os filtros gerais (aplicáveis às abas de cargo)
   const [abaAtiva, setAbaAtiva] = useState('Visão Geral');
   const [municipioSelecionado, setMunicipioSelecionado] = useState('Todos os Municípios');
-  const [zonaSelecionada, setZonaSelecionada] = useState('Todas as Zonas');
-  const [secaoSelecionada, setSecaoSelecionada] = useState('Todas as Seções');
+  const [zonaSelecionada, setZonaSelecionada] = useState('Todas as Zonas'); // RESTAURADO
+  const [secaoSelecionada, setSecaoSelecionada] = useState('Todas as Seções'); // RESTAURADO
   const [siglaSelecionada, setSiglaSelecionada] = useState('Todas as Siglas');
-  const [termoBuscaCandidato, setTermoBuscaCandidato] = useState('');
+  const [candidatoSelecionado, setCandidatoSelecionado] = useState('Todos os Candidatos'); // Candidato dos filtros detalhados
   const [termoBuscaLocal, setTermoBuscaLocal] = useState('');
-
   const [localSelecionado, setLocalSelecionado] = useState('Todos os Locais');
 
+  // Estados para dados disponíveis nos filtros
   const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
-  const [zonasDisponiveis, setZonasDisponiveis] = useState<string[]>([]);
-  const [secoesDisponiveis, setSecoesDisponiveis] = useState<string[]>([]);
+  const [zonasDisponiveis, setZonasDisponiveis] = useState<string[]>([]); // RESTAURADO
+  const [secoesDisponiveis, setSecoesDisponiveis] = useState<string[]>([]); // RESTAURADO
   const [siglasDisponiveis, setSiglasDisponiveis] = useState<string[]>([]);
   const [locaisDisponiveis, setLocaisDisponiveis] = useState<string[]>([]);
-  const [locaisDisponiveisDropdown, setLocaisDisponiveisDropdown] = useState<{ id: string, label: string }[]>([]);
+  const [candidatosDisponiveis, setCandidatosDisponiveis] = useState<CandidatoDropdownOption[]>([]); 
+    const [locaisDisponiveisDropdown, setLocaisDisponiveisDropdown] = useState<{ id: string, label: string }[]>([]); // Usar 'id' para a key e 'label' para o texto exibido
+  
 
+  // Estados para dados de exibição
   const [votosCandidatoPorLocal, setVotosCandidatoPorLocal] = useState<VotoCandidatoPorLocal[]>([]);
   const [locaisVotacaoFiltradosParaExibicao, setLocaisVotacaoFiltradosParaExibicao] = useState<LocalVotacaoDetalhado[]>([]);
   const [votosAgrupadosCandidatos, setVotosAgrupadosCandidatos] = useState<VotoAgregadoCandidato[]>([]);
 
+  // Estados para Totais e Métricas
   const [dadosGeraisAbaAtiva, setDadosGeraisAbaAtiva] = useState({
     eleitoresAptos: 0, comparecimentos: 0, abstencoes: 0, taxaAbstencao: 0,
     locais: 0, secoes: 0, validos: 0, brancos: 0, nulos: 0,
@@ -92,56 +99,59 @@ export default function PainelVotacao() {
     locais: 0, secoes: 0, validos: 0, brancos: 0, nulos: 0,
   });
 
+  // Dados brutos e filtrados para processamento
   const [dadosCompletosParaMapa, setDadosCompletosParaMapa] = useState<any[]>([]);
   const [dadosFiltradosSemBuscaCandidatoOuPartido, setDadosFiltradosSemBuscaCandidatoOuPartido] = useState<any[]>([]);
   const [dadosFinalFiltrados, setDadosFinalFiltrados] = useState<any[]>([]);
   const [allSectionMetrics, setAllSectionMetrics] = useState<Map<string, SectionMetrics>>(new Map());
 
+  // Estados de carregamento e aplicação de filtros
   const [carregando, setCarregando] = useState(true);
   const [algumFiltroAplicado, setAlgumFiltroAplicado] = useState(false);
   const [algumFiltroGeograficoAplicado, setAlgumFiltroGeograficoAplicado] = useState(false);
 
-  const [cargoRankingSelecionado, setCargoRankingSelecionado] = useState('Presidente');
+  // Estados para o Ranking (na aba 'Visão Geral')
+  const [cargoRankingSelecionado, setCargoRankingSelecionado] = useState('Prefeito');
   const [municipioRankingSelecionado, setMunicipioRankingSelecionado] = useState('JOÃO PESSOA');
   const [siglaRankingSelecionada, setSiglaRankingSelecionada] = useState('Todas as Siglas');
-  const [termoBuscaCandidatoRanking, setTermoBuscaCandidatoRanking] = useState('');
+  const [candidatoRankingSelecionado, setCandidatoRankingSelecionado] = useState('Todos os Candidatos'); // Candidato selecionado NO RANKING
+  const [candidatosDisponiveisRanking, setCandidatosDisponiveisRanking] = useState<CandidatoDropdownOption[]>([]);
   const [ordenacaoColunaRanking, setOrdenacaoColunaRanking] = useState('totalVotos');
   const [ordenacaoDirecaoRanking, setOrdenacaoDirecaoRanking] = useState<'asc' | 'desc'>('desc');
   const [candidatosRanking, setCandidatosRanking] = useState<VotoAgregadoCandidatoRanking[]>([]);
 
+  // Estados de Paginação para Ranking e Votos por Local
   const [paginaAtualRanking, setPaginaAtualRanking] = useState(1);
-  const [itensPorPaginaRanking, setItensPorPaginaRanking] = useState(10);
+  const [itensPorPaginaRanking, setItensPorPaginaRanking] = useState(25);
   const [paginaAtualVotosLocal, setPaginaAtualVotosLocal] = useState(1);
   const [itensPorPaginaVotosLocal, setItensPorPaginaVotosLocal] = useState(10);
 
+
+  // Referências para cache e controle de fluxo
   const resumoCacheRef = useRef<Record<string, any>>(
     typeof window !== 'undefined'
       ? JSON.parse(localStorage.getItem('votacaoResumo') || '{}')
       : {}
   );
+  // As referências de 'AnteriorRef' não são mais estritamente necessárias com a nova lógica de filtro reativa no useEffect,
+  // mas mantê-las não causa problemas.
   const municipioAnteriorRef = useRef(municipioSelecionado);
   const localAnteriorRef = useRef(localSelecionado);
   const zonaAnteriorRef = useRef(zonaSelecionada);
   const secaoAnteriorRef = useRef(secaoSelecionada);
 
-  const abas = ['Visão Geral', 'Visão Geral 2º turno','Presidente', 'Presidente 2º turno', 'Senador', 'Governador', 'Deputado Federal', 'Deputado Estadual'];
+  // Mapeamento de planilhas
+  const abas = ['Visão Geral', 'Prefeito', 'Vereador'];
   const planilhasPorCargo: Record<string, string[]> = {
-    'Visão Geral': [
-      'presidente_2018', 'senador_2018', 'governador_2018',
-      'grupo_federal1_2018', 'grupo_federal2_2018', 'grupo_federal3_2018', 'deputado_federaljp_2018',
-      'grupo_estadual1_2018', 'grupo_estadual2_2018', 'grupo_estadual3_2018', 'deputado_estadualjp_2018',
-    ],
-    'Visão Geral 2º turno': ['presidente_2018_2'],
-    Presidente: ['presidente_2018'],
-    'Presidente 2º turno': ['presidente_2018_2'],
-    Senador: ['senador_2018'],
-    Governador: ['governador_2018'],
-    'Deputado Federal': ['grupo_federal1_2018', 'grupo_federal2_2018', 'grupo_federal3_2018', 'deputado_federaljp_2018'],
-    'Deputado Estadual': ['grupo_estadual1_2018', 'grupo_estadual2_2018', 'grupo_estadual3_2018', 'deputado_estadualjp_2018'],
+    'Visão Geral': ['prefeito_2020', 'vereador_2020'],
+    Prefeito: ['prefeito_2020'],
+    Vereador: ['vereador_2020'],
   };
-  const cargosDisponiveisParaRanking = abas.filter(aba => aba !== 'Visão Geral' && aba !== 'Visão Geral 2º turno');
+  const cargosDisponiveisParaRanking = abas.filter(aba => aba !== 'Visão Geral');
   const [municipiosDisponiveisParaRanking, setMunicipiosDisponiveisParaRanking] = useState<string[]>([]);
 
+
+  // Helpers de uso geral
   const getUniqueOptions = useCallback((data: any[], key: string, sort = true) => {
     const options = new Set<string>();
     data.forEach((item: any) => {
@@ -177,6 +187,7 @@ export default function PainelVotacao() {
     return 0;
   }, []);
 
+  // Estado para dados de locais de votação (carregados uma única vez)
   const [dadosLocais, setDadosLocais] = useState<LocalVotacaoDetalhado[]>([]);
   const locaisCarregadosRef = useRef(false);
 
@@ -207,11 +218,14 @@ export default function PainelVotacao() {
     fetchLocais();
   }, []);
 
+
+  // Efeito principal para carregar os dados brutos quando a aba muda
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
 
     setCarregando(true);
+    // Resetar todos os estados dependentes dos dados carregados
     setDadosCompletosParaMapa([]);
     setVotosAgrupadosCandidatos([]);
     setDadosFiltradosSemBuscaCandidatoOuPartido([]);
@@ -219,11 +233,12 @@ export default function PainelVotacao() {
     setVotosCandidatoPorLocal([]);
     setDadosFinalFiltrados([]);
 
+    // Resetar filtros específicos do cargo/local ao mudar de aba
     setLocalSelecionado('Todos os Locais');
     setZonaSelecionada('Todas as Zonas');
     setSecaoSelecionada('Todas as Seções');
     setSiglaSelecionada('Todas as Siglas');
-    setTermoBuscaCandidato('');
+    setCandidatoSelecionado('Todos os Candidatos');
     setTermoBuscaLocal('');
     setAlgumFiltroAplicado(false);
     setAlgumFiltroGeograficoAplicado(false);
@@ -232,25 +247,19 @@ export default function PainelVotacao() {
     setZonasDisponiveis([]);
     setSecoesDisponiveis([]);
     setLocaisDisponiveis([]);
-    setLocaisDisponiveisDropdown([]);
+    setCandidatosDisponiveis([]);
 
-    setTermoBuscaCandidatoRanking('');
+    // RESETAR FILTROS DO RANKING AO MUDAR DE ABA PARA GARANTIR CONSISTÊNCIA
+    setCargoRankingSelecionado('Prefeito');
+    setMunicipioRankingSelecionado('JOÃO PESSOA');
+    setCandidatoRankingSelecionado('Todos os Candidatos');
     setOrdenacaoColunaRanking('totalVotos');
     setOrdenacaoDirecaoRanking('desc');
     setCandidatosRanking([]);
     setPaginaAtualRanking(1);
     setSiglaRankingSelecionada('Todas as Siglas');
+    setCandidatosDisponiveisRanking([]);
     setPaginaAtualVotosLocal(1);
-
-    if (abaAtiva === 'Visão Geral 2º turno') {
-      setCargoRankingSelecionado('Presidente 2º turno');
-    } else if (abaAtiva === 'Visão Geral') {
-      setCargoRankingSelecionado('Presidente');
-    } else {
-        // Para abas de cargo específicas, o cargo do ranking é o próprio nome da aba.
-        // Isso assume que o nome da aba corresponde ao nome do cargo na coluna 'Cargo' dos dados.
-        setCargoRankingSelecionado(abaAtiva);
-    }
 
 
     const resumoSalvo = resumoCacheRef.current[abaAtiva];
@@ -268,18 +277,8 @@ export default function PainelVotacao() {
           const linhas: string[][] = json.data?.slice(1) || [];
 
           const cargoMap: Record<string, string> = {
-            'presidente_2018': 'Presidente',
-            'presidente_2018_2': 'Presidente 2º turno',
-            'senador_2018': 'Senador',
-            'governador_2018': 'Governador',
-            'grupo_federal1_2018': 'Deputado Federal',
-            'grupo_federal2_2018': 'Deputado Federal',
-            'grupo_federal3_2018': 'Deputado Federal',
-            'deputado_federaljp_2018': 'Deputado Federal',
-            'grupo_estadual1_2018': 'Deputado Estadual',
-            'grupo_estadual2_2018': 'Deputado Estadual',
-            'grupo_estadual3_2018': 'Deputado Estadual',
-            'deputado_estadualjp_2018': 'Deputado Estadual',
+            'prefeito_2020': 'Prefeito',
+            'vereador_2020': 'Vereador',
           };
           const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
 
@@ -419,7 +418,6 @@ export default function PainelVotacao() {
               'Quantidade de Votos': safeParseVotes(dado['Quantidade de Votos']),
               'Endereço do Local': infoLocal?.['Endereço do Local'] || 'N/A',
               'Bairro do Local': infoLocal?.['Bairro do Local'] || 'N/A',
-              'Nome do Local': infoLocal?.['Nome do Local'] || 'N/A',
             };
           });
 
@@ -464,7 +462,7 @@ export default function PainelVotacao() {
       setZonasDisponiveis([]);
       setSecoesDisponiveis([]);
       setLocaisDisponiveis([]);
-      setLocaisDisponiveisDropdown([]);
+      setCandidatosDisponiveis([]);
       setDadosGeraisFiltrados({
         eleitoresAptos: 0, comparecimentos: 0, abstencoes: 0, taxaAbstencao: 0,
         locais: 0, secoes: 0, validos: 0, brancos: 0, nulos: 0,
@@ -473,6 +471,7 @@ export default function PainelVotacao() {
       return;
     }
 
+    // Identificar se algum filtro geográfico está aplicado
     const isAnyGeographicFilterApplied =
       municipioSelecionado !== 'Todos os Municípios' ||
       zonaSelecionada !== 'Todas as Zonas' ||
@@ -481,22 +480,24 @@ export default function PainelVotacao() {
       termoBuscaLocal !== '';
     setAlgumFiltroGeograficoAplicado(isAnyGeographicFilterApplied);
 
-    const isAnyFilterApplied = isAnyGeographicFilterApplied || siglaSelecionada !== 'Todas as Siglas' || termoBuscaCandidato !== '';
+    // Identificar se algum filtro (geográfico, sigla, candidato) está aplicado
+    const isAnyFilterApplied = isAnyGeographicFilterApplied || siglaSelecionada !== 'Todas as Siglas' || candidatoSelecionado !== 'Todos os Candidatos';
     setAlgumFiltroAplicado(isAnyFilterApplied);
-
-    municipioAnteriorRef.current = municipioSelecionado;
-    zonaAnteriorRef.current = zonaSelecionada;
-    localAnteriorRef.current = localSelecionado;
-    secaoAnteriorRef.current = secaoSelecionada;
-
+    
+    // Variável que acumula todos os filtros geográficos
     let dadosComTodosFiltrosGeograficosAplicados = [...dadosCompletosParaMapa];
+    // Variável para popular os dropdowns de Zona, Local, Seção (filtrada em cascata)
     let locaisParaPopularDropdowns = [...dadosLocais];
 
+    // --- APLICAR FILTROS GEOGRÁFICOS EM CASCATA ---
+
+    // 1. Filtro: Município
     if (municipioSelecionado !== 'Todos os Municípios') {
       dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Município'] === municipioSelecionado);
       locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Município'] === municipioSelecionado);
     }
 
+    // 2. Atualizar Zonas Disponíveis e Filtrar por Zona
     const newZonas = (municipioSelecionado !== 'Todos os Municípios')
       ? getUniqueOptions(locaisParaPopularDropdowns, 'Zona Eleitoral', false)
       : [];
@@ -507,6 +508,7 @@ export default function PainelVotacao() {
       locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Zona Eleitoral'] === zonaSelecionada);
     }
 
+    // 3. Atualizar Locais Disponíveis (Dropdown) e Filtrar por Local
     const computedLocaisDataForDropdown = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas')
       ? locaisParaPopularDropdowns.map(local => ({
             id: local['Local de Votação'],
@@ -515,16 +517,16 @@ export default function PainelVotacao() {
                 : local['Local de Votação']
           }))
       : [];
-
     const uniqueDropdownItems = Array.from(new Map(computedLocaisDataForDropdown.map(item => [item.id, item])).values());
     setLocaisDisponiveisDropdown(uniqueDropdownItems);
     setLocaisDisponiveis(uniqueDropdownItems.map(l => l.id));
-
+    
     if (localSelecionado !== 'Todos os Locais') {
       dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Local de Votação'] === localSelecionado);
       locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Local de Votação'] === localSelecionado);
     }
 
+    // 4. Atualizar Seções Disponíveis e Filtrar por Seção
     const newSecoes = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas' && localSelecionado !== 'Todos os Locais')
       ? getUniqueOptions(locaisParaPopularDropdowns, 'Seção Eleitoral', false)
       : [];
@@ -535,6 +537,7 @@ export default function PainelVotacao() {
       locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Seção Eleitoral'] === secaoSelecionada);
     }
 
+    // 5. Filtrar por Termo de Busca de Local (se aplicável)
     const termoLocalNormalizado = removerAcentos(termoBuscaLocal.toUpperCase());
     if (termoBuscaLocal) {
         dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => {
@@ -547,25 +550,47 @@ export default function PainelVotacao() {
         });
     }
 
+    // --- FIM DA APLICAÇÃO DOS FILTROS GEOGRÁFICOS ---
+    // 'dadosComTodosFiltrosGeograficosAplicados' agora é a base para tudo que vem a seguir.
+    
+    // Populando os candidatos disponíveis para o dropdown de "Filtros Detalhados"
+    const uniqueCandidatos: { [key: string]: CandidatoDropdownOption } = {};
+    dadosComTodosFiltrosGeograficosAplicados.forEach((item: any) => {
+      const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+      const siglaPartido = item['Sigla do Partido']?.trim();
+      const numeroCandidato = item['Numero do Candidato']?.trim();
+      const isLegenda = nomeCandidato === siglaPartido?.toUpperCase();
+      const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido?.toLowerCase() === '#nulo#';
+      if (nomeCandidato && !isLegenda && !isBrancoOuNulo) {
+        uniqueCandidatos[nomeCandidato] = { nome: nomeCandidato, siglaPartido: siglaPartido, numeroCandidato: numeroCandidato };
+      }
+    });
+    const sortedCandidatosDisponiveis = Object.values(uniqueCandidatos).sort((a, b) => a.nome.localeCompare(b.nome));
+    setCandidatosDisponiveis(sortedCandidatosDisponiveis);
+
+
+    // Filtrar locais de votação para exibição na área de filtros detalhados (locaisVotacaoFiltradosParaExibicao)
+    // Se você tiver esse estado, ele deve usar 'locaisParaPopularDropdowns' como base
     setLocaisVotacaoFiltradosParaExibicao(locaisParaPopularDropdowns);
+
 
     const siglasFiltradasGeograficamente = getUniqueOptions(dadosComTodosFiltrosGeograficosAplicados, 'Sigla do Partido');
     const filteredSiglasGeograficamente = siglasFiltradasGeograficamente.filter(sigla => sigla.toLowerCase() !== '#nulo#');
     setSiglasDisponiveis(filteredSiglasGeograficamente);
 
     let dadosParaCalculoDeSiglasECandidatos = [...dadosComTodosFiltrosGeograficosAplicados];
-
+    
     if (siglaSelecionada !== 'Todas as Siglas') {
       dadosParaCalculoDeSiglasECandidatos = dadosParaCalculoDeSiglasECandidatos.filter(dado => dado['Sigla do Partido'] === siglaSelecionada);
     }
 
     setDadosFiltradosSemBuscaCandidatoOuPartido(dadosParaCalculoDeSiglasECandidatos);
 
+
     let dadosFinalProcessados = [...dadosParaCalculoDeSiglasECandidatos];
-    if (termoBuscaCandidato) {
-      const termoNormalizado = removerAcentos(termoBuscaCandidato.toUpperCase());
-      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) =>
-        removerAcentos(dado['Nome do Candidato/Voto']?.trim().toUpperCase()).includes(termoNormalizado)
+    if (candidatoSelecionado !== 'Todos os Candidatos') {
+      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) => 
+        dado['Nome do Candidato/Voto']?.trim().toUpperCase() === candidatoSelecionado
       );
     } else {
       dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) => {
@@ -578,6 +603,7 @@ export default function PainelVotacao() {
     }
     setDadosFinalFiltrados(dadosFinalProcessados);
 
+    // Cálculo dos totais gerais filtrados (Eleitores aptos, comparecimentos, abstenções etc.)
     let currentFilteredAptos = 0;
     let currentFilteredComp = 0;
     let currentFilteredAbst = 0;
@@ -589,9 +615,9 @@ export default function PainelVotacao() {
             const matchesMunicipio = municipioSelecionado === 'Todos os Municípios' || metric.municipio === municipioSelecionado;
             const matchesZona = zonaSelecionada === 'Todas as Zonas' || metric.zona === zonaSelecionada;
             const matchesLocalCode = localSelecionado === 'Todos os Locais' || metric.localCode === localSelecionado;
-
-            const matchingLocalInfo = dadosLocais.find(l =>
-                l['Local de Votação'] === metric.localCode &&
+            
+            const matchingLocalInfo = dadosLocais.find(l => 
+                l['Local de Votação'] === metric.localCode && 
                 l['Município'] === metric.municipio &&
                 l['Zona Eleitoral'] === metric.zona &&
                 (secaoSelecionada === 'Todas as Seções' || l['Seção Eleitoral'] === secaoSelecionada) &&
@@ -636,29 +662,12 @@ export default function PainelVotacao() {
         nulos: currentFilteredNulos,
     });
 
-    if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && !termoBuscaCandidato) {
+    // Lógica para os Votos Agrupados (Cards de Candidato) - Visível quando "Todos os Candidatos" é selecionado
+    // Este bloco só executa para as abas de cargo (Prefeito/Vereador)
+    if (abaAtiva !== 'Visão Geral' && dadosCompletosParaMapa.length > 0 && candidatoSelecionado === 'Todos os Candidatos') {
       const agregados: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; } } = {};
 
-      let dataToAggregate = [];
-
-      const allGeographicFiltersAreDefault =
-        municipioSelecionado === 'Todos os Municípios' &&
-        localSelecionado === 'Todos os Locais' &&
-        zonaSelecionada === 'Todas as Zonas' &&
-        secaoSelecionada === 'Todas as Seções' &&
-        termoBuscaLocal === '';
-
-      const allPartyAndSearchFiltersAreDefault =
-        siglaSelecionada === 'Todas as Siglas' &&
-        termoBuscaCandidato === '';
-
-      if (allGeographicFiltersAreDefault && allPartyAndSearchFiltersAreDefault) {
-          dataToAggregate = dadosCompletosParaMapa;
-      } else {
-          dataToAggregate = dadosFinalProcessados;
-      }
-
-      dataToAggregate.forEach(item => {
+      dadosParaCalculoDeSiglasECandidatos.forEach((item: any) => { // Use dadosParaCalculoDeSiglasECandidatos aqui
         const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
         const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
         const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
@@ -667,7 +676,7 @@ export default function PainelVotacao() {
         if (nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || normalizedSiglaPartido === '#NULO#' || nomeCandidato === normalizedSiglaPartido) {
           return;
         }
-
+        
         if (!agregados[nomeCandidato]) {
           agregados[nomeCandidato] = { nome: nomeCandidato, totalVotos: 0, siglaPartido: siglaPartidoOriginal };
         }
@@ -677,13 +686,32 @@ export default function PainelVotacao() {
       const sortedCandidatos = Object.values(agregados)
         .sort((a, b) => b.totalVotos - a.totalVotos);
       setVotosAgrupadosCandidatos(sortedCandidatos);
-      setVotosCandidatoPorLocal([]);
-      setPaginaAtualVotosLocal(1);
-    } else if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && termoBuscaCandidato !== '') {
+      setVotosCandidatoPorLocal([]); // Garante que a outra lista esteja vazia
+      setPaginaAtualVotosLocal(1); // Resetar paginação
+    } 
+    // Lógica para exibir votos por local de votação quando um candidato específico é selecionado
+    // Este bloco agora é ATIVADO SEJA NA ABA DE CARGO ESPECÍFICO OU NA 'VISÃO GERAL' (para o ranking)
+    else if (dadosCompletosParaMapa.length > 0 && 
+              (candidatoSelecionado !== 'Todos os Candidatos' || candidatoRankingSelecionado !== 'Todos os Candidatos')) {
         const agregadosPorLocal: { [key: string]: VotoCandidatoPorLocal } = {};
 
-        let dataForTotalValidVotesPerLocal = [...dadosComTodosFiltrosGeograficosAplicados];
+        // PASSO 1: Determinar o conjunto de dados para calcular os TOTAL DE VOTOS VÁLIDOS POR LOCAL
+        // ESTA É A PARTE CRÍTICA: dataForTotalValidVotesPerLocal não deve ser filtrada por partido ou candidato
+        let dataForTotalValidVotesPerLocal = [...dadosComTodosFiltrosGeograficosAplicados]; // Use a variável que já tem todos os filtros geográficos
 
+        if (abaAtiva === 'Visão Geral') {
+            // Se estamos na Visão Geral, aplicar APENAS filtros de Cargo e Município do Ranking
+            if (cargoRankingSelecionado !== 'Todos os Cargos') {
+                dataForTotalValidVotesPerLocal = dataForTotalValidVotesPerLocal.filter((dado: any) => dado.Cargo === cargoRankingSelecionado);
+            }
+            if (municipioRankingSelecionado !== 'Todos os Municípios') {
+                dataForTotalValidVotesPerLocal = dataForTotalValidVotesPerLocal.filter((dado: any) => dado['Município'] === municipioRankingSelecionado);
+            }
+        } else {
+            // Se estamos nas abas de cargo (Prefeito/Vereador), 'dataForTotalValidVotesPerLocal' já está correta (geo-filtrada)
+        }
+
+        // 2. Calcular o total de votos VÁLIDOS por Local de Votação a partir de 'dataForTotalValidVotesPerLocal'
         const totalValidVotesPerLocal: { [key: string]: number } = {};
         dataForTotalValidVotesPerLocal.forEach((item: any) => {
             const nomeVoto = item['Nome do Candidato/Voto']?.toUpperCase();
@@ -691,6 +719,7 @@ export default function PainelVotacao() {
             const votos = item['Quantidade de Votos'] || 0;
             const localKey = item['Local de Votação']?.trim();
 
+            // Votos válidos são aqueles que NÃO são BRANCO, NULO ou LEGENDA
             const isLegenda = nomeVoto === siglaVoto?.toUpperCase();
             const isBrancoOuNulo = nomeVoto === 'BRANCO' || nomeVoto === 'NULO' || siglaVoto === '#nulo#';
 
@@ -702,23 +731,43 @@ export default function PainelVotacao() {
             }
         });
 
-        let dataForCandidateLocalVotes = [...dadosComTodosFiltrosGeograficosAplicados];
-        if (siglaSelecionada !== 'Todas as Siglas') {
-            dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Sigla do Partido'] === siglaSelecionada);
+        // 3. Determinar o CANDIDATO e o conjunto de dados para FILTRAR OS VOTOS DO CANDIDATO POR LOCAL
+        let dataForCandidateLocalVotes = [...dadosComTodosFiltrosGeograficosAplicados]; // Começa com os dados geo-filtrados
+        let targetCandidateName = '';
+
+        if (abaAtiva === 'Visão Geral') {
+            // Aplicar todos os filtros de ranking para os votos do candidato
+            if (cargoRankingSelecionado !== 'Todos os Cargos') {
+                dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado.Cargo === cargoRankingSelecionado);
+            }
+            if (municipioRankingSelecionado !== 'Todos os Municípios') {
+                dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Município'] === municipioRankingSelecionado);
+            }
+            if (siglaRankingSelecionada !== 'Todas as Siglas') {
+                dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Sigla do Partido'] === siglaRankingSelecionada);
+            }
+            targetCandidateName = candidatoRankingSelecionado;
+
+        } else {
+            // Aplicar filtros de sigla e candidato (já sobre os dados geo-filtrados)
+            dataForCandidateLocalVotes = [...dadosComTodosFiltrosGeograficosAplicados];
+            if (siglaSelecionada !== 'Todas as Siglas') {
+              dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Sigla do Partido'] === siglaSelecionada);
+            }
+            targetCandidateName = candidatoSelecionado;
         }
-        const targetCandidateName = termoBuscaCandidato.toUpperCase();
 
         dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) =>
             dado['Nome do Candidato/Voto']?.trim().toUpperCase() === targetCandidateName
         );
-
+        
         dataForCandidateLocalVotes.forEach((item: any) => {
             const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
             const siglaPartido = item['Sigla do Partido']?.trim();
             const localVotacaoCode = item['Local de Votação']?.trim();
             const votos = item['Quantidade de Votos'] || 0;
 
-            const infoLocal = dadosLocais.find(l =>
+            const infoLocal = dadosLocais.find(l => 
                 l['Município'] === item['Município'] &&
                 l['Zona Eleitoral'] === item['Zona Eleitoral'] &&
                 l['Local de Votação'] === localVotacaoCode &&
@@ -745,6 +794,7 @@ export default function PainelVotacao() {
             }
         });
 
+        // 4. Calcular a porcentagem para cada local com base nos totais válidos
         Object.values(agregadosPorLocal).forEach(item => {
             const localKey = item.localVotacao;
             const totalValid = totalValidVotesPerLocal[localKey] || 0;
@@ -768,14 +818,16 @@ export default function PainelVotacao() {
     }
 
   }, [
-    municipioSelecionado, localSelecionado, zonaSelecionada, secaoSelecionada, siglaSelecionada, termoBuscaCandidato,
+    municipioSelecionado, localSelecionado, zonaSelecionada, secaoSelecionada, siglaSelecionada, candidatoSelecionado,
     termoBuscaLocal, dadosCompletosParaMapa, carregando, getUniqueOptions, abaAtiva, dadosLocais, algumFiltroAplicado, allSectionMetrics,
-    cargoRankingSelecionado, municipioRankingSelecionado, siglaRankingSelecionada
+    cargoRankingSelecionado, municipioRankingSelecionado, candidatoRankingSelecionado, siglaRankingSelecionada
   ]);
 
+  // LÓGICA DO RANKING NA ABA 'VISÃO GERAL'
   useEffect(() => {
-    if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') || carregando || dadosCompletosParaMapa.length === 0) {
+    if (abaAtiva !== 'Visão Geral' || carregando || dadosCompletosParaMapa.length === 0) {
       setCandidatosRanking([]);
+      setCandidatosDisponiveisRanking([]);
       setPaginaAtualRanking(1);
       return;
     }
@@ -794,23 +846,37 @@ export default function PainelVotacao() {
       dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter((dado: any) => dado['Sigla do Partido'] === siglaRankingSelecionada);
     }
 
-    if (termoBuscaCandidatoRanking) {
-      const termoNormalizado = removerAcentos(termoBuscaCandidatoRanking.toUpperCase());
-      dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter(dado => {
-        const nomeCandidato = dado['Nome do Candidato/Voto']?.trim().toUpperCase();
-        const siglaPartido = dado['Sigla do Partido']?.trim().toUpperCase();
-        const isLegenda = nomeCandidato === siglaPartido;
-        const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido === '#NULO#';
-        return nomeCandidato && removerAcentos(nomeCandidato).includes(termoNormalizado) && !isLegenda && !isBrancoOuNulo;
-      });
+    // Popula o dropdown de candidatos para o ranking
+    const uniqueCandidatosRanking: { [key: string]: CandidatoDropdownOption } = {};
+    dadosFiltradosParaRanking.forEach((item: any) => {
+      const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+      const siglaPartido = item['Sigla do Partido']?.trim();
+      const numeroCandidato = item['Numero do Candidato']?.trim();
+      const isLegenda = nomeCandidato === siglaPartido?.toUpperCase();
+      const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido?.toLowerCase() === '#nulo#';
+      if (nomeCandidato && !isLegenda && !isBrancoOuNulo) {
+        uniqueCandidatosRanking[nomeCandidato] = { nome: nomeCandidato, siglaPartido: siglaPartido, numeroCandidato: numeroCandidato };
+      }
+    });
+    const sortedCandidatosDisponiveisRanking = Object.values(uniqueCandidatosRanking).sort((a, b) => a.nome.localeCompare(b.nome));
+    setCandidatosDisponiveisRanking(sortedCandidatosDisponiveisRanking);
+
+
+    // Se um candidato específico foi selecionado no dropdown do ranking,
+    // não precisamos calcular o ranking completo, apenas exibir os votos por local.
+    // A lógica de votos por local no outro useEffect já vai cuidar disso,
+    // então este useEffect só precisa garantir que 'candidatosRanking' esteja vazio.
+    if (candidatoRankingSelecionado !== 'Todos os Candidatos') {
+        setCandidatosRanking([]);
+        setPaginaAtualRanking(1);
+        return;
     }
 
-    console.log("Dados filtrados para Ranking:", dadosFiltradosParaRanking);
 
     const rawGroupedByCandidatoCargoMunicipio: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; cargo: string; municipio: string; numeroCandidato: string; } } = {};
     const totalValidVotesPerCargoMunicipio: { [key: string]: number } = {};
 
-    dadosFiltradosParaRanking.forEach(item => {
+    dadosFiltradosParaRanking.forEach((item: any) => {
       const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
       const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
       const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
@@ -902,7 +968,8 @@ export default function PainelVotacao() {
 
     setCandidatosRanking(sortedCandidatos);
     setPaginaAtualRanking(1);
-  }, [abaAtiva, carregando, dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, termoBuscaCandidatoRanking, siglaRankingSelecionada, ordenacaoColunaRanking, ordenacaoDirecaoRanking, getUniqueOptions, safeParseVotes]);
+  }, [abaAtiva, carregando, dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, candidatoRankingSelecionado, siglaRankingSelecionada, ordenacaoColunaRanking, ordenacaoDirecaoRanking, getUniqueOptions, safeParseVotes]);
+
 
   const siglasParaRankingDropdown = useMemo(() => {
     let dadosFiltradosParaDropdown: any[] = [...dadosCompletosParaMapa];
@@ -919,6 +986,8 @@ export default function PainelVotacao() {
     return uniqueSiglas.filter((sigla: string) => sigla.toLowerCase() !== '#nulo#');
   }, [dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, getUniqueOptions]);
 
+
+  // Paginação da tabela de Ranking (Visão Geral - Candidatos por Cargo/Município)
   const indiceUltimoItemRanking = paginaAtualRanking * itensPorPaginaRanking;
   const indicePrimeiroItemRanking = indiceUltimoItemRanking - itensPorPaginaRanking;
   const candidatosPaginaAtualRanking = candidatosRanking.slice(indicePrimeiroItemRanking, indiceUltimoItemRanking);
@@ -932,6 +1001,7 @@ export default function PainelVotacao() {
     setPaginaAtualRanking(prev => Math.max(prev - 1, 1));
   };
 
+  // Paginação da tabela de Votos por Local (Visão Geral - Candidato Específico E/OU Abas de Cargo)
   const indiceUltimoItemVotosLocal = paginaAtualVotosLocal * itensPorPaginaVotosLocal;
   const indicePrimeiroItemVotosLocal = indiceUltimoItemVotosLocal - itensPorPaginaVotosLocal;
   const votosCandidatoPorLocalPaginaAtual = votosCandidatoPorLocal.slice(indicePrimeiroItemVotosLocal, indiceUltimoItemVotosLocal);
@@ -944,6 +1014,7 @@ export default function PainelVotacao() {
   const irParaPaginaAnteriorVotosLocal = () => {
     setPaginaAtualVotosLocal(prev => Math.max(prev - 1, 1));
   };
+
 
   return (
     <ProtectedRoute>
@@ -967,15 +1038,15 @@ export default function PainelVotacao() {
                     setZonaSelecionada('Todas as Zonas');
                     setSecaoSelecionada('Todas as Seções');
                     setSiglaSelecionada('Todas as Siglas');
-                    setTermoBuscaCandidato('');
+                    setCandidatoSelecionado('Todos os Candidatos');
                     setTermoBuscaLocal('');
                     setLocalSelecionado('Todos os Locais');
-                    setCargoRankingSelecionado('Presidente');
+                    // Resetar filtros do ranking ao mudar de aba
+                    setCargoRankingSelecionado('Prefeito');
                     setMunicipioRankingSelecionado('JOÃO PESSOA');
-                    setTermoBuscaCandidatoRanking('');
+                    setCandidatoRankingSelecionado('Todos os Candidatos');
                     setOrdenacaoColunaRanking('totalVotos');
                     setOrdenacaoDirecaoRanking('desc');
-                    setCandidatosRanking([]);
                     setPaginaAtualRanking(1);
                     setSiglaRankingSelecionada('Todas as Siglas');
                     setPaginaAtualVotosLocal(1);
@@ -993,9 +1064,11 @@ export default function PainelVotacao() {
           </div>
 
           <div className="p-6 space-y-10">
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && <MapaParaibaCandidato key={`${abaAtiva}-mapa`} apiData={dadosCompletosParaMapa} abaAtiva={abaAtiva} />}
+            {/* Mapa da Paraíba - Posicionado AGORA acima dos cards */}
+            {abaAtiva !== 'Visão Geral' && !carregando && <MapaParaibaCandidato key={`${abaAtiva}-mapa`} apiData={dadosCompletosParaMapa} abaAtiva={abaAtiva} />}
 
-            {abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? (
+            {/* VotacaoCards: Exibe dados gerais (filtrados ou globais) ou dados de votos por cargo */}
+            {abaAtiva === 'Visão Geral' ? (
               <>
               <VotacaoCards
                 tipo="geral"
@@ -1011,9 +1084,11 @@ export default function PainelVotacao() {
                 carregando={carregando}
               />
 
+              {/* SEÇÃO DO RANKING DENTRO DA VISÃO GERAL */}
               <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Ranking de Votos por Candidato</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {/* Filtro de Cargo para o Ranking */}
                   <div>
                     <label htmlFor="cargo-ranking-select" className="block text-sm font-medium text-gray-700 mb-1">
                       Cargo:
@@ -1026,7 +1101,9 @@ export default function PainelVotacao() {
                         onChange={(e) => {
                           setCargoRankingSelecionado(e.target.value);
                           setSiglaRankingSelecionada('Todas as Siglas');
+                          setCandidatoRankingSelecionado('Todos os Candidatos'); // Resetar candidato ao mudar cargo
                           setPaginaAtualRanking(1);
+                          setPaginaAtualVotosLocal(1);
                         }}
                         disabled={carregando}
                       >
@@ -1043,6 +1120,7 @@ export default function PainelVotacao() {
                     </div>
                   </div>
 
+                  {/* Filtro de Município para o Ranking */}
                   <div>
                     <label htmlFor="municipio-ranking-select" className="block text-sm font-medium text-gray-700 mb-1">
                       Município:
@@ -1055,7 +1133,9 @@ export default function PainelVotacao() {
                         onChange={(e) => {
                           setMunicipioRankingSelecionado(e.target.value);
                           setSiglaRankingSelecionada('Todas as Siglas');
+                          setCandidatoRankingSelecionado('Todos os Candidatos'); // Resetar candidato ao mudar município
                           setPaginaAtualRanking(1);
+                          setPaginaAtualVotosLocal(1);
                         }}
                         disabled={carregando}
                       >
@@ -1078,6 +1158,7 @@ export default function PainelVotacao() {
                     </div>
                   </div>
 
+                  {/* Filtro de Sigla do Partido para o Ranking */}
                   <div>
                     <label htmlFor="sigla-ranking-select" className="block text-sm font-medium text-gray-700 mb-1">
                       Partido:
@@ -1089,7 +1170,9 @@ export default function PainelVotacao() {
                         value={siglaRankingSelecionada}
                         onChange={(e) => {
                           setSiglaRankingSelecionada(e.target.value);
+                          setCandidatoRankingSelecionado('Todos os Candidatos'); // Resetar candidato ao mudar partido
                           setPaginaAtualRanking(1);
+                          setPaginaAtualVotosLocal(1);
                         }}
                         disabled={carregando}
                       >
@@ -1106,226 +1189,407 @@ export default function PainelVotacao() {
                     </div>
                   </div>
 
+                  {/* Filtro de Candidato para o Ranking (agora um select) */}
                   <div>
-                    <label htmlFor="busca-candidato-ranking" className="block text-sm font-medium text-gray-700 mb-1">
-                      Buscar Candidato:
+                    <label htmlFor="candidato-ranking-select" className="block text-sm font-medium text-gray-700 mb-1">
+                      Candidato:
                     </label>
-                    <input
-                      id="busca-candidato-ranking"
-                      type="text"
-                      className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                      placeholder="Nome do candidato..."
-                      value={termoBuscaCandidatoRanking}
-                      onChange={(e) => {
-                        setTermoBuscaCandidatoRanking(e.target.value);
-                        setSiglaRankingSelecionada('Todas as Siglas');
-                        setPaginaAtualRanking(1);
-                      }}
-                      disabled={carregando}
-                    />
-                  </div>
-
-                  <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end gap-2">
-                    <div className="flex-1">
-                      <label htmlFor="ordenacao-coluna" className="block text-sm font-medium text-gray-700 mb-1">
-                        Ordenar por:
-                      </label>
-                      <div className="relative">
-                        <select
-                          id="ordenacao-coluna"
-                          className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                          value={ordenacaoColunaRanking}
-                          onChange={(e) => {
-                            setOrdenacaoColunaRanking(e.target.value);
-                            setPaginaAtualRanking(1);
-                          }}
-                          disabled={carregando}
-                        >
-                          <option value="totalVotos">Total de Votos</option>
-                          <option value="nome">Nome do Candidato</option>
-                          <option value="siglaPartido">Sigla do Partido</option>
-                          <option value="porcentagem"> % Votos Válidos</option>
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
-                        </div>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setOrdenacaoDirecaoRanking(ordenacaoDirecaoRanking === 'desc' ? 'asc' : 'desc');
-                        setPaginaAtualRanking(1);
-                      }}
-                      className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
-                      disabled={carregando}
-                    >
-                      {ordenacaoDirecaoRanking === 'desc' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                      {ordenacaoDirecaoRanking === 'desc' ? 'Decrescente' : 'Crescente'}
-                    </button>
-                  </div>
-                </div>
-
-                {!carregando && candidatosRanking.length > 0 ? (
-                  <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Candidato
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Partido
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Número
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Posição
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Total Votos
-                          </th>
-                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            % Votos Válidos
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {candidatosPaginaAtualRanking.map((candidato, index) => (
-                          <tr key={`${candidato.nome}-${candidato.cargo}-${candidato.municipio}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              {candidato.nome}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {candidato.siglaPartido}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {candidato.numeroCandidato}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {candidato.posicaoRanking}º
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {candidato.totalVotos.toLocaleString('pt-BR')}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                              {candidato.porcentagem.toFixed(2)}%
-                            </td>
-                          </tr>
+                    <div className="relative">
+                      <select
+                        id="candidato-ranking-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={candidatoRankingSelecionado}
+                        onChange={(e) => {
+                          setCandidatoRankingSelecionado(e.target.value);
+                          setPaginaAtualRanking(1);
+                          setPaginaAtualVotosLocal(1);
+                        }}
+                        disabled={carregando || candidatosDisponiveisRanking.length === 0}
+                      >
+                        <option value="Todos os Candidatos">Todos os Candidatos</option>
+                        {candidatosDisponiveisRanking.map((candidato) => (
+                          <option key={candidato.nome} value={candidato.nome}>
+                            {candidato.nome} ({candidato.siglaPartido})
+                          </option>
                         ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  !carregando && (
-                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
-                      Nenhum candidato encontrado para o ranking com os filtros selecionados.
-                    </div>
-                  )
-                )}
-
-                {!carregando && candidatosRanking.length > 0 && (
-                  <nav
-                    className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
-                    aria-label="Pagination"
-                  >
-                    <div className="flex flex-1 justify-between sm:hidden">
-                      <button
-                        onClick={irParaPaginaAnteriorRanking}
-                        disabled={paginaAtualRanking === 1}
-                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        Anterior
-                      </button>
-                      <button
-                        onClick={irParaProximaPaginaRanking}
-                        disabled={paginaAtualRanking === totalPaginasRanking}
-                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                      >
-                        Próximo
-                      </button>
-                    </div>
-                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                      <div>
-                        <p className="text-sm text-gray-700">
-                          Mostrando <span className="font-medium">{indicePrimeiroItemRanking + 1}</span> a{' '}
-                          <span className="font-medium">{Math.min(indiceUltimoItemRanking, candidatosRanking.length)}</span> de{' '}
-                          <span className="font-medium">{candidatosRanking.length}</span> resultados
-                        </p>
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
                       </div>
-                      <div className="flex items-center gap-4">
+                    </div>
+                  </div>
+
+
+                  {/* Ordenar por Coluna e Direção - SÓ SE "TODOS OS CANDIDATOS" ESTIVER SELECIONADO NO RANKING */}
+                  {candidatoRankingSelecionado === 'Todos os Candidatos' && (
+                    <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end gap-2">
+                      <div className="flex-1">
+                        <label htmlFor="ordenacao-coluna" className="block text-sm font-medium text-gray-700 mb-1">
+                          Ordenar por:
+                        </label>
                         <div className="relative">
-                          <label htmlFor="itens-por-pagina" className="sr-only">Itens por página</label>
                           <select
-                            id="itens-por-pagina"
+                            id="ordenacao-coluna"
                             className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                            value={itensPorPaginaRanking}
+                            value={ordenacaoColunaRanking}
                             onChange={(e) => {
-                              setItensPorPaginaRanking(Number(e.target.value));
+                              setOrdenacaoColunaRanking(e.target.value);
                               setPaginaAtualRanking(1);
                             }}
+                            disabled={carregando}
                           >
-                            <option value="10">10</option>
-                            <option value="25">25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
+                            <option value="totalVotos">Total de Votos</option>
+                            <option value="nome">Nome do Candidato</option>
+                            <option value="siglaPartido">Sigla do Partido</option>
+                            <option value="porcentagem"> % Votos Válidos</option>
                           </select>
                           <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                             <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
                           </div>
                         </div>
-
-                        <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
-                          <button
-                            onClick={irParaPaginaAnteriorRanking}
-                            disabled={paginaAtualRanking === 1}
-                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Anterior</span>
-                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                          {Array.from({ length: totalPaginasRanking }, (_, i) => i + 1).map(pagina => (
-                            <button
-                              key={pagina}
-                              onClick={() => setPaginaAtualRanking(pagina)}
-                              aria-current={pagina === paginaAtualRanking ? 'page' : undefined}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                                pagina === paginaAtualRanking
-                                  ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                              }`}
-                            >
-                              {pagina}
-                            </button>
-                          ))}
-                          <button
-                            onClick={irParaProximaPaginaRanking}
-                            disabled={paginaAtualRanking === totalPaginasRanking}
-                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
-                          >
-                            <span className="sr-only">Próximo</span>
-                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10l-3.938-3.71a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
-                            </svg>
-                          </button>
-                        </nav>
                       </div>
+                      {/* Botão de Direção com Ícones SVG */}
+                      <button
+                        onClick={() => {
+                          setOrdenacaoDirecaoRanking(ordenacaoDirecaoRanking === 'desc' ? 'asc' : 'desc');
+                          setPaginaAtualRanking(1);
+                        }}
+                        className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
+                        disabled={carregando}
+                      >
+                        {ordenacaoDirecaoRanking === 'desc' ? (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
+                          </svg>
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                            <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                        {ordenacaoDirecaoRanking === 'desc' ? 'Decrescente' : 'Crescente'}
+                      </button>
                     </div>
-                  </nav>
+                  )}
+                </div>
+
+                {/* CONDICIONAL: Tabela de Ranking PADRÃO OU Tabela de Votos por Local para Candidato Específico */}
+                {candidatoRankingSelecionado === 'Todos os Candidatos' ? (
+                  // EXIBIR TABELA DE RANKING PADRÃO (se "Todos os Candidatos" selecionado no ranking)
+                  !carregando && candidatosRanking.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Candidato
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Partido
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Número
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Posição
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Total Votos
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              % Votos Válidos
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {candidatosPaginaAtualRanking.map((candidato, index) => (
+                            <tr key={`${candidato.nome}-${candidato.cargo}-${candidato.municipio}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {candidato.nome}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {candidato.siglaPartido}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {candidato.numeroCandidato}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {candidato.posicaoRanking}º
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {candidato.totalVotos.toLocaleString('pt-BR')}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {candidato.porcentagem.toFixed(2)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    !carregando && (
+                      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
+                        Nenhum candidato encontrado para o ranking com os filtros selecionados.
+                      </div>
+                    )
+                  )
+                ) : (
+                  // EXIBIR TABELA DE VOTOS POR LOCAL PARA CANDIDATO ESPECÍFICO (NA VISÃO GERAL)
+                  !carregando && votosCandidatoPorLocal.length > 0 ? (
+                    <div className="overflow-x-auto">
+                      <h4 className="text-md font-bold text-gray-800 mb-3">Detalhe dos votos de {candidatoRankingSelecionado} por Local de Votação:</h4>
+                      <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Local de Votação (Código)
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Nome do Local
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Endereço
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Bairro
+                            </th>
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Total de Votos
+                            </th>
+                            {/* NOVA COLUNA AQUI */}
+                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              % No Local
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {votosCandidatoPorLocalPaginaAtual.map((item, index) => (
+                            <tr key={`${item.localVotacao}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                                {item.localVotacao}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {item.nomeLocal}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {item.enderecoLocal}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {item.bairroLocal}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {item.totalVotos.toLocaleString('pt-BR')}
+                              </td>
+                              {/* EXIBIÇÃO DA PORCENTAGEM */}
+                              <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                                {item.porcentagem.toFixed(2)}%
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    !carregando && (
+                      <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
+                        Nenhum voto encontrado por local de votação para o candidato selecionado.
+                      </div>
+                    )
+                  )
+                )}
+
+                {/* Controles de Paginação (Com lógica condicional para qual paginação usar) */}
+                {!carregando && (
+                  candidatoRankingSelecionado === 'Todos os Candidatos' && candidatosRanking.length > 0 ? (
+                    // Paginação para a Tabela de Ranking Padrão
+                    <nav
+                      className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+                      aria-label="Pagination"
+                    >
+                      <div className="flex flex-1 justify-between sm:hidden">
+                        <button
+                          onClick={irParaPaginaAnteriorRanking}
+                          disabled={paginaAtualRanking === 1}
+                          className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Anterior
+                        </button>
+                        <button
+                          onClick={irParaProximaPaginaRanking}
+                          disabled={paginaAtualRanking === totalPaginasRanking}
+                          className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                        >
+                          Próximo
+                        </button>
+                      </div>
+                      <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">
+                            Mostrando <span className="font-medium">{indicePrimeiroItemRanking + 1}</span> a{' '}
+                            <span className="font-medium">{Math.min(indiceUltimoItemRanking, candidatosRanking.length)}</span> de{' '}
+                            <span className="font-medium">{candidatosRanking.length}</span> resultados
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="relative">
+                            <label htmlFor="itens-por-pagina" className="sr-only">Itens por página</label>
+                            <select
+                              id="itens-por-pagina"
+                              className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                              value={itensPorPaginaRanking}
+                              onChange={(e) => {
+                                setItensPorPaginaRanking(Number(e.target.value));
+                                setPaginaAtualRanking(1);
+                              }}
+                            >
+                              <option value="10">10</option>
+                              <option value="25">25</option>
+                              <option value="50">50</option>
+                              <option value="100">100</option>
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                            </div>
+                          </div>
+
+                          <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                            <button
+                              onClick={irParaPaginaAnteriorRanking}
+                              disabled={paginaAtualRanking === 1}
+                              className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span className="sr-only">Anterior</span>
+                              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                            {Array.from({ length: totalPaginasRanking }, (_, i) => i + 1).map(pagina => (
+                              <button
+                                key={pagina}
+                                onClick={() => setPaginaAtualRanking(pagina)}
+                                aria-current={pagina === paginaAtualRanking ? 'page' : undefined}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  pagina === paginaAtualRanking
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                }`}
+                              >
+                                {pagina}
+                              </button>
+                            ))}
+                            <button
+                              onClick={irParaProximaPaginaRanking}
+                              disabled={paginaAtualRanking === totalPaginasRanking}
+                              className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                              <span className="sr-only">Próximo</span>
+                              <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10l-3.938-3.71a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                              </svg>
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </nav>
+                  ) : (
+                    // PAGINAÇÃO DA TABELA DE VOTOS POR LOCAL (QUANDO CANDIDATO ESPECÍFICO SELECIONADO NA VISÃO GERAL)
+                    candidatoRankingSelecionado !== 'Todos os Candidatos' && votosCandidatoPorLocal.length > 0 && (
+                      <nav
+                        className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+                        aria-label="Pagination"
+                      >
+                        <div className="flex flex-1 justify-between sm:hidden">
+                          <button
+                            onClick={irParaPaginaAnteriorVotosLocal}
+                            disabled={paginaAtualVotosLocal === 1}
+                            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            Anterior
+                          </button>
+                          <button
+                            onClick={irParaProximaPaginaVotosLocal}
+                            disabled={paginaAtualVotosLocal === totalPaginasVotosLocal}
+                            className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          >
+                            Próximo
+                          </button>
+                        </div>
+                        <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-sm text-gray-700">
+                              Mostrando <span className="font-medium">{indicePrimeiroItemVotosLocal + 1}</span> a{' '}
+                              <span className="font-medium">{Math.min(indiceUltimoItemVotosLocal, votosCandidatoPorLocal.length)}</span> de{' '}
+                              <span className="font-medium">{votosCandidatoPorLocal.length}</span> resultados
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            <div className="relative">
+                              <label htmlFor="itens-por-pagina-votos-local" className="sr-only">Itens por página</label>
+                              <select
+                                id="itens-por-pagina-votos-local"
+                                className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                                value={itensPorPaginaVotosLocal}
+                                onChange={(e) => {
+                                  setItensPorPaginaVotosLocal(Number(e.target.value));
+                                  setPaginaAtualVotosLocal(1);
+                                }}
+                              >
+                                <option value="10">10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                              </select>
+                              <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                                <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                              </div>
+                            </div>
+
+                            <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                              <button
+                                onClick={irParaPaginaAnteriorVotosLocal}
+                                disabled={paginaAtualVotosLocal === 1}
+                                className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <span className="sr-only">Anterior</span>
+                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                  <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                              {Array.from({ length: totalPaginasVotosLocal }, (_, i) => i + 1).map(pagina => (
+                                <button
+                                  key={pagina}
+                                  onClick={() => setPaginaAtualVotosLocal(pagina)}
+                                  aria-current={pagina === paginaAtualVotosLocal ? 'page' : undefined}
+                                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                    pagina === paginaAtualVotosLocal
+                                      ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                  }`}
+                                >
+                                  {pagina}
+                                </button>
+                              ))}
+                              <button
+                                onClick={irParaProximaPaginaVotosLocal}
+                                disabled={paginaAtualVotosLocal === totalPaginasVotosLocal}
+                                className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                              >
+                                <span className="sr-only">Próximo</span>
+                                <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                                  <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10l-3.938-3.71a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                                </svg>
+                              </button>
+                            </nav>
+                          </div>
+                        </div>
+                      </nav>
+                    )
+                  )
                 )}
               </div>
               </>
             ) : (
+              // Se um cargo específico está ativo (aba Prefeito ou Vereador)
               algumFiltroAplicado ? (
                 <VotacaoCards
                     tipo="filtrado"
@@ -1350,12 +1614,14 @@ export default function PainelVotacao() {
               )
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && (
+            {abaAtiva !== 'Visão Geral' && (
               <div className="mt-8 mb-4">
                 <h3 className="text-base font-semibold text-gray-800 mb-3">
                     Filtros Detalhados:
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                {/* GRID DE FILTROS DETALHADOS */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"> {/* Aumentei para 4 colunas para acomodar melhor */}
+                    {/* Município */}
                     <div>
                     <label htmlFor="municipio-select" className="block text-sm font-medium text-gray-700 mb-1">
                         Município:
@@ -1367,11 +1633,11 @@ export default function PainelVotacao() {
                         value={municipioSelecionado}
                         onChange={(e) => {
                             setMunicipioSelecionado(e.target.value);
-                            setZonaSelecionada('Todas as Zonas');
-                            setLocalSelecionado('Todos os Locais');
-                            setSecaoSelecionada('Todas as Seções');
+                            setZonaSelecionada('Todas as Zonas'); // Resetar ao mudar município
+                            setLocalSelecionado('Todos os Locais'); // Resetar ao mudar município
+                            setSecaoSelecionada('Todas as Seções'); // Resetar ao mudar município
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setCandidatoSelecionado('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando}
@@ -1389,6 +1655,7 @@ export default function PainelVotacao() {
                     </div>
                     </div>
 
+                    {/* Zona Eleitoral - RESTAURADO */}
                     <div>
                     <label htmlFor="zona-select" className="block text-sm font-medium text-gray-700 mb-1">
                         Zona Eleitoral:
@@ -1400,10 +1667,10 @@ export default function PainelVotacao() {
                         value={zonaSelecionada}
                         onChange={(e) => {
                             setZonaSelecionada(e.target.value);
-                            setLocalSelecionado('Todos os Locais');
-                            setSecaoSelecionada('Todas as Seções');
+                            setLocalSelecionado('Todos os Locais'); // Resetar ao mudar zona
+                            setSecaoSelecionada('Todas as Seções'); // Resetar ao mudar zona
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setCandidatoSelecionado('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando || municipioSelecionado === 'Todos os Municípios'}
@@ -1421,37 +1688,38 @@ export default function PainelVotacao() {
                     </div>
                     </div>
 
+                    {/* Local de Votação */}
                     <div>
                     <label htmlFor="local-select" className="block text-sm font-medium text-gray-700 mb-1">
-                        Local de Votação:
+                            Local de Votação:
                     </label>
                     <div className="relative">
-                        <select
-                        id="local-select"
-                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                        value={localSelecionado}
-                        onChange={(e) => {
-                            setLocalSelecionado(e.target.value);
-                            setSecaoSelecionada('Todas as Seções');
-                            setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
-                            setTermoBuscaLocal('');
-                        }}
-                        disabled={carregando || zonaSelecionada === 'Todos as Zonas'}
-                        >
-                        <option value="Todos os Locais">Todos os Locais</option>
-                        {locaisDisponiveisDropdown.map((local) => (
-                            <option key={local.id} value={local.id}>
-                            {local.label}
-                            </option>
-                        ))}
-                        </select>
-                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
-                        </div>
+                            <select
+                            id="local-select"
+                            className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                            value={localSelecionado}
+                            onChange={(e) => {
+                                setLocalSelecionado(e.target.value);
+                                setSecaoSelecionada('Todas as Seções');
+                                setSiglaSelecionada('Todas as Siglas');
+                                setTermoBuscaLocal('');
+                            }}
+                            disabled={carregando || zonaSelecionada === 'Todas as Zonas'}
+                            >
+                            <option value="Todos os Locais">Todos os Locais</option>
+                            {locaisDisponiveisDropdown.map((local) => (
+                                <option key={local.id} value={local.id}> {/* Usar local.id como key */}
+                                {local.label} {/* Exibir o label formatado */}
+                                </option>
+                            ))}
+                            </select>
+                            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                            </div>
                     </div>
                     </div>
 
+                    {/* Seção Eleitoral - RESTAURADO */}
                     <div>
                     <label htmlFor="secao-select" className="block text-sm font-medium text-gray-700 mb-1">
                         Seção Eleitoral:
@@ -1464,7 +1732,7 @@ export default function PainelVotacao() {
                         onChange={(e) => {
                             setSecaoSelecionada(e.target.value);
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setCandidatoSelecionado('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando || municipioSelecionado === 'Todos os Municípios' || zonaSelecionada === 'Todas as Zonas' || localSelecionado === 'Todos os Locais'}
@@ -1481,7 +1749,8 @@ export default function PainelVotacao() {
                         </div>
                     </div>
                     </div>
-
+                    
+                    {/* Sigla do Partido */}
                     <div>
                     <label htmlFor="sigla-select" className="block text-sm font-medium text-gray-700 mb-1">
                         Sigla do Partido:
@@ -1493,7 +1762,7 @@ export default function PainelVotacao() {
                         value={siglaSelecionada}
                         onChange={(e) => {
                             setSiglaSelecionada(e.target.value);
-                            setTermoBuscaCandidato('');
+                            setCandidatoSelecionado('Todos os Candidatos');
                         }}
                         disabled={carregando}
                         >
@@ -1510,105 +1779,106 @@ export default function PainelVotacao() {
                     </div>
                     </div>
 
+                    {/* Filtro de Candidato por Dropdown (nos filtros detalhados) */}
                     <div>
-                    <label htmlFor="busca-candidato" className="block text-sm font-medium text-gray-700 mb-1">
-                        Buscar Candidato:
+                    <label htmlFor="candidato-select" className="block text-sm font-medium text-gray-700 mb-1">
+                        Selecionar Candidato:
                     </label>
-                    <input
-                        id="busca-candidato"
-                        type="text"
-                        className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                        placeholder="Nome do candidato..."
-                        value={termoBuscaCandidato}
-                        onChange={(e) => setTermoBuscaCandidato(e.target.value)}
-                        disabled={carregando}
-                    />
+                    <div className="relative">
+                        <select
+                        id="candidato-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={candidatoSelecionado}
+                        onChange={(e) => setCandidatoSelecionado(e.target.value)}
+                        disabled={carregando || candidatosDisponiveis.length === 0}
+                        >
+                        <option value="Todos os Candidatos">Todos os Candidatos</option>
+                        {candidatosDisponiveis.map((candidato) => (
+                            <option key={candidato.nome} value={candidato.nome}>
+                            {candidato.nome} ({candidato.siglaPartido})
+                            </option>
+                        ))}
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                        </div>
+                    </div>
                     </div>
                 </div>
 
-                {!carregando &&
-                (municipioSelecionado !== 'Todos os Municípios' ||
-                localSelecionado !== 'Todos os Locais' ||
-                zonaSelecionada !== 'Todas as Zonas' ||
-                secaoSelecionada !== 'Todas as Seções' ||
-                termoBuscaLocal !== '')
-                && (dadosGeraisFiltrados.locais === 0) && (
-                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
-                        Nenhum local de votação encontrado com os filtros e busca aplicados.
-                    </div>
-                )}
-
-                {!carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && (
+                   {!carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && (
                     <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 w-full">
                         <p className="font-semibold">Informações com filtros aplicados:</p>
                         <ul className="list-disc list-inside mt-2">
                             <li>Quantidade de Candidatos: {votosAgrupadosCandidatos.length}</li>
                             {siglaSelecionada === 'Todas as Siglas' ? (
-                                <>
-                                    <li>Total de Votos Válidos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toLowerCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            const isLegenda = nome === sigla?.toUpperCase();
-                                            const isBrancoOuNulo = nome === 'BRANCO' || nome === 'NULO' || sigla === '#nulo#';
-                                            if (!isBrancoOuNulo && !isLegenda) return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
-                                    <li>Total de Votos Brancos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (nome === 'BRANCO') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                    <>
+                                        <li>Total de Votos Válidos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const sigla = item['Sigla do Partido']?.toLowerCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
+                                                const isLegenda = nome === sigla?.toUpperCase();
+                                                const isBrancoOuNulo = nome === 'BRANCO' || nome === 'NULO' || sigla === '#nulo#';
+                                                if (!isBrancoOuNulo && !isLegenda) return sum + votos;
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
+                                            <li>Total de Votos Brancos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
+                                                if (nome === 'BRANCO') return sum + votos;
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
 
-                                    <li>Total de Votos Nulos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toLowerCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
+                                            <li>Total de Votos Nulos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const sigla = item['Sigla do Partido']?.toLowerCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
 
-                                            if ((nome === 'NULO' || sigla === '#nulo#') && nome !== 'BRANCO') {
-                                                return sum + votos;
-                                            }
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
-                                    <li>Total de Votos de Legenda (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
-                                </>
+                                                if ((nome === 'NULO' || sigla === '#nulo#') && nome !== 'BRANCO') {
+                                                    return sum + votos;
+                                                }
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
+                                            <li>Total de Votos de Legenda (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const sigla = item['Sigla do Partido']?.toUpperCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
+                                                if (nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
+                                    </>
                             ) : (
-                                <>
-                                    <li>Total de Votos Nominais (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (sigla === siglaSelecionada.toUpperCase() && nome !== sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
-                                    <li>Total de Votos de Legenda ({siglaSelecionada}) (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (sigla === siglaSelecionada.toUpperCase() && nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
-                                </>
+                                    <>
+                                        <li>Total de Votos Nominais (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const sigla = item['Sigla do Partido']?.toUpperCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
+                                                if (sigla === siglaSelecionada.toUpperCase() && nome !== sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
+                                            <li>Total de Votos de Legenda ({siglaSelecionada}) (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
+                                                const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                                const sigla = item['Sigla do Partido']?.toUpperCase();
+                                                const votos = item['Quantidade de Votos'] || 0;
+                                                if (sigla === siglaSelecionada.toUpperCase() && nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                                return sum;
+                                            }, 0).toLocaleString('pt-BR')}</li>
+                                    </>
                             )}
                         </ul>
                     </div>
                 )}
                 {!carregando && algumFiltroAplicado && dadosFinalFiltrados.length === 0 && (
-                    <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
-                        Nenhum candidato encontrado com os filtros selecionados.
-                    </div>
+                        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
+                            Nenhum candidato encontrado com os filtros selecionados.
+                        </div>
                 )}
+    
               </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosAgrupadosCandidatos.length > 0 && !termoBuscaCandidato && (
+            {/* Votação por Candidato (Cards) - Visível apenas quando "Todos os Candidatos" é selecionado (em abas de cargo) */}
+            {abaAtiva !== 'Visão Geral' && !carregando && votosAgrupadosCandidatos.length > 0 && candidatoSelecionado === 'Todos os Candidatos' && (
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Votação por Candidato ({abaAtiva}):
@@ -1626,10 +1896,11 @@ export default function PainelVotacao() {
               </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosCandidatoPorLocal.length > 0 && termoBuscaCandidato !== '' && (
+            {/* Tabela de Votos por Local de Votação para Candidato Específico - Para abas "Prefeito" / "Vereador" */}
+            {abaAtiva !== 'Visão Geral' && !carregando && votosCandidatoPorLocal.length > 0 && candidatoSelecionado !== 'Todos os Candidatos' && (
               <div className="mt-8 bg-white shadow-md rounded-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
-                  Votos de {termoBuscaCandidato} por Local de Votação:
+                  Votos de {candidatoSelecionado} por Local de Votação:
                 </h3>
                 <div className="overflow-x-auto">
                   <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
@@ -1650,12 +1921,14 @@ export default function PainelVotacao() {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Total de Votos
                         </th>
+                        {/* NOVA COLUNA AQUI */}
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           % No Local
                         </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
+                      {/* Usar a paginação aqui também para abas de Prefeito/Vereador */}
                       {votosCandidatoPorLocalPaginaAtual.map((item, index) => (
                         <tr key={`${item.localVotacao}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
@@ -1673,6 +1946,7 @@ export default function PainelVotacao() {
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             {item.totalVotos.toLocaleString('pt-BR')}
                           </td>
+                          {/* EXIBIÇÃO DA PORCENTAGEM */}
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             {item.porcentagem.toFixed(2)}%
                           </td>
@@ -1681,6 +1955,7 @@ export default function PainelVotacao() {
                     </tbody>
                   </table>
                 </div>
+                {/* Controles de Paginação para a tabela de votos por local (aba Prefeito/Vereador) */}
                 {!carregando && votosCandidatoPorLocal.length > 0 && (
                   <nav
                     className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
@@ -1712,9 +1987,9 @@ export default function PainelVotacao() {
                       </div>
                       <div className="flex items-center gap-4">
                         <div className="relative">
-                          <label htmlFor="itens-por-pagina-votos-local" className="sr-only">Itens por página</label>
+                          <label htmlFor="itens-por-pagina-votos-local-detail" className="sr-only">Itens por página</label>
                           <select
-                            id="itens-por-pagina-votos-local"
+                            id="itens-por-pagina-votos-local-detail"
                             className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
                             value={itensPorPaginaVotosLocal}
                             onChange={(e) => {
@@ -1775,20 +2050,23 @@ export default function PainelVotacao() {
               </div>
             )}
             
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && votosAgrupadosCandidatos.length === 0 && termoBuscaCandidato === '' && (
+            {/* Mensagem quando não há votos nominais de candidatos após filtros */}
+            {abaAtiva !== 'Visão Geral' && !carregando && algumFiltroAplicado && dadosFinalFiltrados.length > 0 && votosAgrupadosCandidatos.length === 0 && candidatoSelecionado === 'Todos os Candidatos' && (
                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
                  <p>Não foram encontrados votos nominais para candidatos com os filtros atuais (pode haver apenas votos brancos, nulos ou de legenda).</p>
                </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosCompletosParaMapa.length > 0 &&
-              votosAgrupadosCandidatos.length === 0 && votosCandidatoPorLocal.length === 0 && (termoBuscaCandidato !== '' || !algumFiltroGeograficoAplicado) && (
+            {/* Nova mensagem se nenhum dado foi encontrado no total para exibir candidatos */}
+            {abaAtiva !== 'Visão Geral' && !carregando && algumFiltroAplicado && dadosCompletosParaMapa.length > 0 &&
+              votosAgrupadosCandidatos.length === 0 && votosCandidatoPorLocal.length === 0 && (
                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
                     Nenhum candidato encontrado para o cargo com os filtros selecionados.
                 </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && dadosCompletosParaMapa.length === 0 && (
+            {/* Mensagem de dados ausentes para o cargo */}
+            {abaAtiva !== 'Visão Geral' && !carregando && dadosCompletosParaMapa.length === 0 && (
                 <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 w-full">
                     Não foi possível carregar os dados para o cargo selecionado. Verifique a fonte dos dados.
                 </div>

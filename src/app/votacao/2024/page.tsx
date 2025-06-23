@@ -122,7 +122,7 @@ export default function PainelVotacao() {
 
   // Estados de Paginação para Ranking e Votos por Local
   const [paginaAtualRanking, setPaginaAtualRanking] = useState(1);
-  const [itensPorPaginaRanking, setItensPorPaginaRanking] = useState(10);
+  const [itensPorPaginaRanking, setItensPorPaginaRanking] = useState(25);
   const [paginaAtualVotosLocal, setPaginaAtualVotosLocal] = useState(1);
   const [itensPorPaginaVotosLocal, setItensPorPaginaVotosLocal] = useState(10);
 

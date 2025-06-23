@@ -5,8 +5,10 @@ import { getSheetData } from '@/services/sheetService';
 
 const PLANILHAS: Record<string, string> = {
   presidente: '1jzmPqJxQDb3HFDCLnipwv9IjdabcArKufoAOl3CwsxI',
+  presidente_2: '1JTfd8aGPzbpTgWuZqDqqP4jTL1qntanPCtaFVCFlKoo',
   senador: '1HZeWTnIwjA_spCwShs1nzywtP-VKhLlyvua81IpDvBA',
   governador: '1IVSLlwf4KhylgmtZI0Ww1X8KWKO3Xf-N6iAHbYhPtEY',
+  governador_2: '1nCt2gfe3EwwZ8gtNZlZvWwty14bXbPOAXwSEyTlD8XM',
   grupo_federal1: '1nwbckdXt4bINJlBDztIL-cEC1l1IKWLF1JN_9lt5mMM',
   grupo_federal2: '1owUCd9_2KDAjku4glW7vKKzqUaHNGjOjj-28c53hu7M',
   grupo_federal3: '1drzj84mgeXeb54aOW7maPoInpPFaNIyGPKRNLF6mzlI',
@@ -16,6 +18,7 @@ const PLANILHAS: Record<string, string> = {
   grupo_estadual3: '1A4jEJD50oo0OKMJPqu6gQWeFgu-cSDkm-hk0iz-TdZc',
   deputado_estadualjp: '17XG_K7IfGaK8EvwQkSIF1VEecyZcpDtMsZ71gFYDtog',
   presidente_2018: '1gkilbyJBpQHL35X649Cqz3GNh1W-uPHkrdXjwFeqa-c',
+  presidente_2018_2: '1t4_xNihGoUl6rcsS5JGXXWpdxXkMA63U6QPt0Jmfgiw',
   senador_2018: '1TSm80-jdQ80sph12JJQXGuSrflcPaCcpUqpIYR39rDo',
   governador_2018: '16f0fpk8Qxb_onji7xtc96L7CJY4Ig8ycDZZTl7Jvk7s',
   grupo_estadual1_2018: '11ac2lLvoBX8-hDptLI7AHjwmt9vJIypE3dtZVp76xTk',
@@ -29,6 +32,8 @@ const PLANILHAS: Record<string, string> = {
   locais: '1mk--eC-NvNUkNLq9WPvqTzycDtarByI53DstT-DpJAI',
   vereador_2024:'1OAliRhLbT3BxDBTz78Q3RKvTHa7QzCO0OLGPFv00f-s',
   prefeito_2024:'1Lf2NFiId1C7qoguXIfUSi8Ulmx1zkeeDSANa4sLgGcM',
+  vereador_2020: '1_OMGnsBRs0UUKevWCim60KU8CQ-XqrT5ajq1k07nHHY',
+  prefeito_2020: '1DeoBU-XA7N5qF33vGtDstlOBL8ocCIvVC0smI0BNNco',
   masculino_divorciado: "1wPNC4RfoQosxZxFHaTQu350_y8hiNDgGvy3muCsBb20",
   masculino_casado: "1rz8spDVxv3ecetj0vkjmDp7FiiVhYzSJr8J6av9iXaI",
   masculino_solteiro: "13NJgfeAzHMYjhpMtlJ4jIagqs3WceoiEaookes5YEus",
@@ -40,7 +45,6 @@ const PLANILHAS: Record<string, string> = {
   feminino_separado_judicialmente: "1BaAqEJcUO0XXGIbV_JJtLrNn88x61UjVO_e4fT4zp5A",
   feminino_solteiro: "1GnLhjyUGnFAQ7ITZ5NwRoqQvu97Vi8e4Fat1Ac5x6kQ",
   feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
-  
 };
 
 const SHEET_RANGE = 'Sheet1!A:P';

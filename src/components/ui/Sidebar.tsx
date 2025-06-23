@@ -164,6 +164,10 @@ const Sidebar = () => {
                   <Link href="/votacao/2018">Eleições 2018</Link>
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
+                  <AiOutlineBarChart className="mr-2" size={16} />
+                  <Link href="/votacao/2020">Eleições 2020</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
                   <AiOutlineAreaChart className="mr-2" size={16} />
                   <Link href="/votacao/2022">Eleições 2022</Link>
                 </li>
