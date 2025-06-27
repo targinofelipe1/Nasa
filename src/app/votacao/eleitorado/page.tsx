@@ -6,13 +6,10 @@ import NoScroll from '@/components/ui/NoScroll';
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 import EleitoradoCards from '@/components/ui/EleitoradoCards';
 import MapaParaibaEleitorado from '@/components/ui/MapaParaibaEleitorado';
-import FiltrosDemograficos from '@/components/ui/FiltrosDemograficos';
-import TabelaEleitorado from '@/components/ui/TabelaEleitorado';
 import FiltrosEleitorado from '@/components/ui/FiltrosEleitorado';
 import RankingEleitorado from '@/components/ui/RankingEleitorado';
 import GraficoDinamicoEleitorado from '@/components/ui/GraficoDinamicoEleitorado';
 
-// --- INTERFACES ---
 interface LocalVotacaoDetalhado {
   'Município': string;
   'Zona Eleitoral': string;
@@ -57,7 +54,6 @@ interface MapMunicipioMetrics {
   totalHomens: number;
   totalAnalfabetos: number;
 }
-// --- FIM INTERFACES ---
 
 const removerAcentos = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -109,9 +105,7 @@ export default function PainelEleitorado() {
   const [dadosFiltradosParaExibicao, setDadosFiltradosParaExibicao] = useState<EleitoradoAgregado[]>([]);
   const [locaisVotacaoFiltradosParaExibicao, setLocaisVotacaoFiltradosParaExibicao] = useState<LocalVotacaoDetalhado[]>([]);
 
-  const [carregandoEleitorado, setCarregandoEleitorado] = useState(true);
-  const [carregandoLocais, setCarregandoLocais] = useState(false);
-
+  const [carregandoEleitorado, setCarregandoEleitorado] = useState(false); // Inicia como false
   const carregando = carregandoEleitorado;
 
   const [totaisEleitoradoGeral, setTotaisEleitoradoGeral] = useState({
@@ -144,6 +138,14 @@ export default function PainelEleitorado() {
     totalAnalfabetos: 0,
   });
 
+  const resumoCacheRef = useRef<Record<string, any>>(
+    typeof window !== 'undefined'
+      ? JSON.parse(localStorage.getItem('eleitoradoResumoGlobal') || '{}')
+      : {}
+  );
+
+  const [forceReloadCounter, setForceReloadCounter] = useState(0); 
+
   const abas = ['Visão Geral', 'Gênero', 'Estado Civil', 'Faixa Etária', 'Escolaridade', 'Raça/Cor', 'Identidade de Gênero'];
 
   const planilhasEleitorado = useMemo(() => [
@@ -159,7 +161,6 @@ export default function PainelEleitorado() {
   const getUniqueOptions = useCallback((data: any[], key: string, sort = true) => {
     const options = new Set<string>();
     data.forEach((item: any) => {
-      // Padroniza o valor antes de adicionar às opções únicas
       const value = item[key]?.trim().toUpperCase();
       if (value && value !== 'N/A' && value !== 'NÃO SE APLICA') {
         options.add(value);
@@ -179,6 +180,65 @@ export default function PainelEleitorado() {
       });
     }
     return sortedOptions;
+  }, []);
+
+  const calcularTotaisGeraisEleitorado = useCallback((dados: EleitoradoAgregado[]) => {
+    let totalEleitoresGeral = 0;
+    let totalBiometriaGeral = 0;
+    let totalDeficienciaGeral = 0;
+    let totalNomeSocialGeral = 0;
+    let totalQuilombolaGeral = 0;
+    let totalInterpreteLibrasGeral = 0;
+    let totalMulheresGeral = 0;
+    let totalHomensGeral = 0;
+    let totalJovensGeral = 0;
+    let totalAdultosGeral = 0;
+    let totalIdososGeral = 0;
+    let totalAnalfabetosGeral = 0;
+
+    dados.forEach((item: EleitoradoAgregado) => {
+      totalEleitoresGeral += item['Qtd. Eleitores'];
+      totalBiometriaGeral += item['Qtd. com Biometria'];
+      totalDeficienciaGeral += item['Qtd. com Deficiência'];
+      totalNomeSocialGeral += item['Qtd. com Nome Social'];
+      if (item['Quilombola']?.toUpperCase().trim() === 'SIM') totalQuilombolaGeral += item['Qtd. Eleitores'];
+      if (item['Intérprete de Libras']?.toUpperCase().trim() === 'SIM') totalInterpreteLibrasGeral += item['Qtd. Eleitores'];
+      
+      const genero = item['Gênero']?.toUpperCase().trim();
+      if (genero === 'FEMININO') totalMulheresGeral += item['Qtd. Eleitores'];
+      if (genero === 'MASCULINO') totalHomensGeral += item['Qtd. Eleitores'];
+
+      const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim();
+      if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
+        totalJovensGeral += item['Qtd. Eleitores'];
+      } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
+        totalAdultosGeral += item['Qtd. Eleitores'];
+      } else if (faixaEtaria === '60 A 64 ANOS' || faixaEtaria === '65 A 69 ANOS' || faixaEtaria === '70 A 74 ANOS' || faixaEtaria === '75 A 79 ANOS' || faixaEtaria === '80 A 84 ANOS' || faixaEtaria === '85 A 89 ANOS' || faixaEtaria === '90 A 94 ANOS' || faixaEtaria === '95 A 99 ANOS' || faixaEtaria === 'SUPERIOR A 100 ANOS') {
+        totalIdososGeral += item['Qtd. Eleitores'];
+      }
+
+      const escolaridade = item['Escolaridade']?.toUpperCase().trim();
+      if (escolaridade === 'ANALFABETO') {
+        totalAnalfabetosGeral += item['Qtd. Eleitores'];
+      }
+    });
+
+    const resumoParaCards = {
+      totalEleitores: totalEleitoresGeral,
+      totalBiometria: totalBiometriaGeral,
+      totalDeficiencia: totalDeficienciaGeral,
+      totalNomeSocial: totalNomeSocialGeral,
+      totalQuilombola: totalQuilombolaGeral,
+      totalInterpreteLibras: totalInterpreteLibrasGeral,
+      totalMulheres: totalMulheresGeral,
+      totalHomens: totalHomensGeral,
+      totalJovens: totalJovensGeral,
+      totalAdultos: totalAdultosGeral,
+      totalIdosos: totalIdososGeral,
+      totalAnalfabetos: totalAnalfabetosGeral,
+    };
+
+    return resumoParaCards;
   }, []);
 
   const filtrosEstaoAtivos = useMemo(() => {
@@ -211,118 +271,88 @@ export default function PainelEleitorado() {
     const controller = new AbortController();
     const signal = controller.signal;
 
-    setCarregandoEleitorado(true);
+    let isMounted = true; 
 
-    setDadosCompletos([]);
-    setMunicipioSelecionado('TODOS OS MUNICÍPIOS');
-    setZonaSelecionada('TODAS AS ZONAS');
-    setSecaoSelecionada('TODAS AS SEÇÕES');
-    setLocalSelecionado('TODOS OS LOCAIS');
-    setTermoBuscaLocal('');
-    setGenerosDisponiveis([]);
-    setEstadosCivisDisponiveis([]);
-    setFaixasEtariasDisponiveis([]);
-    setEscolaridadesDisponiveis([]);
-    setRacasCoresDisponiveis([]);
-    setIdentidadesGeneroDisponiveis([]);
-    setGeneroSelecionado('Todos os Gêneros');
-    setEstadoCivilSelecionado('Todos os Estados Civis');
-    setFaixaEtariaSelecionada('Todas as Faixas Etárias');
-    setEscolaridadeSelecionada('Todas as Escolaridades');
-    setRacaCorSelecionada('Todas as Raças/Cores');
-    setIdentidadeGeneroSelecionada('Todos os Identidades de Gênero');
-    setIncluirQuilombola(false);
-    setIncluirInterpreteLibras(false);
-    setIncluirComBiometria(false);
-    setIncluirComDeficiencia(false);
-    setIncluirComNomeSocial(false);
-    setPaginaAtualTabela(1);
+    // Função para resetar todos os estados relevantes para o carregamento inicial/troca de aba
+    const resetAllDataStates = (setLoadingToTrue = false) => {
+      setDadosCompletos([]);
+      setMunicipiosDisponiveis([]);
+      setGenerosDisponiveis([]);
+      setEstadosCivisDisponiveis([]);
+      setFaixasEtariasDisponiveis([]);
+      setEscolaridadesDisponiveis([]);
+      setRacasCoresDisponiveis([]);
+      setIdentidadesGeneroDisponiveis([]);
+      setTotaisEleitoradoGeral({
+        totalEleitores: 0, totalBiometria: 0, totalDeficiencia: 0,
+        totalNomeSocial: 0, totalQuilombola: 0, totalInterpreteLibras: 0,
+        totalMulheres: 0, totalHomens: 0, totalJovens: 0, totalAdultos: 0,
+        totalIdosos: 0, totalAnalfabetos: 0,
+      });
+      setTotaisParaCardsPorCategoria({
+        totalEleitores: 0, totalBiometria: 0, totalDeficiencia: 0,
+        totalNomeSocial: 0, totalQuilombola: 0, totalInterpreteLibras: 0,
+        totalMulheres: 0, totalHomens: 0, totalJovens: 0, totalAdultos: 0,
+        totalIdosos: 0, totalAnalfabetos: 0,
+      });
+      setCarregandoEleitorado(setLoadingToTrue); // Define o carregamento baseado no parâmetro
+    };
 
-    const fetchData = async () => {
-      const todosOsDadosBrutos: EleitoradoAgregado[] = [];
-      const cacheKey = `eleitoradoCompletos_${planilhasEleitorado.join('_')}`;
+    const CACHE_KEY_DATA = `eleitoradoCompletos_geral`; 
+    const CACHE_KEY_RESUMO = `eleitoradoResumoGlobal`; 
 
-      try {
-        if (typeof window !== 'undefined') {
-          const cachedData = localStorage.getItem(cacheKey);
-          if (cachedData) {
-            const parsedCache: EleitoradoAgregado[] = JSON.parse(cachedData);
-            setDadosCompletos(parsedCache);
+    const fetchData = async (forceFetchFromAPI: boolean) => {
+      let dataFromCache = null;
+      let resumoFromCache = null;
+      let dataLoadedFromCache = false;
 
-            let totalEleitoresGeral = 0;
-            let totalBiometriaGeral = 0;
-            let totalDeficienciaGeral = 0;
-            let totalNomeSocialGeral = 0;
-            let totalQuilombolaGeral = 0;
-            let totalInterpreteLibrasGeral = 0;
-            let totalMulheresGeral = 0;
-            let totalHomensGeral = 0;
-            let totalJovensGeral = 0;
-            let totalAdultosGeral = 0;
-            let totalIdososGeral = 0;
-            let totalAnalfabetosGeral = 0;
+      if (!forceFetchFromAPI && typeof window !== 'undefined') {
+        const cachedDataString = localStorage.getItem(CACHE_KEY_DATA);
+        const cachedResumoString = localStorage.getItem(CACHE_KEY_RESUMO);
 
-            parsedCache.forEach(item => {
-              totalEleitoresGeral += item['Qtd. Eleitores'];
-              totalBiometriaGeral += item['Qtd. com Biometria'];
-              totalDeficienciaGeral += item['Qtd. com Deficiência'];
-              totalNomeSocialGeral += item['Qtd. com Nome Social'];
-              if (item['Quilombola']?.toUpperCase().trim() === 'SIM') totalQuilombolaGeral += item['Qtd. Eleitores'];
-              if (item['Intérprete de Libras']?.toUpperCase().trim() === 'SIM') totalInterpreteLibrasGeral += item['Qtd. Eleitores'];
-              
-              const genero = item['Gênero']?.toUpperCase().trim();
-              if (genero === 'FEMININO') totalMulheresGeral += item['Qtd. Eleitores'];
-              if (genero === 'MASCULINO') totalHomensGeral += item['Qtd. Eleitores'];
-
-              const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-              if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
-                totalJovensGeral += item['Qtd. Eleitores'];
-              } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
-                totalAdultosGeral += item['Qtd. Eleitores'];
-              } else if (faixaEtaria === '60 A 64 ANOS' || faixaEtaria === '65 A 69 ANOS' || faixaEtaria === '70 A 74 ANOS' || faixaEtaria === '75 A 79 ANOS' || faixaEtaria === '80 A 84 ANOS' || faixaEtaria === '85 A 89 ANOS' || faixaEtaria === '90 A 94 ANOS' || faixaEtaria === '95 A 99 ANOS' || faixaEtaria === 'SUPERIOR A 100 ANOS') {
-                totalIdososGeral += item['Qtd. Eleitores'];
+        if (cachedDataString && cachedResumoString) {
+          try {
+            dataFromCache = JSON.parse(cachedDataString);
+            resumoFromCache = JSON.parse(cachedResumoString);
+            if (dataFromCache.length > 0 && resumoFromCache) {
+              console.log("[PainelEleitorado] Servindo dados e resumo do cache (localStorage).");
+              if (isMounted) {
+                setDadosCompletos(dataFromCache);
+                setTotaisEleitoradoGeral(resumoFromCache);
+                setMunicipiosDisponiveis(getUniqueOptions(dataFromCache, 'Município'));
+                setGenerosDisponiveis(getUniqueOptions(dataFromCache, 'Gênero'));
+                setEstadosCivisDisponiveis(getUniqueOptions(dataFromCache, 'Estado Civil'));
+                setFaixasEtariasDisponiveis(getUniqueOptions(dataFromCache, 'Faixa Etária'));
+                setEscolaridadesDisponiveis(getUniqueOptions(dataFromCache, 'Escolaridade'));
+                setRacasCoresDisponiveis(getUniqueOptions(dataFromCache, 'Raça/Cor'));
+                setIdentidadesGeneroDisponiveis(getUniqueOptions(dataFromCache, 'Identidade de Gênero'));
+                setCarregandoEleitorado(false); // Carregado do cache, então não está "carregando"
+                dataLoadedFromCache = true;
               }
-
-              const escolaridade = item['Escolaridade']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-              if (escolaridade === 'ANALFABETO') {
-                totalAnalfabetosGeral += item['Qtd. Eleitores'];
-              }
-            });
-
-            setTotaisEleitoradoGeral({
-              totalEleitores: totalEleitoresGeral,
-              totalBiometria: totalBiometriaGeral,
-              totalDeficiencia: totalDeficienciaGeral,
-              totalNomeSocial: totalNomeSocialGeral,
-              totalQuilombola: totalQuilombolaGeral,
-              totalInterpreteLibras: totalInterpreteLibrasGeral,
-              totalMulheres: totalMulheresGeral,
-              totalHomens: totalHomensGeral,
-              totalJovens: totalJovensGeral,
-              totalAdultos: totalAdultosGeral,
-              totalIdosos: totalIdososGeral,
-              totalAnalfabetos: totalAnalfabetosGeral,
-            });
-
-            setMunicipiosDisponiveis(getUniqueOptions(parsedCache, 'Município'));
-            setGenerosDisponiveis(getUniqueOptions(parsedCache, 'Gênero'));
-            setEstadosCivisDisponiveis(getUniqueOptions(parsedCache, 'Estado Civil'));
-            setFaixasEtariasDisponiveis(getUniqueOptions(parsedCache, 'Faixa Etária'));
-            setEscolaridadesDisponiveis(getUniqueOptions(parsedCache, 'Escolaridade'));
-            setRacasCoresDisponiveis(getUniqueOptions(parsedCache, 'Raça/Cor'));
-            setIdentidadesGeneroDisponiveis(getUniqueOptions(parsedCache, 'Identidade de Gênero'));
-
-            setCarregandoEleitorado(false);
-            return;
+            } else {
+              localStorage.removeItem(CACHE_KEY_DATA);
+              localStorage.removeItem(CACHE_KEY_RESUMO);
+            }
+          } catch (e) {
+            console.error("Erro ao analisar dados do cache:", e);
+            localStorage.removeItem(CACHE_KEY_DATA);
+            localStorage.removeItem(CACHE_KEY_RESUMO);
           }
-        }
-      } catch (e) {
-        console.error("Erro ao carregar dados do cache, buscando dados novos:", e);
-        if (typeof window !== 'undefined') {
-          localStorage.removeItem(cacheKey);
         }
       }
 
+      if (dataLoadedFromCache) {
+          return; // Já carregou do cache, nada mais a fazer aqui
+      }
+      
+      // Se chegamos aqui, ou forceFetchFromAPI é true, ou não havia cache válido
+      if (isMounted) {
+          setCarregandoEleitorado(true); // Ativa o spinner de carregamento, pois vamos buscar da API
+      }
+
+      console.log("[PainelEleitorado] Buscando dados da API...");
+      const todosOsDadosBrutos: EleitoradoAgregado[] = [];
+      
       const fetchPromises = planilhasEleitorado.map(async (id) => {
         try {
           const res = await fetch(`/api/sheets/eleicao/${id}`, { signal });
@@ -330,16 +360,27 @@ export default function PainelEleitorado() {
           return json.data?.slice(1) || [];
         } catch (err: any) {
           if (err.name === 'AbortError') {
-            console.warn('Requisição abortada para planilha:', id);
-          } else {
-            console.error(`Erro ao carregar dados da planilha ${id}:`, err);
+            return [];
           }
+          console.error(`Erro ao carregar dados da planilha ${id}:`, err);
           return [];
         }
       });
 
       const allLines = await Promise.all(fetchPromises);
       const combinedLines = allLines.flat();
+
+      if (!isMounted) {
+          return; 
+      }
+
+      if (combinedLines.length === 0) {
+        console.warn("[PainelEleitorado] Nenhuma linha de dados recebida da API.");
+        if (isMounted) {
+          resetAllDataStates(); // Reseta estados e prepara para mostrar aviso de erro
+        }
+        return;
+      }
 
       for (const linha of combinedLines) {
         todosOsDadosBrutos.push({
@@ -362,92 +403,66 @@ export default function PainelEleitorado() {
           'Tipo de Escolaridade Detalhado': linha[16]?.trim() || 'N/A',
         });
       }
+      console.log("[PainelEleitorado] Dados da API carregados e processados:", todosOsDadosBrutos.length);
+      
+      if (isMounted) {
+        setDadosCompletos(todosOsDadosBrutos);
+        const totaisCalculados = calcularTotaisGeraisEleitorado(todosOsDadosBrutos);
+        setTotaisEleitoradoGeral(totaisCalculados);
 
-      setDadosCompletos(todosOsDadosBrutos);
-
-      setMunicipiosDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Município'));
-      setGenerosDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Gênero'));
-      setEstadosCivisDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Estado Civil'));
-      setFaixasEtariasDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Faixa Etária'));
-      setEscolaridadesDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Escolaridade'));
-      setRacasCoresDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Raça/Cor'));
-      setIdentidadesGeneroDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Identidade de Gênero'));
-
-      let totalEleitoresGeral = 0;
-      let totalBiometriaGeral = 0;
-      let totalDeficienciaGeral = 0;
-      let totalNomeSocialGeral = 0;
-      let totalQuilombolaGeral = 0;
-      let totalInterpreteLibrasGeral = 0;
-      let totalMulheresGeral = 0;
-      let totalHomensGeral = 0;
-      let totalJovensGeral = 0;
-      let totalAdultosGeral = 0;
-      let totalIdososGeral = 0;
-      let totalAnalfabetosGeral = 0;
-
-      todosOsDadosBrutos.forEach((item: EleitoradoAgregado) => {
-        totalEleitoresGeral += item['Qtd. Eleitores'];
-        totalBiometriaGeral += item['Qtd. com Biometria'];
-        totalDeficienciaGeral += item['Qtd. com Deficiência'];
-        totalNomeSocialGeral += item['Qtd. com Nome Social'];
-        if (item['Quilombola']?.toUpperCase().trim() === 'SIM') {
-          totalQuilombolaGeral += item['Qtd. Eleitores'];
-        }
-        if (item['Intérprete de Libras']?.toUpperCase().trim() === 'SIM') {
-          totalInterpreteLibrasGeral += item['Qtd. Eleitores'];
+        try {
+          if (typeof window !== 'undefined') {
+            localStorage.setItem(CACHE_KEY_DATA, JSON.stringify(todosOsDadosBrutos));
+            localStorage.setItem(CACHE_KEY_RESUMO, JSON.stringify(totaisCalculados));
+          }
+        } catch (e) {
+          console.warn('Erro ao salvar no cache (provavelmente QuotaExceededError):', e);
         }
         
-        const genero = item['Gênero']?.toUpperCase().trim();
-        if (genero === 'FEMININO') totalMulheresGeral += item['Qtd. Eleitores'];
-        if (genero === 'MASCULINO') totalHomensGeral += item['Qtd. Eleitores'];
+        setMunicipiosDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Município'));
+        setGenerosDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Gênero'));
+        setEstadosCivisDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Estado Civil'));
+        setFaixasEtariasDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Faixa Etária'));
+        setEscolaridadesDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Escolaridade'));
+        setRacasCoresDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Raça/Cor'));
+        setIdentidadesGeneroDisponiveis(getUniqueOptions(todosOsDadosBrutos, 'Identidade de Gênero'));
 
-        const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-        if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
-          totalJovensGeral += item['Qtd. Eleitores'];
-        } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
-          totalAdultosGeral += item['Qtd. Eleitores'];
-        } else if (faixaEtaria === '60 A 64 ANOS' || faixaEtaria === '65 A 69 ANOS' || faixaEtaria === '70 A 74 ANOS' || faixaEtaria === '75 A 79 ANOS' || faixaEtaria === '80 A 84 ANOS' || faixaEtaria === '85 A 89 ANOS' || faixaEtaria === '90 A 94 ANOS' || faixaEtaria === '95 A 99 ANOS' || faixaEtaria === 'SUPERIOR A 100 ANOS') {
-          totalIdososGeral += item['Qtd. Eleitores'];
-        }
-
-        const escolaridade = item['Escolaridade']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-        if (escolaridade === 'ANALFABETO') {
-          totalAnalfabetosGeral += item['Qtd. Eleitores'];
-        }
-      });
-
-      setTotaisEleitoradoGeral({
-        totalEleitores: totalEleitoresGeral,
-        totalBiometria: totalBiometriaGeral,
-        totalDeficiencia: totalDeficienciaGeral,
-        totalNomeSocial: totalNomeSocialGeral,
-        totalQuilombola: totalQuilombolaGeral,
-        totalInterpreteLibras: totalInterpreteLibrasGeral,
-        totalMulheres: totalMulheresGeral,
-        totalHomens: totalHomensGeral,
-        totalJovens: totalJovensGeral,
-        totalAdultos: totalAdultosGeral,
-        totalIdosos: totalIdososGeral,
-        totalAnalfabetos: totalAnalfabetosGeral,
-      });
-
-      try {
-        if (typeof window !== 'undefined') {
-          localStorage.setItem(cacheKey, JSON.stringify(todosOsDadosBrutos));
-        }
-      } catch (e) {
-        console.warn('Erro ao salvar no cache (provavelmente QuotaExceededError):', e);
+        setCarregandoEleitorado(false);
       }
-      setCarregandoEleitorado(false);
     };
 
-    fetchData();
+    // Lógica principal do useEffect para o carregamento de dados
+    // Sempre zera os dados e mostra o aviso amarelo, a menos que esteja forçando um reload
+    if (forceReloadCounter === 0 && dadosCompletos.length === 0) {
+        resetAllDataStates(false); // Mostra o aviso amarelo
+    }
+
+    // Dispara a busca de dados apenas se o forceReloadCounter > 0
+    if (forceReloadCounter > 0) {
+        fetchData(true); // Força um fetch da API
+        if (isMounted) setForceReloadCounter(0); // Reseta o contador
+    } else if (dadosCompletos.length === 0 && !carregandoEleitorado) {
+        // Se não estamos carregando, não temos dados, e não é um forceReload
+        // (i.e., acabamos de entrar na página ou trocar de aba),
+        // resetamos e mostramos o aviso amarelo (isso já foi feito acima, mas reforça)
+        // A chamada a fetchData(false) será feita abaixo se necessário
+        if (isMounted) setCarregandoEleitorado(false); 
+    }
+    
+    // Na primeira montagem ou troca de aba, tente carregar do cache.
+    // Isso é separado do forceReloadCounter para permitir que o cache carregue sem um clique inicial,
+    // mas ainda permite que o clique force um novo fetch.
+    if (forceReloadCounter === 0) { // Se não é um forceReload, tenta carregar
+        fetchData(false); 
+    }
+
 
     return () => {
+      isMounted = false;
       controller.abort();
     };
-  }, [getUniqueOptions, planilhasEleitorado]);
+  }, [abaAtiva, forceReloadCounter, getUniqueOptions, planilhasEleitorado, calcularTotaisGeraisEleitorado]);
+
 
   const mapMunicipioMetrics = useMemo(() => {
     const metrics: Record<string, Omit<MapMunicipioMetrics, 'percMulheres' | 'percJovens' | 'percAdultos' | 'percIdosos' | 'percMasculino' | 'percFeminino' | 'percAnalfabetos'>> = {};
@@ -472,7 +487,7 @@ export default function PainelEleitorado() {
       if (genero === 'FEMININO') metrics[municipio].totalMulheres += item['Qtd. Eleitores'];
       if (genero === 'MASCULINO') metrics[municipio].totalHomens += item['Qtd. Eleitores'];
 
-      const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
+      const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim();
       if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
         metrics[municipio].totalJovens += item['Qtd. Eleitores'];
       } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
@@ -481,7 +496,7 @@ export default function PainelEleitorado() {
         metrics[municipio].totalIdosos += item['Qtd. Eleitores'];
       }
       
-      const escolaridade = item['Escolaridade']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
+      const escolaridade = item['Escolaridade']?.toUpperCase().trim();
       if (escolaridade === 'ANALFABETO') {
         metrics[municipio].totalAnalfabetos += item['Qtd. Eleitores'];
       }
@@ -504,7 +519,6 @@ export default function PainelEleitorado() {
     }
     return finalMetrics;
   }, [dadosCompletos]);
-
 
   useEffect(() => {
     if (carregandoEleitorado || dadosCompletos.length === 0) {
@@ -560,25 +574,24 @@ export default function PainelEleitorado() {
       );
     }
 
-    // Filtros Demográficos - Garante que as comparações usem valores padronizados
     if (generoSelecionado !== 'Todos os Gêneros') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Gênero']?.toUpperCase().trim() === generoSelecionado.toUpperCase().trim()); }
     if (estadoCivilSelecionado !== 'Todos os Estados Civis') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Estado Civil']?.toUpperCase().trim() === estadoCivilSelecionado.toUpperCase().trim()); }
-    if (faixaEtariaSelecionada !== 'Todas as Faixas Etárias') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Faixa Etária']?.toUpperCase().trim() === faixaEtariaSelecionada.toUpperCase().trim()); } // Corrigido: .toUpperCase()
+    if (faixaEtariaSelecionada !== 'Todas as Faixas Etárias') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Faixa Etária']?.toUpperCase().trim() === faixaEtariaSelecionada.toUpperCase().trim()); }
     if (escolaridadeSelecionada !== 'Todas as Escolaridades') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Escolaridade']?.toUpperCase().trim() === escolaridadeSelecionada.toUpperCase().trim()); }
     if (racaCorSelecionada !== 'Todas as Raças/Cores') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Raça/Cor']?.toUpperCase().trim() === racaCorSelecionada.toUpperCase().trim()); }
     if (identidadeGeneroSelecionada !== 'Todos os Identidades de Gênero') { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Identidade de Gênero']?.toUpperCase().trim() === identidadeGeneroSelecionada.toUpperCase().trim()); }
     if (incluirQuilombola) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Quilombola']?.toUpperCase().trim() === 'SIM'); }
     if (incluirInterpreteLibras) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Intérprete de Libras']?.toUpperCase().trim() === 'SIM'); }
     if (incluirComBiometria) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Qtd. com Biometria'] > 0); }
-    if (incluirComDeficiencia) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Qtd. com Deficiência'] > 0); }
+    if (incluirComDeficiencia) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Qtd. com Deficiência'] > 0); } 
     if (incluirComNomeSocial) { dadosAtuaisFiltrados = dadosAtuaisFiltrados.filter((dado: EleitoradoAgregado) => dado['Qtd. com Nome Social'] > 0); }
 
-    setGenerosDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Gênero'));
-    setEstadosCivisDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Estado Civil'));
-    setFaixasEtariasDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Faixa Etária'));
-    setEscolaridadesDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Escolaridade'));
-    setRacasCoresDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Raça/Cor'));
-    setIdentidadesGeneroDisponiveis(getUniqueOptions(dadosAtuaisFiltrados, 'Identidade de Gênero'));
+    setGenerosDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Gênero'));
+    setEstadosCivisDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Estado Civil'));
+    setFaixasEtariasDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Faixa Etária'));
+    setEscolaridadesDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Escolaridade'));
+    setRacasCoresDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Raça/Cor'));
+    setIdentidadesGeneroDisponiveis(getUniqueOptions(dadosParaOpcoesGeograficas, 'Identidade de Gênero'));
 
     const locaisParaExibirUnicos: LocalVotacaoDetalhado[] = [];
     const nomesLocaisJaExibidos = new Set<string>();
@@ -590,7 +603,7 @@ export default function PainelEleitorado() {
         'Zona Eleitoral': item['Zona Eleitoral'],
         'Seção Eleitoral': item['Seção Eleitoral'],
         'Local de Votação': item['Local de Votação'],
-        'Nome do Local': item['Local de Votação'],
+        'Nome do Local': item['Local de Votação'], 
       };
 
       const matchesTermoBusca = !termoBuscaLocal || removerAcentos(localDetalhado['Nome do Local']).includes(termoLocalNormalizado);
@@ -605,69 +618,30 @@ export default function PainelEleitorado() {
     setDadosFiltradosParaExibicao(dadosAtuaisFiltrados);
     setPaginaAtualTabela(1);
 
-    let dadosGeograficosFiltradosParaCards: EleitoradoAgregado[] = [...dadosCompletos];
+    const currentTotalEleitores = dadosAtuaisFiltrados.reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
+    const currentTotalBiometria = dadosAtuaisFiltrados.reduce((sum, item) => sum + item['Qtd. com Biometria'], 0);
+    const currentTotalDeficiencia = dadosAtuaisFiltrados.reduce((sum, item) => sum + item['Qtd. com Deficiência'], 0);
+    const currentTotalNomeSocial = dadosAtuaisFiltrados.reduce((sum, item) => sum + item['Qtd. com Nome Social'], 0);
+    const currentTotalQuilombola = dadosAtuaisFiltrados.filter(item => item['Quilombola']?.toUpperCase().trim() === 'SIM').reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
+    const currentTotalInterpreteLibras = dadosAtuaisFiltrados.filter(item => item['Intérprete de Libras']?.toUpperCase().trim() === 'SIM').reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
+    const currentTotalMulheres = dadosAtuaisFiltrados.filter(item => item['Gênero']?.toUpperCase().trim() === 'FEMININO').reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
+    const currentTotalHomens = dadosAtuaisFiltrados.filter(item => item['Gênero']?.toUpperCase().trim() === 'MASCULINO').reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
 
-    if (municipioSelecionado !== 'TODOS OS MUNICÍPIOS') {
-      dadosGeograficosFiltradosParaCards = dadosGeograficosFiltradosParaCards.filter(
-        (dado: EleitoradoAgregado) => dado['Município'] === municipioSelecionado
-      );
-    }
-    if (zonaSelecionada !== 'TODAS AS ZONAS') {
-      dadosGeograficosFiltradosParaCards = dadosGeograficosFiltradosParaCards.filter(
-        (dado: EleitoradoAgregado) => dado['Zona Eleitoral'] === zonaSelecionada
-      );
-    }
-    if (localSelecionado !== 'TODOS OS LOCAIS') {
-      dadosGeograficosFiltradosParaCards = dadosGeograficosFiltradosParaCards.filter(
-        (dado: EleitoradoAgregado) => dado['Local de Votação']?.trim().toUpperCase() === localSelecionado.trim().toUpperCase()
-      );
-    }
-    if (secaoSelecionada !== 'TODAS AS SEÇÕES') {
-      dadosGeograficosFiltradosParaCards = dadosGeograficosFiltradosParaCards.filter(
-        (dado: EleitoradoAgregado) => dado['Seção Eleitoral']?.trim() === secaoSelecionada.trim()
-      );
-    }
-
-    let currentTotalEleitores = 0;
-    let currentTotalBiometria = 0;
-    let currentTotalDeficiencia = 0;
-    let currentTotalNomeSocial = 0;
-    let currentTotalQuilombola = 0;
-    let currentTotalInterpreteLibras = 0;
-    let currentTotalMulheres = 0;
-    let currentTotalHomens = 0;
     let currentTotalJovens = 0;
     let currentTotalAdultos = 0;
     let currentTotalIdosos = 0;
-    let currentTotalAnalfabetos = 0;
-
-
-    dadosGeograficosFiltradosParaCards.forEach((item: EleitoradoAgregado) => {
-      currentTotalEleitores += item['Qtd. Eleitores'];
-      currentTotalBiometria += item['Qtd. com Biometria'];
-      currentTotalDeficiencia += item['Qtd. com Deficiência'];
-      currentTotalNomeSocial += item['Qtd. com Nome Social'];
-      if (item['Quilombola']?.toUpperCase().trim() === 'SIM') currentTotalQuilombola += item['Qtd. Eleitores'];
-      if (item['Intérprete de Libras']?.toUpperCase().trim() === 'SIM') currentTotalInterpreteLibras += item['Qtd. Eleitores'];
-      
-      const genero = item['Gênero']?.toUpperCase().trim();
-      if (genero === 'FEMININO') currentTotalMulheres += item['Qtd. Eleitores'];
-      if (genero === 'MASCULINO') currentTotalHomens += item['Qtd. Eleitores'];
-
-      const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-      if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
-        currentTotalJovens += item['Qtd. Eleitores'];
-      } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
-        currentTotalAdultos += item['Qtd. Eleitores'];
-      } else if (faixaEtaria === '60 A 64 ANOS' || faixaEtaria === '65 A 69 ANOS' || faixaEtaria === '70 A 74 ANOS' || faixaEtaria === '75 A 79 ANOS' || faixaEtaria === '80 A 84 ANOS' || faixaEtaria === '85 A 89 ANOS' || faixaEtaria === '90 A 94 ANOS' || faixaEtaria === '95 A 99 ANOS' || faixaEtaria === 'SUPERIOR A 100 ANOS') {
-        currentTotalIdosos += item['Qtd. Eleitores'];
-      }
-
-      const escolaridade = item['Escolaridade']?.toUpperCase().trim(); // Corrigido: .toUpperCase()
-      if (escolaridade === 'ANALFABETO') {
-        currentTotalAnalfabetos += item['Qtd. Eleitores'];
-      }
+    dadosAtuaisFiltrados.forEach(item => {
+        const faixaEtaria = item['Faixa Etária']?.toUpperCase().trim();
+        if (faixaEtaria === '16 A 17 ANOS' || faixaEtaria === '18 A 20 ANOS' || faixaEtaria === '21 A 24 ANOS') {
+            currentTotalJovens += item['Qtd. Eleitores'];
+        } else if (faixaEtaria === '25 A 29 ANOS' || faixaEtaria === '30 A 34 ANOS' || faixaEtaria === '35 A 39 ANOS' || faixaEtaria === '40 A 44 ANOS' || faixaEtaria === '45 A 49 ANOS' || faixaEtaria === '50 A 54 ANOS' || faixaEtaria === '55 A 59 ANOS') {
+            currentTotalAdultos += item['Qtd. Eleitores'];
+        } else if (faixaEtaria === '60 A 64 ANOS' || faixaEtaria === '65 A 69 ANOS' || faixaEtaria === '70 A 74 ANOS' || faixaEtaria === '75 A 79 ANOS' || faixaEtaria === '80 A 84 ANOS' || faixaEtaria === '85 A 89 ANOS' || faixaEtaria === '90 A 94 ANOS' || faixaEtaria === '95 A 99 ANOS' || faixaEtaria === 'SUPERIOR A 100 ANOS') {
+            currentTotalIdosos += item['Qtd. Eleitores'];
+        }
     });
+    const currentTotalAnalfabetos = dadosAtuaisFiltrados.filter(item => item['Escolaridade']?.toUpperCase().trim() === 'ANALFABETO').reduce((sum, item) => sum + item['Qtd. Eleitores'], 0);
+
 
     setTotaisParaCardsPorCategoria({
       totalEleitores: currentTotalEleitores,
@@ -684,12 +658,34 @@ export default function PainelEleitorado() {
       totalAnalfabetos: currentTotalAnalfabetos,
     });
   }, [
-    municipioSelecionado, zonaSelecionada, secaoSelecionada, localSelecionado, termoBuscaLocal,
-    generoSelecionado, estadoCivilSelecionado, faixaEtariaSelecionada, escolaridadeSelecionada,
-    racaCorSelecionada, identidadeGeneroSelecionada, incluirQuilombola, incluirInterpreteLibras,
-    incluirComBiometria, incluirComDeficiencia, incluirComNomeSocial,
-    dadosCompletos, carregandoEleitorado, getUniqueOptions
+    municipioSelecionado,
+    zonaSelecionada,
+    secaoSelecionada,
+    localSelecionado,
+    termoBuscaLocal,
+    generoSelecionado,
+    estadoCivilSelecionado,
+    faixaEtariaSelecionada,
+    escolaridadeSelecionada,
+    racaCorSelecionada,
+    identidadeGeneroSelecionada,
+    incluirQuilombola,
+    incluirInterpreteLibras,
+    incluirComBiometria,
+    incluirComDeficiencia,
+    incluirComNomeSocial,
+    dadosCompletos, 
+    carregandoEleitorado, 
+    getUniqueOptions
   ]);
+
+  const handleRecarregarDados = () => {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(`eleitoradoCompletos_geral`);
+      localStorage.removeItem('eleitoradoResumoGlobal');
+    }
+    setForceReloadCounter(prev => prev + 1); 
+  };
 
   return (
     <ProtectedRoute>
@@ -703,50 +699,80 @@ export default function PainelEleitorado() {
               <span className="text-gray-400"> Eleitorado</span>
             </p>
             <h1 className="text-2xl font-bold text-black">Painel do Eleitorado</h1>
-            <div className="flex space-x-10 mt-5 border-b border-gray-300">
-              {abas.map((aba) => (
-                <button
-                  key={aba}
-                  onClick={() => {
-                    setAbaAtiva(aba);
-                    setMunicipioSelecionado('TODOS OS MUNICÍPIOS');
-                    setZonaSelecionada('TODAS AS ZONAS');
-                    setSecaoSelecionada('TODAS AS SEÇÕES');
-                    setLocalSelecionado('TODOS OS LOCAIS');
-                    setTermoBuscaLocal('');
-                    setGenerosDisponiveis([]);
-                    setEstadosCivisDisponiveis([]);
-                    setFaixasEtariasDisponiveis([]);
-                    setEscolaridadesDisponiveis([]);
-                    setRacasCoresDisponiveis([]);
-                    setIdentidadesGeneroDisponiveis([]);
-                    setGeneroSelecionado('Todos os Gêneros');
-                    setEstadoCivilSelecionado('Todos os Estados Civis');
-                    setFaixaEtariaSelecionada('Todas as Faixas Etárias');
-                    setEscolaridadeSelecionada('Todas as Escolaridades');
-                    setRacaCorSelecionada('Todas as Raças/Cores');
-                    setIdentidadeGeneroSelecionada('Todos os Identidades de Gênero');
-                    setIncluirQuilombola(false);
-                    setIncluirInterpreteLibras(false);
-                    setIncluirComBiometria(false);
-                    setIncluirComDeficiencia(false);
-                    setIncluirComNomeSocial(false);
-                    setPaginaAtualTabela(1);
-                  }}
-                  className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
-                    abaAtiva === aba
-                      ? 'border-b-2 border-blue-900 text-blue-900'
-                      : 'text-gray-700 hover:text-blue-900'
-                  }`}
-                >
-                  {aba}
-                </button>
-              ))}
+            <div className="flex justify-between items-center mt-5 border-b border-gray-300">
+              <div className="flex space-x-10">
+                {abas.map((aba) => (
+                  <button
+                    key={aba}
+                    onClick={() => {
+                      setAbaAtiva(aba);
+                      setMunicipioSelecionado('TODOS OS MUNICÍPIOS');
+                      setZonaSelecionada('TODAS AS ZONAS');
+                      setSecaoSelecionada('TODAS AS SEÇÕES');
+                      setLocalSelecionado('TODOS OS LOCAIS');
+                      setTermoBuscaLocal('');
+                      setGeneroSelecionado('Todos os Gêneros');
+                      setEstadoCivilSelecionado('Todos os Estados Civis');
+                      setFaixaEtariaSelecionada('Todas as Faixas Etárias');
+                      setEscolaridadeSelecionada('Todas as Escolaridades');
+                      setRacaCorSelecionada('Todas as Raças/Cores');
+                      setIdentidadeGeneroSelecionada('Todos os Identidades de Gênero');
+                      setIncluirQuilombola(false);
+                      setIncluirInterpreteLibras(false);
+                      setIncluirComBiometria(false);
+                      setIncluirComDeficiencia(false);
+                      setIncluirComNomeSocial(false);
+                      setPaginaAtualTabela(1);
+                      // Ao trocar de aba, resetamos os dados e ativamos o aviso amarelo
+                      if (dadosCompletos.length > 0) { // Se já havia dados carregados
+                         setDadosCompletos([]); // Zera os dados para que o aviso amarelo apareça
+                         setCarregandoEleitorado(false); // Garante que o spinner não apareça inicialmente
+                      }
+                      // Forçar um reload do useEffect (mesmo sem incrementar forceReloadCounter)
+                      // para que a lógica de "tenta cache, se não tiver, mostra aviso" seja re-avaliada.
+                      // Se queremos *sempre* a mensagem amarela, é preciso zerar dadosCompletos.
+                    }}
+                    className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
+                      abaAtiva === aba
+                        ? 'border-b-2 border-blue-900 text-blue-900'
+                        : 'text-gray-700 hover:text-blue-900'
+                    }`}
+                  >
+                    {aba}
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={handleRecarregarDados}
+                className="inline-flex items-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 mr-1">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644A4.491 4.491 0 0 0 7.5 21h11.218A2.25 2.25 0 0 0 21 18.75V10.5m-1.5 3.75-.612 1.44m-.227.56L14.75 19.5m-5.834-11.832-.894-.894V6m-1.5 1.5-.75-.75m5.25-5.25-.75-.75V3.75M12 21v-3.75m-4.5-5.25L5.75 12.75M12 3v3.75M15.75 9L17.25 7.5" />
+                </svg>
+                Recarregar Dados
+              </button>
             </div>
           </div>
 
           <div className="p-6 space-y-4">
-            {carregando ? (
+            {!carregando && dadosCompletos.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-[50vh] bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
+                <svg className="h-8 w-8 text-yellow-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.176 3.374 1.9 3.374h14.71c1.724 0 2.766-1.874 1.9-3.376L12.9 3.426c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <p className="text-xl font-semibold mt-4">Dados não carregados.</p>
+                <p className="text-sm mt-2">Para visualizar as informações do eleitorado, clique no botão "Recarregar Dados" no canto superior direito ou abaixo.</p>
+                <button
+                  onClick={handleRecarregarDados}
+                  className="mt-4 inline-flex items-center rounded-md border border-yellow-300 bg-yellow-600 text-white px-4 py-2.5 text-sm font-medium shadow-sm hover:bg-yellow-700 focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 transition-colors duration-200"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="size-5 mr-1">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644A4.491 4.491 0 0 0 7.5 21h11.218A2.25 2.25 0 0 0 21 18.75V10.5m-1.5 3.75-.612 1.44m-.227.56L14.75 19.5m-5.834-11.832-.894-.894V6m-1.5 1.5-.75-.75m5.25-5.25-.75-.75V3.75M12 21v-3.75m-4.5-5.25L5.75 12.75M12 3v3.75M15.75 9L17.25 7.5" />
+                  </svg>
+                  Recarregar Dados Agora
+                </button>
+              </div>
+            ) : carregando ? (
               <div className="flex flex-col items-center justify-center h-[50vh] bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800 w-full">
                 <svg className="animate-spin h-8 w-8 text-blue-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
@@ -825,17 +851,17 @@ export default function PainelEleitorado() {
                 />
 
               {abaAtiva === 'Visão Geral' ? (
-                  <RankingEleitorado
-                    mapMunicipioMetrics={mapMunicipioMetrics}
-                    carregando={carregando}
-                  />
-                ) : (
-                  <GraficoDinamicoEleitorado
-                    dadosFiltrados={dadosFiltradosParaExibicao}
-                    abaAtiva={abaAtiva}
-                    carregando={carregando}
-                  />
-                )}
+                  <RankingEleitorado
+                    mapMunicipioMetrics={mapMunicipioMetrics}
+                    carregando={carregando}
+                  />
+                ) : (
+                  <GraficoDinamicoEleitorado
+                    dadosFiltrados={dadosFiltradosParaExibicao}
+                    abaAtiva={abaAtiva}
+                    carregando={carregando}
+                  />
+                )}
 
               </>
             )}
@@ -843,6 +869,12 @@ export default function PainelEleitorado() {
             {!carregando && dadosCompletos.length === 0 && (
               <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 w-full">
                 Não foi possível carregar os dados do eleitorado. Verifique a fonte dos dados e as rotas de API.
+                <button
+                  onClick={handleRecarregarDados}
+                  className="mt-2 inline-flex items-center rounded-md border border-red-300 bg-red-500 text-white px-3 py-1.5 text-sm font-medium shadow-sm hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+                >
+                  Tentar Recarregar
+                </button>
               </div>
             )}
           </div>

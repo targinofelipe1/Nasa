@@ -133,8 +133,7 @@ export default function PainelVotacao() {
       ? JSON.parse(localStorage.getItem('votacaoResumo') || '{}')
       : {}
   );
-  // As referências de 'AnteriorRef' não são mais estritamente necessárias com a nova lógica de filtro reativa no useEffect,
-  // mas mantê-las não causa problemas.
+
   const municipioAnteriorRef = useRef(municipioSelecionado);
   const localAnteriorRef = useRef(localSelecionado);
   const zonaAnteriorRef = useRef(zonaSelecionada);
@@ -249,7 +248,6 @@ export default function PainelVotacao() {
     setLocaisDisponiveis([]);
     setCandidatosDisponiveis([]);
 
-    // RESETAR FILTROS DO RANKING AO MUDAR DE ABA PARA GARANTIR CONSISTÊNCIA
     setCargoRankingSelecionado('Prefeito');
     setMunicipioRankingSelecionado('JOÃO PESSOA');
     setCandidatoRankingSelecionado('Todos os Candidatos');
@@ -603,67 +601,77 @@ export default function PainelVotacao() {
     }
     setDadosFinalFiltrados(dadosFinalProcessados);
 
-    // Cálculo dos totais gerais filtrados (Eleitores aptos, comparecimentos, abstenções etc.)
-    let currentFilteredAptos = 0;
-    let currentFilteredComp = 0;
-    let currentFilteredAbst = 0;
-    const currentUniqueFilteredLocals = new Set<string>();
-    const currentUniqueFilteredSecoes = new Set<string>();
+   let currentFilteredAptos = 0;
+      let currentFilteredComp = 0;
+      let currentFilteredAbst = 0;
+      const currentUniqueFilteredLocals = new Set<string>();
+      const currentUniqueFilteredSecoes = new Set<string>();
 
-    if (allSectionMetrics.size > 0) {
-        allSectionMetrics.forEach((metric: SectionMetrics) => {
-            const matchesMunicipio = municipioSelecionado === 'Todos os Municípios' || metric.municipio === municipioSelecionado;
-            const matchesZona = zonaSelecionada === 'Todas as Zonas' || metric.zona === zonaSelecionada;
-            const matchesLocalCode = localSelecionado === 'Todos os Locais' || metric.localCode === localSelecionado;
-            
-            const matchingLocalInfo = dadosLocais.find(l => 
-                l['Local de Votação'] === metric.localCode && 
-                l['Município'] === metric.municipio &&
-                l['Zona Eleitoral'] === metric.zona &&
-                (secaoSelecionada === 'Todas as Seções' || l['Seção Eleitoral'] === secaoSelecionada) &&
-                (!termoBuscaLocal || removerAcentos(l['Nome do Local']).includes(termoLocalNormalizado))
-            );
+      allSectionMetrics.forEach(metric => {
+          const matchesMunicipio = municipioSelecionado === 'Todos os Municípios' || metric.municipio === municipioSelecionado;
+          const matchesZona = zonaSelecionada === 'Todas as Zonas' || metric.zona === zonaSelecionada;
+          const matchesLocal = localSelecionado === 'Todos os Locais' || metric.localCode === localSelecionado;
+          const matchesSecao = secaoSelecionada === 'Todas as Seções' || metric.secao === secaoSelecionada;
+          const termoLocalNormalizado = removerAcentos(termoBuscaLocal.toUpperCase());
 
-            if (matchesMunicipio && matchesZona && matchesLocalCode && matchingLocalInfo) {
-                currentFilteredAptos += metric.aptos;
-                currentFilteredComp += metric.comp;
-                currentFilteredAbst += metric.abst;
-                currentUniqueFilteredSecoes.add(`${metric.municipio}_${metric.zona}_${metric.secao}`);
-                currentUniqueFilteredLocals.add(metric.localCode);
-            }
-        });
-    }
+          let matchesTermoLocal = true;
 
-    let currentFilteredValidos = 0;
-    let currentFilteredBrancos = 0;
-    let currentFilteredNulos = 0;
-    dadosParaCalculoDeSiglasECandidatos.forEach((item: any) => {
-        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-        const sigla = item['Sigla do Partido']?.toLowerCase();
-        const votos = item['Quantidade de Votos'] || 0;
-        if (nome === 'BRANCO') {
-            currentFilteredBrancos += votos;
-        } else if (nome === 'NULO' || sigla === '#nulo#') {
-            currentFilteredNulos += votos;
-        } else {
-            currentFilteredValidos += votos;
-        }
-    });
+          if (termoBuscaLocal) {
+              const infoLocal = dadosLocais.find(l =>
+                  l['Município'] === metric.municipio &&
+                  l['Zona Eleitoral'] === metric.zona &&
+                  l['Seção Eleitoral'] === metric.secao &&
+                  l['Local de Votação'] === metric.localCode
+              );
+              const nomeLocal = infoLocal?.['Nome do Local']?.trim().toUpperCase();
+              matchesTermoLocal = Boolean(nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado));
+          }
 
-    setDadosGeraisFiltrados({
-        eleitoresAptos: currentFilteredAptos,
-        comparecimentos: currentFilteredComp,
-        abstencoes: currentFilteredAbst,
-        taxaAbstencao: currentFilteredAptos > 0 ? (currentFilteredAbst / currentFilteredAptos) * 100 : 0,
-        locais: currentUniqueFilteredLocals.size,
-        secoes: currentUniqueFilteredSecoes.size,
-        validos: currentFilteredValidos,
-        brancos: currentFilteredBrancos,
-        nulos: currentFilteredNulos,
-    });
+          if (matchesMunicipio && matchesZona && matchesLocal && matchesSecao && matchesTermoLocal) {
+              currentFilteredAptos += metric.aptos;
+              currentFilteredComp += metric.comp;
+              currentFilteredAbst += metric.abst;
+              currentUniqueFilteredSecoes.add(`${metric.municipio}_${metric.zona}_${metric.secao}`);
+              currentUniqueFilteredLocals.add(metric.localCode);
+          }
+      });
 
-    // Lógica para os Votos Agrupados (Cards de Candidato) - Visível quando "Todos os Candidatos" é selecionado
-    // Este bloco só executa para as abas de cargo (Prefeito/Vereador)
+      let currentFilteredValidos = 0;
+      let currentFilteredBrancos = 0;
+      let currentFilteredNulos = 0;
+      let currentFilteredLegenda = 0;
+
+      dadosFiltradosSemBuscaCandidatoOuPartido.forEach(item => {
+          const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+          const sigla = item['Sigla do Partido']?.toUpperCase();
+          const votos = item['Quantidade de Votos'] || 0;
+          const isLegenda = (nome === sigla && nome !== '' && sigla !== '');
+          const isBranco = nome === 'BRANCO';
+          const isNulo = nome === 'NULO' || sigla === '#NULO#';
+
+          if (isBranco) {
+              currentFilteredBrancos += votos;
+          } else if (isNulo) {
+              currentFilteredNulos += votos;
+          } else if (isLegenda) {
+              currentFilteredLegenda += votos;
+          } else {
+              currentFilteredValidos += votos;
+          }
+      });
+      setDadosGeraisFiltrados({
+          eleitoresAptos: currentFilteredAptos,
+          comparecimentos: currentFilteredComp,
+          abstencoes: currentFilteredAbst,
+          taxaAbstencao: currentFilteredAptos > 0 ? (currentFilteredAbst / currentFilteredAptos) * 100 : 0,
+          locais: currentUniqueFilteredLocals.size,
+          secoes: currentUniqueFilteredSecoes.size,
+          validos: currentFilteredValidos,
+          brancos: currentFilteredBrancos,
+          nulos: currentFilteredNulos,
+      });
+
+
     if (abaAtiva !== 'Visão Geral' && dadosCompletosParaMapa.length > 0 && candidatoSelecionado === 'Todos os Candidatos') {
       const agregados: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; } } = {};
 
@@ -1064,10 +1072,8 @@ export default function PainelVotacao() {
           </div>
 
           <div className="p-6 space-y-10">
-            {/* Mapa da Paraíba - Posicionado AGORA acima dos cards */}
             {abaAtiva !== 'Visão Geral' && !carregando && <MapaParaibaCandidato key={`${abaAtiva}-mapa`} apiData={dadosCompletosParaMapa} abaAtiva={abaAtiva} />}
 
-            {/* VotacaoCards: Exibe dados gerais (filtrados ou globais) ou dados de votos por cargo */}
             {abaAtiva === 'Visão Geral' ? (
               <>
               <VotacaoCards
@@ -1589,7 +1595,6 @@ export default function PainelVotacao() {
               </div>
               </>
             ) : (
-              // Se um cargo específico está ativo (aba Prefeito ou Vereador)
               algumFiltroAplicado ? (
                 <VotacaoCards
                     tipo="filtrado"
@@ -1602,10 +1607,10 @@ export default function PainelVotacao() {
                     votosNulos={dadosGeraisFiltrados.nulos}
                     carregando={carregando}
                 />
-              ) : (
+              ) : ( 
                 <VotacaoCards
                     tipo="votos"
-                    votosValidos={dadosGeraisAbaAtiva.validos}
+                    votosValidos={dadosGeraisAbaAtiva.validos} 
                     votosBrancos={dadosGeraisAbaAtiva.brancos}
                     votosNulos={dadosGeraisAbaAtiva.nulos}
                     totalComparecimentos={dadosGeraisAbaAtiva.comparecimentos}
@@ -1613,6 +1618,7 @@ export default function PainelVotacao() {
                 />
               )
             )}
+  
 
             {abaAtiva !== 'Visão Geral' && (
               <div className="mt-8 mb-4">

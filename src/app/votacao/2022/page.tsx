@@ -57,6 +57,8 @@ interface VotoCandidatoPorLocal {
   enderecoLocal: string;
   bairroLocal: string;
   porcentagem: number;
+  posicaoRankingLocal: number;
+  secaoEleitoral?: string;
 }
 
 const removerAcentos = (str: string) => str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
@@ -67,10 +69,10 @@ export default function PainelVotacao() {
   const [zonaSelecionada, setZonaSelecionada] = useState('Todas as Zonas');
   const [secaoSelecionada, setSecaoSelecionada] = useState('Todas as Seções');
   const [siglaSelecionada, setSiglaSelecionada] = useState('Todas as Siglas');
-  const [termoBuscaCandidato, setTermoBuscaCandidato] = useState('');
+  const [termoBuscaCandidato, setTermoBuscaCandidato] = useState('Todos os Candidatos');
+  const [localSelecionado, setLocalSelecionado] = useState('Todos os Locais');
   const [termoBuscaLocal, setTermoBuscaLocal] = useState('');
 
-  const [localSelecionado, setLocalSelecionado] = useState('Todos os Locais');
 
   const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
   const [zonasDisponiveis, setZonasDisponiveis] = useState<string[]>([]);
@@ -104,7 +106,8 @@ export default function PainelVotacao() {
   const [cargoRankingSelecionado, setCargoRankingSelecionado] = useState('Presidente');
   const [municipioRankingSelecionado, setMunicipioRankingSelecionado] = useState('JOÃO PESSOA');
   const [siglaRankingSelecionada, setSiglaRankingSelecionada] = useState('Todas as Siglas');
-  const [termoBuscaCandidatoRanking, setTermoBuscaCandidatoRanking] = useState('');
+  const [candidatoRankingSelecionado, setCandidatoRankingSelecionado] = useState('Todos os Candidatos');
+  const [candidatosRankingDropdown, setCandidatosRankingDropdown] = useState<CandidatoDropdownOption[]>([]);
   const [ordenacaoColunaRanking, setOrdenacaoColunaRanking] = useState('totalVotos');
   const [ordenacaoDirecaoRanking, setOrdenacaoDirecaoRanking] = useState<'asc' | 'desc'>('desc');
   const [candidatosRanking, setCandidatosRanking] = useState<VotoAgregadoCandidatoRanking[]>([]);
@@ -113,6 +116,18 @@ export default function PainelVotacao() {
   const [itensPorPaginaRanking, setItensPorPaginaRanking] = useState(10);
   const [paginaAtualVotosLocal, setPaginaAtualVotosLocal] = useState(1);
   const [itensPorPaginaVotosLocal, setItensPorPaginaVotosLocal] = useState(10);
+
+  const [candidatosParaDetalheLocalDropdown, setCandidatosParaDetalheLocalDropdown] = useState<CandidatoDropdownOption[]>([]);
+  const [candidatoDetalheLocalSelecionado, setCandidatoDetalheLocalSelecionado] = useState('Todos os Candidatos');
+  const [votosCandidatoPorLocalDetalhado, setVotosCandidatoPorLocalDetalhado] = useState<VotoCandidatoPorLocal[]>([]);
+  const [paginaAtualVotosLocalDetalhado, setPaginaAtualVotosLocalDetalhado] = useState(1);
+  const [itensPorPaginaVotosLocalDetalhado, setItensPorPaginaVotosLocalDetalhado] = useState(10);
+  const [municipioDetalheLocalSelecionado, setMunicipioDetalheLocalSelecionado] = useState('JOÃO PESSOA');
+  const [ordenacaoColunaDetalheLocal, setOrdenacaoColunaDetalheLocal] = useState('totalVotos');
+  const [ordenacaoDirecaoDetalheLocal, setOrdenacaoDirecaoDetalheLocal] = useState<'asc' | 'desc'>('desc');
+  const [bairroDetalheLocalSelecionado, setBairroDetalheLocalSelecionado] = useState('Todos os Bairros');
+  const [bairrosDisponiveisDetalheLocal, setBairrosDisponiveisDetalheLocal] = useState<string[]>([]);
+
 
   const resumoCacheRef = useRef<Record<string, any>>(
     typeof window !== 'undefined'
@@ -124,7 +139,7 @@ export default function PainelVotacao() {
   const zonaAnteriorRef = useRef(zonaSelecionada);
   const secaoAnteriorRef = useRef(secaoSelecionada);
 
-  const abas = [
+   const abas = [
   'Visão Geral',
   'Visão Geral 2º turno',
   'Presidente',
@@ -136,21 +151,21 @@ export default function PainelVotacao() {
   'Deputado Estadual',
 ];
 
-const planilhasPorCargo: Record<string, string[]> = {
-  'Visão Geral': [
-    'presidente', 'senador', 'governador',
-    'grupo_federal1', 'grupo_federal2', 'grupo_federal3', 'deputado_federaljp',
-    'grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp',
-  ],
-  'Visão Geral 2º turno': ['presidente_2', 'governador_2'],
-  Presidente: ['presidente'],
-  'Presidente 2º turno': ['presidente_2'],
-  Senador: ['senador'],
-  Governador: ['governador'],
-  'Governador 2º turno': ['governador_2'],
-  'Deputado Federal': ['grupo_federal1', 'grupo_federal2', 'grupo_federal3', 'deputado_federaljp'],
-  'Deputado Estadual': ['grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp'],
-};
+  const planilhasPorCargo: Record<string, string[]> = {
+    'Visão Geral': [
+      'presidente', 'senador', 'governador',
+      'grupo_federal1', 'grupo_federal2', 'grupo_federal3', 'deputado_federaljp',
+      'grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp',
+    ],
+    'Visão Geral 2º turno': ['presidente_2', 'governador_2'],
+    Presidente: ['presidente'],
+    'Presidente 2º turno': ['presidente_2'],
+    Senador: ['senador'],
+    Governador: ['governador'],
+    'Governador 2º turno': ['governador_2'],
+    'Deputado Federal': ['grupo_federal1', 'grupo_federal2', 'grupo_federal3', 'deputado_federaljp'],
+    'Deputado Estadual': ['grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp'],
+  };
 
   const cargosDisponiveisParaRanking = abas.filter(aba => aba !== 'Visão Geral' && aba !== 'Visão Geral 2º turno');
   const [municipiosDisponiveisParaRanking, setMunicipiosDisponiveisParaRanking] = useState<string[]>([]);
@@ -236,7 +251,7 @@ const planilhasPorCargo: Record<string, string[]> = {
     setZonaSelecionada('Todas as Zonas');
     setSecaoSelecionada('Todas as Seções');
     setSiglaSelecionada('Todas as Siglas');
-    setTermoBuscaCandidato('');
+    setTermoBuscaCandidato('Todos os Candidatos');
     setTermoBuscaLocal('');
     setAlgumFiltroAplicado(false);
     setAlgumFiltroGeograficoAplicado(false);
@@ -247,21 +262,26 @@ const planilhasPorCargo: Record<string, string[]> = {
     setLocaisDisponiveis([]);
     setLocaisDisponiveisDropdown([]);
 
-    setTermoBuscaCandidatoRanking('');
+    setSiglaRankingSelecionada('Todas as Siglas');
+    setCandidatoRankingSelecionado('Todos os Candidatos');
     setOrdenacaoColunaRanking('totalVotos');
     setOrdenacaoDirecaoRanking('desc');
     setCandidatosRanking([]);
     setPaginaAtualRanking(1);
-    setSiglaRankingSelecionada('Todas as Siglas');
     setPaginaAtualVotosLocal(1);
+    setCandidatoDetalheLocalSelecionado('Todos os Candidatos');
+    setMunicipioDetalheLocalSelecionado('JOÃO PESSOA');
+    setVotosCandidatoPorLocalDetalhado([]);
+    setPaginaAtualVotosLocalDetalhado(1);
+    setOrdenacaoColunaDetalheLocal('totalVotos');
+    setOrdenacaoDirecaoDetalheLocal('desc');
+
 
     if (abaAtiva === 'Visão Geral 2º turno') {
       setCargoRankingSelecionado('Presidente 2º turno');
     } else if (abaAtiva === 'Visão Geral') {
       setCargoRankingSelecionado('Presidente');
     } else {
-        // Para abas de cargo específicas, o cargo do ranking é o próprio nome da aba.
-        // Isso assume que o nome da aba corresponde ao nome do cargo na coluna 'Cargo' dos dados.
         setCargoRankingSelecionado(abaAtiva);
     }
 
@@ -280,7 +300,7 @@ const planilhasPorCargo: Record<string, string[]> = {
           const json = await res.json();
           const linhas: string[][] = json.data?.slice(1) || [];
 
-        const cargoMap: Record<string, string> = {
+         const cargoMap: Record<string, string> = {
             'presidente': 'Presidente',
             'presidente_2': 'Presidente 2º turno',
             'senador': 'Senador',
@@ -295,7 +315,6 @@ const planilhasPorCargo: Record<string, string[]> = {
             'grupo_estadual3': 'Deputado Estadual',
             'deputado_estadualjp': 'Deputado Estadual',
           };
-
           const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
 
           for (const linha of linhas) {
@@ -470,323 +489,494 @@ const planilhasPorCargo: Record<string, string[]> = {
     };
   }, [abaAtiva, getUniqueOptions, safeParseVotes, dadosLocais]);
 
+  const getPaginationNumbers = useCallback((currentPage: number, totalPages: number, siblingCount = 1) => {
+    const totalPageNumbers = siblingCount * 2 + 3;
+    const totalBlocks = totalPageNumbers + 2;
+
+    if (totalPages > totalBlocks) {
+      const startPage = Math.max(2, currentPage - siblingCount);
+      const endPage = Math.min(totalPages - 1, currentPage + siblingCount);
+
+      let pagesToProcess: (number | string)[] = [];
+
+      const hasLeftSpill = startPage > 2;
+      const hasRightSpill = totalPages - endPage > 1;
+
+      pagesToProcess.push(1);
+
+      if (hasLeftSpill) {
+        pagesToProcess.push('...');
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pagesToProcess.push(i);
+      }
+
+      if (hasRightSpill) {
+        pagesToProcess.push('...');
+      }
+
+      if (totalPages > 1 && !pagesToProcess.includes(totalPages)) {
+        pagesToProcess.push(totalPages);
+      }
+
+      const uniqueAndSortedPages: (number | string)[] = [];
+      const seenNumbers = new Set<number>();
+      
+      if (totalPages >= 1 && !pagesToProcess.includes(1)) {
+          uniqueAndSortedPages.push(1);
+          seenNumbers.add(1);
+      }
+
+      pagesToProcess.forEach(page => {
+          if (typeof page === 'number') {
+              if (!seenNumbers.has(page)) {
+                  uniqueAndSortedPages.push(page);
+                  seenNumbers.add(page);
+              }
+          } else if (page === '...') {
+              uniqueAndSortedPages.push('...');
+          }
+      });
+
+      const finalCleanedPages: (number | string)[] = [];
+      for (let i = 0; i < uniqueAndSortedPages.length; i++) {
+          if (uniqueAndSortedPages[i] === '...') {
+              if (typeof uniqueAndSortedPages[i-1] === 'number' && typeof uniqueAndSortedPages[i+1] === 'number' &&
+                  (uniqueAndSortedPages[i+1] as number) - (uniqueAndSortedPages[i-1] as number) <= (siblingCount * 2 + 2) + 1 ) { 
+              } else {
+                  finalCleanedPages.push('...');
+              }
+          } else {
+              finalCleanedPages.push(uniqueAndSortedPages[i]);
+          }
+      }
+      
+      const finalFilteredAndOrdered: (number | string)[] = [];
+      let lastPushed: number | string | null = null;
+
+      finalCleanedPages.forEach((item, index) => {
+          if (item === '...') {
+              if (lastPushed !== '...') {
+                  const prevNum = typeof lastPushed === 'number' ? (lastPushed as number) : null;
+                  const nextNum = typeof finalCleanedPages[index+1] === 'number' ? (finalCleanedPages[index+1] as number) : null;
+
+                  if (prevNum !== null && nextNum !== null && nextNum - prevNum === 2) {
+                      finalFilteredAndOrdered.push(prevNum + 1);
+                  } else {
+                      finalFilteredAndOrdered.push('...');
+                  }
+              }
+          } else {
+              finalFilteredAndOrdered.push(item);
+          }
+          lastPushed = item;
+      });
+
+      if (finalFilteredAndOrdered.length > 1 && finalFilteredAndOrdered[0] === '...' && finalFilteredAndOrdered[1] === 1) {
+          finalFilteredAndOrdered.shift();
+      }
+      if (finalFilteredAndOrdered.length > 1 && finalFilteredAndOrdered[finalFilteredAndOrdered.length - 1] === '...' && finalFilteredAndOrdered[finalFilteredAndOrdered.length - 2] === totalPages) {
+          finalFilteredAndOrdered.pop();
+      }
+      const noConsecutiveEllipses = finalFilteredAndOrdered.filter((item, index, arr) => !(item === '...' && arr[index - 1] === '...'));
+
+      return noConsecutiveEllipses;
+
+    }
+
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, []);
+
   useEffect(() => {
     if (carregando || dadosCompletosParaMapa.length === 0) {
-      setDadosFiltradosSemBuscaCandidatoOuPartido([]);
-      setVotosAgrupadosCandidatos([]);
-      setVotosCandidatoPorLocal([]);
-      setLocaisVotacaoFiltradosParaExibicao([]);
-      setZonasDisponiveis([]);
-      setSecoesDisponiveis([]);
-      setLocaisDisponiveis([]);
-      setLocaisDisponiveisDropdown([]);
-      setDadosGeraisFiltrados({
-        eleitoresAptos: 0, comparecimentos: 0, abstencoes: 0, taxaAbstencao: 0,
-        locais: 0, secoes: 0, validos: 0, brancos: 0, nulos: 0,
-      });
-      setDadosFinalFiltrados([]);
+      setCandidatosRankingDropdown([]);
       return;
     }
 
-    const isAnyGeographicFilterApplied =
-      municipioSelecionado !== 'Todos os Municípios' ||
-      zonaSelecionada !== 'Todas as Zonas' ||
-      localSelecionado !== 'Todos os Locais' ||
-      secaoSelecionada !== 'Todas as Seções' ||
-      termoBuscaLocal !== '';
-    setAlgumFiltroGeograficoAplicado(isAnyGeographicFilterApplied);
+    let dadosParaDropdown = [...dadosCompletosParaMapa];
 
-    const isAnyFilterApplied = isAnyGeographicFilterApplied || siglaSelecionada !== 'Todas as Siglas' || termoBuscaCandidato !== '';
-    setAlgumFiltroAplicado(isAnyFilterApplied);
-
-    municipioAnteriorRef.current = municipioSelecionado;
-    zonaAnteriorRef.current = zonaSelecionada;
-    localAnteriorRef.current = localSelecionado;
-    secaoAnteriorRef.current = secaoSelecionada;
-
-    let dadosComTodosFiltrosGeograficosAplicados = [...dadosCompletosParaMapa];
-    let locaisParaPopularDropdowns = [...dadosLocais];
-
-    if (municipioSelecionado !== 'Todos os Municípios') {
-      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Município'] === municipioSelecionado);
-      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Município'] === municipioSelecionado);
+    if (cargoRankingSelecionado !== 'Todos os Cargos') {
+      dadosParaDropdown = dadosParaDropdown.filter((dado: any) => dado.Cargo === cargoRankingSelecionado);
     }
 
-    const newZonas = (municipioSelecionado !== 'Todos os Municípios')
-      ? getUniqueOptions(locaisParaPopularDropdowns, 'Zona Eleitoral', false)
-      : [];
-    setZonasDisponiveis(newZonas);
-
-    if (zonaSelecionada !== 'Todas as Zonas') {
-      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Zona Eleitoral'] === zonaSelecionada);
-      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Zona Eleitoral'] === zonaSelecionada);
+    if (municipioRankingSelecionado !== 'Todos os Municípios') {
+      dadosParaDropdown = dadosParaDropdown.filter((dado: any) => dado['Município'] === municipioRankingSelecionado);
     }
 
-    const computedLocaisDataForDropdown = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas')
-      ? locaisParaPopularDropdowns.map(local => ({
-            id: local['Local de Votação'],
-            label: local['Nome do Local'] && local['Nome do Local'] !== 'N/A'
-                ? `${local['Nome do Local']} (${local['Local de Votação']})`
-                : local['Local de Votação']
-          }))
-      : [];
-
-    const uniqueDropdownItems = Array.from(new Map(computedLocaisDataForDropdown.map(item => [item.id, item])).values());
-    setLocaisDisponiveisDropdown(uniqueDropdownItems);
-    setLocaisDisponiveis(uniqueDropdownItems.map(l => l.id));
-
-    if (localSelecionado !== 'Todos os Locais') {
-      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Local de Votação'] === localSelecionado);
-      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Local de Votação'] === localSelecionado);
+    if (siglaRankingSelecionada !== 'Todas as Siglas') {
+      dadosParaDropdown = dadosParaDropdown.filter((dado: any) => dado['Sigla do Partido'] === siglaRankingSelecionada);
     }
 
-    const newSecoes = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas' && localSelecionado !== 'Todos os Locais')
-      ? getUniqueOptions(locaisParaPopularDropdowns, 'Seção Eleitoral', false)
-      : [];
-    setSecoesDisponiveis(newSecoes);
+    const uniqueCandidatos = new Map<string, CandidatoDropdownOption>();
+    dadosParaDropdown.forEach((item: any) => {
+      const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+      const siglaPartido = item['Sigla do Partido']?.trim();
+      const numeroCandidato = item['Numero do Candidato']?.trim();
 
-    if (secaoSelecionada !== 'Todas as Seções') {
-      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Seção Eleitoral'] === secaoSelecionada);
-      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Seção Eleitoral'] === secaoSelecionada);
-    }
-
-    const termoLocalNormalizado = removerAcentos(termoBuscaLocal.toUpperCase());
-    if (termoBuscaLocal) {
-        dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => {
-            const nomeLocal = dado['Nome do Local']?.trim().toUpperCase();
-            return nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado);
-        });
-        locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => {
-            const nomeLocal = local['Nome do Local']?.trim().toUpperCase();
-            return nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado);
-        });
-    }
-
-    setLocaisVotacaoFiltradosParaExibicao(locaisParaPopularDropdowns);
-
-    const siglasFiltradasGeograficamente = getUniqueOptions(dadosComTodosFiltrosGeograficosAplicados, 'Sigla do Partido');
-    const filteredSiglasGeograficamente = siglasFiltradasGeograficamente.filter(sigla => sigla.toLowerCase() !== '#nulo#');
-    setSiglasDisponiveis(filteredSiglasGeograficamente);
-
-    let dadosParaCalculoDeSiglasECandidatos = [...dadosComTodosFiltrosGeograficosAplicados];
-
-    if (siglaSelecionada !== 'Todas as Siglas') {
-      dadosParaCalculoDeSiglasECandidatos = dadosParaCalculoDeSiglasECandidatos.filter(dado => dado['Sigla do Partido'] === siglaSelecionada);
-    }
-
-    setDadosFiltradosSemBuscaCandidatoOuPartido(dadosParaCalculoDeSiglasECandidatos);
-
-    let dadosFinalProcessados = [...dadosParaCalculoDeSiglasECandidatos];
-    if (termoBuscaCandidato) {
-      const termoNormalizado = removerAcentos(termoBuscaCandidato.toUpperCase());
-      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) =>
-        removerAcentos(dado['Nome do Candidato/Voto']?.trim().toUpperCase()).includes(termoNormalizado)
-      );
-    } else {
-      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) => {
-        const nomeCandidato = dado['Nome do Candidato/Voto']?.trim().toUpperCase();
-        const siglaPartido = dado['Sigla do Partido']?.trim().toUpperCase();
-        const isLegenda = nomeCandidato === siglaPartido;
-        const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido === '#NULO#';
-        return !isLegenda && !isBrancoOuNulo;
-      });
-    }
-    setDadosFinalFiltrados(dadosFinalProcessados);
-
-    let currentFilteredAptos = 0;
-    let currentFilteredComp = 0;
-    let currentFilteredAbst = 0;
-    const currentUniqueFilteredLocals = new Set<string>();
-    const currentUniqueFilteredSecoes = new Set<string>();
-
-    if (allSectionMetrics.size > 0) {
-        allSectionMetrics.forEach((metric: SectionMetrics) => {
-            const matchesMunicipio = municipioSelecionado === 'Todos os Municípios' || metric.municipio === municipioSelecionado;
-            const matchesZona = zonaSelecionada === 'Todas as Zonas' || metric.zona === zonaSelecionada;
-            const matchesLocalCode = localSelecionado === 'Todos os Locais' || metric.localCode === localSelecionado;
-
-            const matchingLocalInfo = dadosLocais.find(l =>
-                l['Local de Votação'] === metric.localCode &&
-                l['Município'] === metric.municipio &&
-                l['Zona Eleitoral'] === metric.zona &&
-                (secaoSelecionada === 'Todas as Seções' || l['Seção Eleitoral'] === secaoSelecionada) &&
-                (!termoBuscaLocal || removerAcentos(l['Nome do Local']).includes(termoLocalNormalizado))
-            );
-
-            if (matchesMunicipio && matchesZona && matchesLocalCode && matchingLocalInfo) {
-                currentFilteredAptos += metric.aptos;
-                currentFilteredComp += metric.comp;
-                currentFilteredAbst += metric.abst;
-                currentUniqueFilteredSecoes.add(`${metric.municipio}_${metric.zona}_${metric.secao}`);
-                currentUniqueFilteredLocals.add(metric.localCode);
-            }
-        });
-    }
-
-    let currentFilteredValidos = 0;
-    let currentFilteredBrancos = 0;
-    let currentFilteredNulos = 0;
-    dadosParaCalculoDeSiglasECandidatos.forEach((item: any) => {
-        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-        const sigla = item['Sigla do Partido']?.toLowerCase();
-        const votos = item['Quantidade de Votos'] || 0;
-        if (nome === 'BRANCO') {
-            currentFilteredBrancos += votos;
-        } else if (nome === 'NULO' || sigla === '#nulo#') {
-            currentFilteredNulos += votos;
-        } else {
-            currentFilteredValidos += votos;
+      if (nomeCandidato && siglaPartido &&
+          nomeCandidato !== 'BRANCO' && nomeCandidato !== 'NULO' &&
+          siglaPartido.toLowerCase() !== '#nulo#' && nomeCandidato !== siglaPartido.toUpperCase()) {
+        const key = `${nomeCandidato}-${siglaPartido}-${numeroCandidato}`;
+        if (!uniqueCandidatos.has(key)) {
+          uniqueCandidatos.set(key, { nome: nomeCandidato, siglaPartido: siglaPartido, numeroCandidato: numeroCandidato });
         }
-    });
-
-    setDadosGeraisFiltrados({
-        eleitoresAptos: currentFilteredAptos,
-        comparecimentos: currentFilteredComp,
-        abstencoes: currentFilteredAbst,
-        taxaAbstencao: currentFilteredAptos > 0 ? (currentFilteredAbst / currentFilteredAptos) * 100 : 0,
-        locais: currentUniqueFilteredLocals.size,
-        secoes: currentUniqueFilteredSecoes.size,
-        validos: currentFilteredValidos,
-        brancos: currentFilteredBrancos,
-        nulos: currentFilteredNulos,
-    });
-
-    if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && !termoBuscaCandidato) {
-      const agregados: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; } } = {};
-
-      let dataToAggregate = [];
-
-      const allGeographicFiltersAreDefault =
-        municipioSelecionado === 'Todos os Municípios' &&
-        localSelecionado === 'Todos os Locais' &&
-        zonaSelecionada === 'Todas as Zonas' &&
-        secaoSelecionada === 'Todas as Seções' &&
-        termoBuscaLocal === '';
-
-      const allPartyAndSearchFiltersAreDefault =
-        siglaSelecionada === 'Todas as Siglas' &&
-        termoBuscaCandidato === '';
-
-      if (allGeographicFiltersAreDefault && allPartyAndSearchFiltersAreDefault) {
-          dataToAggregate = dadosCompletosParaMapa;
-      } else {
-          dataToAggregate = dadosFinalProcessados;
       }
+    });
 
-      dataToAggregate.forEach(item => {
-        const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
-        const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
-        const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
-        const votos = item['Quantidade de Votos'] || 0;
+    const sortedCandidatos = Array.from(uniqueCandidatos.values()).sort((a, b) => a.nome.localeCompare(b.nome));
+    setCandidatosRankingDropdown(sortedCandidatos);
+    if (candidatoRankingSelecionado !== 'Todos os Candidatos' && !sortedCandidatos.some(c => c.nome === candidatoRankingSelecionado)) {
+        setCandidatoRankingSelecionado('Todos os Candidatos');
+    }
+  }, [dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, siglaRankingSelecionada, carregando]);
 
-        if (nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || normalizedSiglaPartido === '#NULO#' || nomeCandidato === normalizedSiglaPartido) {
-          return;
-        }
+useEffect(() => {
+    if (carregando || dadosCompletosParaMapa.length === 0) {
+      setDadosFiltradosSemBuscaCandidatoOuPartido([]);
+      setVotosAgrupadosCandidatos([]);
+      setVotosCandidatoPorLocal([]);
+      setLocaisVotacaoFiltradosParaExibicao([]);
+      setZonasDisponiveis([]);
+      setSecoesDisponiveis([]);
+      setLocaisDisponiveis([]);
+      setLocaisDisponiveisDropdown([]);
+      setDadosGeraisFiltrados({
+        eleitoresAptos: 0, comparecimentos: 0, abstencoes: 0, taxaAbstencao: 0,
+        locais: 0, secoes: 0, validos: 0, brancos: 0, nulos: 0,
+      });
+      setDadosFinalFiltrados([]);
+      return;
+    }
 
-        if (!agregados[nomeCandidato]) {
-          agregados[nomeCandidato] = { nome: nomeCandidato, totalVotos: 0, siglaPartido: siglaPartidoOriginal };
-        }
-        agregados[nomeCandidato].totalVotos += votos;
+    const isAnyGeographicFilterApplied =
+      municipioSelecionado !== 'Todos os Municípios' ||
+      zonaSelecionada !== 'Todas as Zonas' ||
+      localSelecionado !== 'Todos os Locais' ||
+      secaoSelecionada !== 'Todas as Seções' ||
+      termoBuscaLocal !== '';
+    setAlgumFiltroGeograficoAplicado(isAnyGeographicFilterApplied);
+
+    const isAnyFilterApplied = isAnyGeographicFilterApplied || siglaSelecionada !== 'Todas as Siglas' || termoBuscaCandidato !== 'Todos os Candidatos';
+    setAlgumFiltroAplicado(isAnyFilterApplied);
+
+    municipioAnteriorRef.current = municipioSelecionado;
+    zonaAnteriorRef.current = zonaSelecionada;
+    localAnteriorRef.current = localSelecionado;
+    secaoAnteriorRef.current = secaoSelecionada;
+
+    let dadosComTodosFiltrosGeograficosAplicados = [...dadosCompletosParaMapa];
+    let locaisParaPopularDropdowns = [...dadosLocais];
+
+    if (municipioSelecionado !== 'Todos os Municípios') {
+      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Município'] === municipioSelecionado);
+      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Município'] === municipioSelecionado);
+    }
+
+    const newZonas = (municipioSelecionado !== 'Todos os Municípios')
+      ? getUniqueOptions(locaisParaPopularDropdowns, 'Zona Eleitoral', false)
+      : [];
+    setZonasDisponiveis(newZonas);
+
+    if (zonaSelecionada !== 'Todas as Zonas') {
+      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Zona Eleitoral'] === zonaSelecionada);
+      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Zona Eleitoral'] === zonaSelecionada);
+    }
+
+    const computedLocaisDataForDropdown = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas')
+      ? locaisParaPopularDropdowns.map(local => ({
+            id: local['Local de Votação'],
+            label: local['Nome do Local'] && local['Nome do Local'] !== 'N/A'
+                ? `${local['Nome do Local']} (${local['Local de Votação']})`
+                : local['Local de Votação']
+          }))
+      : [];
+
+    const uniqueDropdownItems = Array.from(new Map(computedLocaisDataForDropdown.map(item => [item.id, item])).values());
+    setLocaisDisponiveisDropdown(uniqueDropdownItems);
+    setLocaisDisponiveis(uniqueDropdownItems.map(l => l.id));
+
+    if (localSelecionado !== 'Todos os Locais') {
+      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Local de Votação'] === localSelecionado);
+      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Local de Votação'] === localSelecionado);
+    }
+
+    const newSecoes = (municipioSelecionado !== 'Todos os Municípios' && zonaSelecionada !== 'Todas as Zonas' && localSelecionado !== 'Todos os Locais')
+      ? getUniqueOptions(locaisParaPopularDropdowns, 'Seção Eleitoral', false)
+      : [];
+    setSecoesDisponiveis(newSecoes);
+
+    if (secaoSelecionada !== 'Todas as Seções') {
+      dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => dado['Seção Eleitoral'] === secaoSelecionada);
+      locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => local['Seção Eleitoral'] === secaoSelecionada);
+    }
+
+    const termoLocalNormalizado = removerAcentos(termoBuscaLocal.toUpperCase());
+    if (termoBuscaLocal) {
+        dadosComTodosFiltrosGeograficosAplicados = dadosComTodosFiltrosGeograficosAplicados.filter(dado => {
+            const nomeLocal = dado['Nome do Local']?.trim().toUpperCase();
+            return nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado);
+        });
+        locaisParaPopularDropdowns = locaisParaPopularDropdowns.filter(local => {
+            const nomeLocal = local['Nome do Local']?.trim().toUpperCase();
+            return nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado);
+        });
+    }
+
+    setLocaisVotacaoFiltradosParaExibicao(locaisParaPopularDropdowns);
+
+    const siglasFiltradasGeograficamente = getUniqueOptions(dadosComTodosFiltrosGeograficosAplicados, 'Sigla do Partido');
+    const filteredSiglasGeograficamente = siglasFiltradasGeograficamente.filter((sigla: string) => sigla.toLowerCase() !== '#nulo#');
+    setSiglasDisponiveis(filteredSiglasGeograficamente);
+
+    let dadosParaCalculoDeSiglasECandidatos = [...dadosComTodosFiltrosGeograficosAplicados];
+
+    if (siglaSelecionada !== 'Todas as Siglas') {
+      dadosParaCalculoDeSiglasECandidatos = dadosParaCalculoDeSiglasECandidatos.filter(dado => dado['Sigla do Partido'] === siglaSelecionada);
+    }
+
+    setDadosFiltradosSemBuscaCandidatoOuPartido(dadosParaCalculoDeSiglasECandidatos);
+
+    let dadosFinalProcessados = [...dadosParaCalculoDeSiglasECandidatos];
+    if (termoBuscaCandidato !== 'Todos os Candidatos') {
+      const termoNormalizado = termoBuscaCandidato.toUpperCase();
+      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) =>
+        dado['Nome do Candidato/Voto']?.trim().toUpperCase() === termoNormalizado
+      );
+    } else {
+      dadosFinalProcessados = dadosFinalProcessados.filter((dado: any) => {
+        const nomeCandidato = dado['Nome do Candidato/Voto']?.trim().toUpperCase();
+        const siglaPartido = dado['Sigla do Partido']?.trim().toUpperCase();
+        const isLegenda = nomeCandidato === siglaPartido;
+        const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido === '#NULO#';
+        return !isLegenda && !isBrancoOuNulo;
+      });
+    }
+    setDadosFinalFiltrados(dadosFinalProcessados);
+
+      let currentFilteredAptos = 0;
+      let currentFilteredComp = 0;
+      let currentFilteredAbst = 0;
+      const currentUniqueFilteredLocals = new Set<string>();
+      const currentUniqueFilteredSecoes = new Set<string>();
+
+      allSectionMetrics.forEach(metric => {
+          const matchesMunicipio = municipioSelecionado === 'Todos os Municípios' || metric.municipio === municipioSelecionado;
+          const matchesZona = zonaSelecionada === 'Todas as Zonas' || metric.zona === zonaSelecionada;
+          const matchesLocal = localSelecionado === 'Todos os Locais' || metric.localCode === localSelecionado;
+          const matchesSecao = secaoSelecionada === 'Todas as Seções' || metric.secao === secaoSelecionada;
+          const termoLocalNormalizado = removerAcentos(termoBuscaLocal.toUpperCase());
+
+          let matchesTermoLocal = true;
+
+          if (termoBuscaLocal) {
+              const infoLocal = dadosLocais.find(l =>
+                  l['Município'] === metric.municipio &&
+                  l['Zona Eleitoral'] === metric.zona &&
+                  l['Seção Eleitoral'] === metric.secao &&
+                  l['Local de Votação'] === metric.localCode
+              );
+              const nomeLocal = infoLocal?.['Nome do Local']?.trim().toUpperCase();
+              matchesTermoLocal = Boolean(nomeLocal && removerAcentos(nomeLocal).includes(termoLocalNormalizado));
+          }
+
+          if (matchesMunicipio && matchesZona && matchesLocal && matchesSecao && matchesTermoLocal) {
+              currentFilteredAptos += metric.aptos;
+              currentFilteredComp += metric.comp;
+              currentFilteredAbst += metric.abst;
+              currentUniqueFilteredSecoes.add(`${metric.municipio}_${metric.zona}_${metric.secao}`);
+              currentUniqueFilteredLocals.add(metric.localCode);
+          }
       });
 
-      const sortedCandidatos = Object.values(agregados)
-        .sort((a, b) => b.totalVotos - a.totalVotos);
-      setVotosAgrupadosCandidatos(sortedCandidatos);
-      setVotosCandidatoPorLocal([]);
-      setPaginaAtualVotosLocal(1);
-    } else if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && termoBuscaCandidato !== '') {
-        const agregadosPorLocal: { [key: string]: VotoCandidatoPorLocal } = {};
+      let currentFilteredValidos = 0;
+      let currentFilteredBrancos = 0;
+      let currentFilteredNulos = 0;
+      let currentFilteredLegenda = 0;
 
-        let dataForTotalValidVotesPerLocal = [...dadosComTodosFiltrosGeograficosAplicados];
+      dadosFiltradosSemBuscaCandidatoOuPartido.forEach(item => {
+          const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+          const sigla = item['Sigla do Partido']?.toUpperCase();
+          const votos = item['Quantidade de Votos'] || 0;
+          const isLegenda = (nome === sigla && nome !== '' && sigla !== '');
+          const isBranco = nome === 'BRANCO';
+          const isNulo = nome === 'NULO' || sigla === '#NULO#';
 
-        const totalValidVotesPerLocal: { [key: string]: number } = {};
-        dataForTotalValidVotesPerLocal.forEach((item: any) => {
-            const nomeVoto = item['Nome do Candidato/Voto']?.toUpperCase();
-            const siglaVoto = item['Sigla do Partido']?.toLowerCase();
-            const votos = item['Quantidade de Votos'] || 0;
-            const localKey = item['Local de Votação']?.trim();
+          if (isBranco) {
+              currentFilteredBrancos += votos;
+          } else if (isNulo) {
+              currentFilteredNulos += votos;
+          } else if (isLegenda) {
+              currentFilteredLegenda += votos;
+          } else {
+              currentFilteredValidos += votos;
+          }
+      });
+      setDadosGeraisFiltrados({
+          eleitoresAptos: currentFilteredAptos,
+          comparecimentos: currentFilteredComp,
+          abstencoes: currentFilteredAbst,
+          taxaAbstencao: currentFilteredAptos > 0 ? (currentFilteredAbst / currentFilteredAptos) * 100 : 0,
+          locais: currentUniqueFilteredLocals.size,
+          secoes: currentUniqueFilteredSecoes.size,
+          validos: currentFilteredValidos,
+          brancos: currentFilteredBrancos,
+          nulos: currentFilteredNulos,
+      });
+      
+    if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && termoBuscaCandidato === 'Todos os Candidatos') {
+      const agregados: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; } } = {};
 
-            const isLegenda = nomeVoto === siglaVoto?.toUpperCase();
-            const isBrancoOuNulo = nomeVoto === 'BRANCO' || nomeVoto === 'NULO' || siglaVoto === '#nulo#';
+      let dataToAggregate = [];
 
-            if (localKey && !isBrancoOuNulo && !isLegenda) {
-                if (!totalValidVotesPerLocal[localKey]) {
-                    totalValidVotesPerLocal[localKey] = 0;
-                }
-                totalValidVotesPerLocal[localKey] += votos;
-            }
-        });
+      const allGeographicFiltersAreDefault =
+        municipioSelecionado === 'Todos os Municípios' &&
+        localSelecionado === 'Todos os Locais' &&
+        zonaSelecionada === 'Todas as Zonas' &&
+        secaoSelecionada === 'Todas as Seções' &&
+        termoBuscaLocal === '';
 
-        let dataForCandidateLocalVotes = [...dadosComTodosFiltrosGeograficosAplicados];
-        if (siglaSelecionada !== 'Todas as Siglas') {
-            dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Sigla do Partido'] === siglaSelecionada);
-        }
-        const targetCandidateName = termoBuscaCandidato.toUpperCase();
+      const allPartyAndSearchFiltersAreDefault =
+        siglaSelecionada === 'Todas as Siglas' &&
+        termoBuscaCandidato === 'Todos os Candidatos';
 
-        dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) =>
-            dado['Nome do Candidato/Voto']?.trim().toUpperCase() === targetCandidateName
-        );
+      if (allGeographicFiltersAreDefault && allPartyAndSearchFiltersAreDefault) {
+          dataToAggregate = dadosCompletosParaMapa;
+      } else {
+          dataToAggregate = dadosFinalProcessados;
+      }
 
-        dataForCandidateLocalVotes.forEach((item: any) => {
-            const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
-            const siglaPartido = item['Sigla do Partido']?.trim();
-            const localVotacaoCode = item['Local de Votação']?.trim();
-            const votos = item['Quantidade de Votos'] || 0;
+      dataToAggregate.forEach(item => {
+        const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+        const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
+        const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
+        const votos = item['Quantidade de Votos'] || 0;
 
-            const infoLocal = dadosLocais.find(l =>
-                l['Município'] === item['Município'] &&
-                l['Zona Eleitoral'] === item['Zona Eleitoral'] &&
-                l['Local de Votação'] === localVotacaoCode &&
-                l['Seção Eleitoral'] === item['Seção Eleitoral']
-            );
-            const nomeLocal = infoLocal?.['Nome do Local'] || 'N/A';
-            const enderecoLocal = infoLocal?.['Endereço do Local'] || 'N/A';
-            const bairroLocal = infoLocal?.['Bairro do Local'] || 'N/A';
+        if (nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || normalizedSiglaPartido === '#NULO#' || nomeCandidato === normalizedSiglaPartido) {
+          return;
+        }
 
-            if (localVotacaoCode && infoLocal) {
-                if (!agregadosPorLocal[localVotacaoCode]) {
-                    agregadosPorLocal[localVotacaoCode] = {
-                        nome: nomeCandidato,
-                        siglaPartido: siglaPartido,
-                        localVotacao: localVotacaoCode,
-                        nomeLocal: nomeLocal,
-                        enderecoLocal: enderecoLocal,
-                        bairroLocal: bairroLocal,
-                        totalVotos: 0,
-                        porcentagem: 0
-                    };
-                }
-                agregadosPorLocal[localVotacaoCode].totalVotos += votos;
-            }
-        });
+        if (!agregados[nomeCandidato]) {
+          agregados[nomeCandidato] = { nome: nomeCandidato, totalVotos: 0, siglaPartido: siglaPartidoOriginal };
+        }
+        agregados[nomeCandidato].totalVotos += votos;
+      });
 
-        Object.values(agregadosPorLocal).forEach(item => {
-            const localKey = item.localVotacao;
-            const totalValid = totalValidVotesPerLocal[localKey] || 0;
-            if (totalValid > 0) {
-                item.porcentagem = (item.totalVotos / totalValid) * 100;
-            } else {
-                item.porcentagem = 0;
-            }
-        });
+      const sortedCandidatos = Object.values(agregados)
+        .sort((a, b) => b.totalVotos - a.totalVotos);
+      setVotosAgrupadosCandidatos(sortedCandidatos);
+      setVotosCandidatoPorLocal([]);
+      setPaginaAtualVotosLocal(1);
+    } else if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && dadosCompletosParaMapa.length > 0 && termoBuscaCandidato !== 'Todos os Candidatos') {
+        const agregadosPorLocal: { [key: string]: VotoCandidatoPorLocal } = {};
 
-        const sortedVotosPorLocal = Object.values(agregadosPorLocal)
-            .sort((a, b) => b.totalVotos - a.totalVotos);
-        setVotosCandidatoPorLocal(sortedVotosPorLocal);
-        setVotosAgrupadosCandidatos([]);
-        setPaginaAtualVotosLocal(1);
-    }
-    else {
-      setVotosAgrupadosCandidatos([]);
-      setVotosCandidatoPorLocal([]);
-      setPaginaAtualVotosLocal(1);
-    }
+        let dataForTotalValidVotesPerLocal = [...dadosComTodosFiltrosGeograficosAplicados];
 
-  }, [
-    municipioSelecionado, localSelecionado, zonaSelecionada, secaoSelecionada, siglaSelecionada, termoBuscaCandidato,
-    termoBuscaLocal, dadosCompletosParaMapa, carregando, getUniqueOptions, abaAtiva, dadosLocais, algumFiltroAplicado, allSectionMetrics,
-    cargoRankingSelecionado, municipioRankingSelecionado, siglaRankingSelecionada
-  ]);
+        const totalValidVotesPerLocal: { [key: string]: number } = {};
+        dataForTotalValidVotesPerLocal.forEach((item: any) => {
+            const nomeVoto = item['Nome do Candidato/Voto']?.toUpperCase();
+            const siglaVoto = item['Sigla do Partido']?.toLowerCase();
+            const votos = item['Quantidade de Votos'] || 0;
+            const localKey = item['Local de Votação']?.trim();
+
+            const isLegenda = nomeVoto === siglaVoto?.toUpperCase();
+            const isBrancoOuNulo = nomeVoto === 'BRANCO' || nomeVoto === 'NULO' || siglaVoto === '#nulo#';
+
+            if (localKey && !isBrancoOuNulo && !isLegenda) {
+                if (!totalValidVotesPerLocal[localKey]) {
+                    totalValidVotesPerLocal[localKey] = 0;
+                }
+                totalValidVotesPerLocal[localKey] += votos;
+            }
+        });
+
+        let dataForCandidateLocalVotes = [...dadosComTodosFiltrosGeograficosAplicados];
+        if (siglaSelecionada !== 'Todas as Siglas') {
+            dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) => dado['Sigla do Partido'] === siglaSelecionada);
+        }
+        const targetCandidateName = termoBuscaCandidato.toUpperCase();
+
+        dataForCandidateLocalVotes = dataForCandidateLocalVotes.filter((dado: any) =>
+            dado['Nome do Candidato/Voto']?.trim().toUpperCase() === targetCandidateName
+        );
+
+        dataForCandidateLocalVotes.forEach((item: any) => {
+            const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+            const siglaPartido = item['Sigla do Partido']?.trim();
+            const localVotacaoCode = item['Local de Votação']?.trim();
+            const votos = item['Quantidade de Votos'] || 0;
+
+            const infoLocal = dadosLocais.find(l =>
+                l['Município'] === item['Município'] &&
+                l['Zona Eleitoral'] === item['Zona Eleitoral'] &&
+                l['Seção Eleitoral'] === item['Seção Eleitoral'] &&
+                l['Local de Votação'] === localVotacaoCode
+            );
+            const nomeLocal = infoLocal?.['Nome do Local'] || 'N/A';
+            const enderecoLocal = infoLocal?.['Endereço do Local'] || 'N/A';
+            const bairroLocal = infoLocal?.['Bairro do Local'] || 'N/A';
+
+            if (localVotacaoCode && infoLocal) {
+                if (!agregadosPorLocal[localVotacaoCode]) {
+                    agregadosPorLocal[localVotacaoCode] = {
+                        nome: nomeCandidato,
+                        siglaPartido: siglaPartido,
+                        localVotacao: localVotacaoCode,
+                        nomeLocal: nomeLocal,
+                        enderecoLocal: enderecoLocal,
+                        bairroLocal: bairroLocal,
+                        totalVotos: 0,
+                        porcentagem: 0,
+                        posicaoRankingLocal: 0
+                    };
+                }
+                agregadosPorLocal[localVotacaoCode].totalVotos += votos;
+            }
+        });
+
+        const sortedVotosPorLocalRaw = Object.values(agregadosPorLocal)
+            .sort((a, b) => b.totalVotos - a.totalVotos);
+
+        let currentLocalRank = 1;
+        const rankedVotosPorLocal = sortedVotosPorLocalRaw.map((item, i) => {
+            const localKey = item.localVotacao;
+            const totalValid = totalValidVotesPerLocal[localKey] || 0;
+            const porcentagem = totalValid > 0 ? (item.totalVotos / totalValid) * 100 : 0;
+            
+            if (i > 0 && item.totalVotos < sortedVotosPorLocalRaw[i-1].totalVotos) {
+                currentLocalRank = i + 1;
+            }
+            return { ...item, porcentagem, posicaoRankingLocal: currentLocalRank };
+        });
+
+        setVotosCandidatoPorLocal(rankedVotosPorLocal);
+        setVotosAgrupadosCandidatos([]);
+        setPaginaAtualVotosLocal(1);
+    }
+    else {
+      setVotosAgrupadosCandidatos([]);
+      setVotosCandidatoPorLocal([]);
+      setPaginaAtualVotosLocal(1);
+    }
+
+  }, [
+    municipioSelecionado,
+    localSelecionado,
+    zonaSelecionada,
+    secaoSelecionada,
+    siglaSelecionada,
+    termoBuscaCandidato,
+    termoBuscaLocal,
+    dadosCompletosParaMapa,
+    carregando,
+    getUniqueOptions,
+    abaAtiva,
+    dadosLocais,
+    allSectionMetrics,
+    cargoRankingSelecionado,
+    municipioRankingSelecionado,
+    siglaRankingSelecionada,
+  ]);
 
   useEffect(() => {
     if ((abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') || carregando || dadosCompletosParaMapa.length === 0) {
@@ -795,52 +985,51 @@ const planilhasPorCargo: Record<string, string[]> = {
       return;
     }
 
-    let dadosFiltradosParaRanking: any[] = [...dadosCompletosParaMapa];
+    let dadosBaseParaCalculoRanking: any[] = [...dadosCompletosParaMapa];
 
     if (cargoRankingSelecionado !== 'Todos os Cargos') {
-      dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter((dado: any) => dado.Cargo === cargoRankingSelecionado);
+      dadosBaseParaCalculoRanking = dadosBaseParaCalculoRanking.filter((dado: any) => dado.Cargo === cargoRankingSelecionado);
     }
 
     if (municipioRankingSelecionado !== 'Todos os Municípios') {
-      dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter((dado: any) => dado['Município'] === municipioRankingSelecionado);
+      dadosBaseParaCalculoRanking = dadosBaseParaCalculoRanking.filter((dado: any) => dado['Município'] === municipioRankingSelecionado);
     }
 
-    if (siglaRankingSelecionada !== 'Todas as Siglas') {
-      dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter((dado: any) => dado['Sigla do Partido'] === siglaRankingSelecionada);
-    }
-
-    if (termoBuscaCandidatoRanking) {
-      const termoNormalizado = removerAcentos(termoBuscaCandidatoRanking.toUpperCase());
-      dadosFiltradosParaRanking = dadosFiltradosParaRanking.filter(dado => {
-        const nomeCandidato = dado['Nome do Candidato/Voto']?.trim().toUpperCase();
-        const siglaPartido = dado['Sigla do Partido']?.trim().toUpperCase();
-        const isLegenda = nomeCandidato === siglaPartido;
-        const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido === '#NULO#';
-        return nomeCandidato && removerAcentos(nomeCandidato).includes(termoNormalizado) && !isLegenda && !isBrancoOuNulo;
-      });
-    }
-
-    console.log("Dados filtrados para Ranking:", dadosFiltradosParaRanking);
-
-    const rawGroupedByCandidatoCargoMunicipio: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; cargo: string; municipio: string; numeroCandidato: string; } } = {};
     const totalValidVotesPerCargoMunicipio: { [key: string]: number } = {};
-
-    dadosFiltradosParaRanking.forEach(item => {
-      const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
-      const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
-      const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
+    dadosBaseParaCalculoRanking.forEach(item => {
+      const nomeVoto = item['Nome do Candidato/Voto']?.toUpperCase();
+      const siglaVoto = item['Sigla do Partido']?.toLowerCase();
       const votos = item['Quantidade de Votos'] || 0;
       const cargoDoRegistro = item.Cargo;
       const municipioDoRegistro = item['Município'];
-      const numeroCand = item['Numero do Candidato'];
 
+      const isLegenda = nomeVoto === siglaVoto?.toUpperCase();
+      const isBrancoOuNulo = nomeVoto === 'BRANCO' || nomeVoto === 'NULO' || siglaVoto === '#nulo#';
+
+      if (!isBrancoOuNulo && !isLegenda) {
+        const groupKey = `${cargoDoRegistro}-${municipioDoRegistro}`;
+        if (!totalValidVotesPerCargoMunicipio[groupKey]) {
+          totalValidVotesPerCargoMunicipio[groupKey] = 0;
+        }
+        totalValidVotesPerCargoMunicipio[groupKey] += votos;
+      }
+    });
+
+    const rawGroupedByCandidatoCargoMunicipio: { [key: string]: { nome: string; totalVotos: number; siglaPartido: string; cargo: string; municipio: string; numeroCandidato: string; } } = {};
+    dadosBaseParaCalculoRanking.forEach(item => {
+      const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+      const siglaPartidoOriginal = item['Sigla do Partido']?.trim();
+      const numeroCand = item['Numero do Candidato'];
+      const votos = item['Quantidade de Votos'] || 0;
+      const cargoDoRegistro = item.Cargo;
+      const municipioDoRegistro = item['Município'];
+
+      const normalizedSiglaPartido = siglaPartidoOriginal ? siglaPartidoOriginal.toUpperCase() : '#NULO#';
       if (nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || normalizedSiglaPartido === '#NULO#' || nomeCandidato === siglaPartidoOriginal.toUpperCase()) {
         return;
       }
 
-      const groupKey = `${cargoDoRegistro}-${municipioDoRegistro}`;
       const candidateKey = `${nomeCandidato}-${siglaPartidoOriginal}-${numeroCand}-${cargoDoRegistro}-${municipioDoRegistro}`;
-
       if (!rawGroupedByCandidatoCargoMunicipio[candidateKey]) {
         rawGroupedByCandidatoCargoMunicipio[candidateKey] = {
           nome: nomeCandidato,
@@ -852,15 +1041,10 @@ const planilhasPorCargo: Record<string, string[]> = {
         };
       }
       rawGroupedByCandidatoCargoMunicipio[candidateKey].totalVotos += votos;
-
-      if (!totalValidVotesPerCargoMunicipio[groupKey]) {
-        totalValidVotesPerCargoMunicipio[groupKey] = 0;
-      }
-      totalValidVotesPerCargoMunicipio[groupKey] += votos;
     });
 
-    const candidatesWithPartialRanking: (VotoAgregadoCandidatoRanking)[] = [];
-    const groupedForRanking: { [key: string]: VotoAgregadoCandidatoRanking[] } = {};
+    const candidatesWithCalculatedRanking: VotoAgregadoCandidatoRanking[] = [];
+    const groupedForRankingPositions: { [key: string]: VotoAgregadoCandidatoRanking[] } = {};
 
     Object.values(rawGroupedByCandidatoCargoMunicipio).forEach((candidate: any) => {
         const groupKey = `${candidate.cargo}-${candidate.municipio}`;
@@ -874,13 +1058,13 @@ const planilhasPorCargo: Record<string, string[]> = {
             posicaoRanking: 0
         };
 
-        if (!groupedForRanking[groupKey]) {
-            groupedForRanking[groupKey] = [];
+        if (!groupedForRankingPositions[groupKey]) {
+            groupedForRankingPositions[groupKey] = [];
         }
-        groupedForRanking[groupKey].push(fullCandidateData);
+        groupedForRankingPositions[groupKey].push(fullCandidateData);
     });
 
-    Object.values(groupedForRanking).forEach((group: VotoAgregadoCandidatoRanking[]) => {
+    Object.values(groupedForRankingPositions).forEach((group: VotoAgregadoCandidatoRanking[]) => {
         group.sort((a, b) => b.totalVotos - a.totalVotos);
         let currentRank = 1;
         for (let i = 0; i < group.length; i++) {
@@ -888,11 +1072,21 @@ const planilhasPorCargo: Record<string, string[]> = {
                 currentRank = i + 1;
             }
             group[i].posicaoRanking = currentRank;
-            candidatesWithPartialRanking.push(group[i]);
+            candidatesWithCalculatedRanking.push(group[i]);
         }
     });
 
-    const sortedCandidatos = candidatesWithPartialRanking.sort((a, b) => {
+    let finalRankingToDisplay = [...candidatesWithCalculatedRanking];
+
+    if (siglaRankingSelecionada !== 'Todas as Siglas') {
+      finalRankingToDisplay = finalRankingToDisplay.filter((dado: any) => dado['siglaPartido'] === siglaRankingSelecionada);
+    }
+
+    if (candidatoRankingSelecionado !== 'Todos os Candidatos') {
+      finalRankingToDisplay = finalRankingToDisplay.filter(dado => dado.nome === candidatoRankingSelecionado);
+    }
+
+    const sortedCandidatos = finalRankingToDisplay.sort((a, b) => {
         if (ordenacaoColunaRanking === 'totalVotos') {
             return ordenacaoDirecaoRanking === 'desc' ? b.totalVotos - a.totalVotos : a.totalVotos - b.totalVotos;
         } else if (ordenacaoColunaRanking === 'nome') {
@@ -917,7 +1111,155 @@ const planilhasPorCargo: Record<string, string[]> = {
 
     setCandidatosRanking(sortedCandidatos);
     setPaginaAtualRanking(1);
-  }, [abaAtiva, carregando, dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, termoBuscaCandidatoRanking, siglaRankingSelecionada, ordenacaoColunaRanking, ordenacaoDirecaoRanking, getUniqueOptions, safeParseVotes]);
+  }, [abaAtiva, carregando, dadosCompletosParaMapa, cargoRankingSelecionado, municipioRankingSelecionado, siglaRankingSelecionada, candidatoRankingSelecionado, ordenacaoColunaRanking, ordenacaoDirecaoRanking, getUniqueOptions, safeParseVotes]);
+
+  useEffect(() => {
+    if (carregando || dadosCompletosParaMapa.length === 0) {
+      setCandidatosParaDetalheLocalDropdown([]);
+      setVotosCandidatoPorLocalDetalhado([]);
+      return;
+    }
+
+    let dadosParaDetalhe = [...dadosCompletosParaMapa];
+
+    const currentCargo = abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? cargoRankingSelecionado : abaAtiva;
+    const currentMunicipio = abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? municipioDetalheLocalSelecionado : municipioSelecionado;
+
+    if (currentCargo !== 'Todos os Cargos') {
+      dadosParaDetalhe = dadosParaDetalhe.filter((dado: any) => dado.Cargo === currentCargo);
+    }
+    if (currentMunicipio !== 'Todos os Municípios') {
+      dadosParaDetalhe = dadosParaDetalhe.filter((dado: any) => dado['Município'] === currentMunicipio);
+    }
+
+    const uniqueBairrosDetalhe = getUniqueOptions(dadosParaDetalhe, 'Bairro do Local');
+    setBairrosDisponiveisDetalheLocal(uniqueBairrosDetalhe);
+    
+    const uniqueCandidatosDetalhe = new Map<string, CandidatoDropdownOption>();
+    dadosParaDetalhe.forEach((item: any) => {
+        const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+        const siglaPartido = item['Sigla do Partido']?.trim();
+        const numeroCandidato = item['Numero do Candidato']?.trim();
+
+        if (nomeCandidato && siglaPartido &&
+            nomeCandidato !== 'BRANCO' && nomeCandidato !== 'NULO' &&
+            siglaPartido.toLowerCase() !== '#nulo#' && nomeCandidato !== siglaPartido.toUpperCase()) {
+            const key = `${nomeCandidato}-${siglaPartido}-${numeroCandidato}`;
+            if (!uniqueCandidatosDetalhe.has(key)) {
+                uniqueCandidatosDetalhe.set(key, { nome: nomeCandidato, siglaPartido: siglaPartido, numeroCandidato: numeroCandidato });
+            }
+        }
+    });
+    const sortedCandidatosDetalhe = Array.from(uniqueCandidatosDetalhe.values()).sort((a, b) => a.nome.localeCompare(b.nome));
+    setCandidatosParaDetalheLocalDropdown(sortedCandidatosDetalhe);
+
+    if (candidatoDetalheLocalSelecionado === 'Todos os Candidatos' || !dadosParaDetalhe.length) {
+        setVotosCandidatoPorLocalDetalhado([]);
+        setPaginaAtualVotosLocalDetalhado(1);
+        setBairroDetalheLocalSelecionado('Todos os Bairros'); 
+        return;
+    }
+
+    if (bairroDetalheLocalSelecionado !== 'Todos os Bairros') {
+        dadosParaDetalhe = dadosParaDetalhe.filter((dado: any) => dado['Bairro do Local'] === bairroDetalheLocalSelecionado);
+    }
+
+    const votosPorCandidatoPorLocal = new Map<string, Map<string, { nome: string, siglaPartido: string, totalVotos: number }>>();
+    const totalVotosValidosPorLocal = new Map<string, number>();
+
+    dadosParaDetalhe.forEach((item: any) => {
+        const localKey = `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}-${item['Local de Votação']}`;
+        const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+        const siglaPartido = item['Sigla do Partido']?.trim();
+        const votos = item['Quantidade de Votos'] || 0;
+
+        const isLegenda = nomeCandidato === siglaPartido?.toUpperCase();
+        const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || siglaPartido?.toLowerCase() === '#nulo#';
+
+        if (!votosPorCandidatoPorLocal.has(localKey)) {
+            votosPorCandidatoPorLocal.set(localKey, new Map());
+        }
+        if (!totalVotosValidosPorLocal.has(localKey)) {
+            totalVotosValidosPorLocal.set(localKey, 0);
+        }
+
+        if (!isBrancoOuNulo && !isLegenda) {
+            const currentTotal = votosPorCandidatoPorLocal.get(localKey)?.get(nomeCandidato)?.totalVotos || 0;
+            votosPorCandidatoPorLocal.get(localKey)?.set(nomeCandidato, {
+                nome: nomeCandidato,
+                siglaPartido: siglaPartido,
+                totalVotos: currentTotal + votos
+            });
+            totalVotosValidosPorLocal.set(localKey, totalVotosValidosPorLocal.get(localKey)! + votos);
+        }
+    });
+
+    const finalVotosPorLocalDetalhado: VotoCandidatoPorLocal[] = [];
+
+    votosPorCandidatoPorLocal.forEach((candidatosNoLocal, localKey) => {
+        const totalLocalValido = totalVotosValidosPorLocal.get(localKey) || 0;
+        
+        const sortedCandidatosNoLocal = Array.from(candidatosNoLocal.values())
+            .sort((a, b) => b.totalVotos - a.totalVotos);
+
+        let currentRank = 1;
+        for (let i = 0; i < sortedCandidatosNoLocal.length; i++) {
+            const currentCandidate = sortedCandidatosNoLocal[i];
+            const porcentagemLocal = totalLocalValido > 0 ? (currentCandidate.totalVotos / totalLocalValido) * 100 : 0;
+
+            if (i > 0 && currentCandidate.totalVotos < sortedCandidatosNoLocal[i-1].totalVotos) {
+                currentRank = i + 1;
+            }
+
+            if (currentCandidate.nome === candidatoDetalheLocalSelecionado.toUpperCase()) {
+                const parts = localKey.split('-');
+                const municipio = parts[0];
+                const zona = parts[1];
+                const secao = parts[2];
+                const localCode = parts[3];
+
+                const infoLocal = dadosLocais.find(l =>
+                    l['Município'] === municipio &&
+                    l['Zona Eleitoral'] === zona &&
+                    l['Seção Eleitoral'] === secao &&
+                    l['Local de Votação'] === localCode
+                );
+
+                finalVotosPorLocalDetalhado.push({
+                    nome: currentCandidate.nome,
+                    totalVotos: currentCandidate.totalVotos,
+                    siglaPartido: currentCandidate.siglaPartido,
+                    localVotacao: localCode,
+                    nomeLocal: infoLocal?.['Nome do Local'] || 'N/A',
+                    enderecoLocal: infoLocal?.['Endereço do Local'] || 'N/A',
+                    bairroLocal: infoLocal?.['Bairro do Local'] || 'N/A',
+                    porcentagem: porcentagemLocal,
+                    secaoEleitoral: secao,
+                    posicaoRankingLocal: currentRank
+                });
+                break;
+            }
+        }
+    });
+
+    finalVotosPorLocalDetalhado.sort((a, b) => {
+      if (ordenacaoColunaDetalheLocal === 'totalVotos') {
+        return ordenacaoDirecaoDetalheLocal === 'desc' ? b.totalVotos - a.totalVotos : a.totalVotos - b.totalVotos;
+      } else if (ordenacaoColunaDetalheLocal === 'nomeLocal') {
+        return ordenacaoDirecaoDetalheLocal === 'asc' ? a.nomeLocal.localeCompare(b.nomeLocal, 'pt-BR') : b.nomeLocal.localeCompare(a.nomeLocal, 'pt-BR');
+      } else if (ordenacaoColunaDetalheLocal === 'porcentagem') {
+        return ordenacaoDirecaoDetalheLocal === 'desc' ? b.porcentagem - a.porcentagem : a.porcentagem - b.porcentagem;
+      } else if (ordenacaoColunaDetalheLocal === 'posicaoRankingLocal') {
+        return ordenacaoDirecaoDetalheLocal === 'asc' ? a.posicaoRankingLocal - b.posicaoRankingLocal : b.posicaoRankingLocal - a.posicaoRankingLocal;
+      }
+      return 0;
+    });
+
+    setVotosCandidatoPorLocalDetalhado(finalVotosPorLocalDetalhado);
+    setPaginaAtualVotosLocalDetalhado(1);
+
+}, [carregando, dadosCompletosParaMapa, abaAtiva, cargoRankingSelecionado, municipioDetalheLocalSelecionado, municipioSelecionado, candidatoDetalheLocalSelecionado, dadosLocais, ordenacaoColunaDetalheLocal, ordenacaoDirecaoDetalheLocal, bairroDetalheLocalSelecionado]);
+
 
   const siglasParaRankingDropdown = useMemo(() => {
     let dadosFiltradosParaDropdown: any[] = [...dadosCompletosParaMapa];
@@ -960,6 +1302,20 @@ const planilhasPorCargo: Record<string, string[]> = {
     setPaginaAtualVotosLocal(prev => Math.max(prev - 1, 1));
   };
 
+  const indiceUltimoItemVotosLocalDetalhado = paginaAtualVotosLocalDetalhado * itensPorPaginaVotosLocalDetalhado;
+  const indicePrimeiroItemVotosLocalDetalhado = indiceUltimoItemVotosLocalDetalhado - itensPorPaginaVotosLocalDetalhado;
+  const votosCandidatoPorLocalDetalhadoPaginaAtual = votosCandidatoPorLocalDetalhado.slice(indicePrimeiroItemVotosLocalDetalhado, indiceUltimoItemVotosLocalDetalhado);
+  const totalPaginasVotosLocalDetalhado = Math.ceil(votosCandidatoPorLocalDetalhado.length / itensPorPaginaVotosLocalDetalhado);
+
+  const irParaProximaPaginaVotosLocalDetalhado = () => {
+    setPaginaAtualVotosLocalDetalhado(prev => Math.min(prev + 1, totalPaginasVotosLocalDetalhado));
+  };
+
+  const irParaPaginaAnteriorVotosLocalDetalhado = () => {
+    setPaginaAtualVotosLocalDetalhado(prev => Math.max(prev - 1, 1));
+  };
+
+
   return (
     <ProtectedRoute>
       <NoScroll />
@@ -982,18 +1338,24 @@ const planilhasPorCargo: Record<string, string[]> = {
                     setZonaSelecionada('Todas as Zonas');
                     setSecaoSelecionada('Todas as Seções');
                     setSiglaSelecionada('Todas as Siglas');
-                    setTermoBuscaCandidato('');
+                    setTermoBuscaCandidato('Todos os Candidatos');
                     setTermoBuscaLocal('');
                     setLocalSelecionado('Todos os Locais');
-                    setCargoRankingSelecionado('Presidente');
+                    setCargoRankingSelecionado(cargo === 'Visão Geral 2º turno' ? 'Presidente 2º turno' : cargo === 'Visão Geral' ? 'Presidente' : cargo);
                     setMunicipioRankingSelecionado('JOÃO PESSOA');
-                    setTermoBuscaCandidatoRanking('');
+                    setSiglaRankingSelecionada('Todas as Siglas');
+                    setCandidatoRankingSelecionado('Todos os Candidatos');
                     setOrdenacaoColunaRanking('totalVotos');
                     setOrdenacaoDirecaoRanking('desc');
                     setCandidatosRanking([]);
                     setPaginaAtualRanking(1);
-                    setSiglaRankingSelecionada('Todas as Siglas');
                     setPaginaAtualVotosLocal(1);
+                    setCandidatoDetalheLocalSelecionado('Todos os Candidatos');
+                    setMunicipioDetalheLocalSelecionado('JOÃO PESSOA');
+                    setVotosCandidatoPorLocalDetalhado([]);
+                    setPaginaAtualVotosLocalDetalhado(1);
+                    setOrdenacaoColunaDetalheLocal('totalVotos');
+                    setOrdenacaoDirecaoDetalheLocal('desc');
                   }}
                   className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                     abaAtiva === cargo
@@ -1013,19 +1375,19 @@ const planilhasPorCargo: Record<string, string[]> = {
             {abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? (
               <>
               <VotacaoCards
-                tipo="geral"
-                eleitoresAptos={dadosGeraisAbaAtiva.eleitoresAptos}
-                totalComparecimentos={dadosGeraisAbaAtiva.comparecimentos}
-                totalAbstencoes={dadosGeraisAbaAtiva.abstencoes}
-                taxaAbstencao={dadosGeraisAbaAtiva.taxaAbstencao}
-                totalLocais={dadosGeraisAbaAtiva.locais}
-                totalSecoes={dadosGeraisAbaAtiva.secoes}
-                votosValidos={dadosGeraisAbaAtiva.validos}
-                votosBrancos={dadosGeraisAbaAtiva.brancos}
-                votosNulos={dadosGeraisAbaAtiva.nulos}
-                carregando={carregando}
+                  tipo={algumFiltroAplicado || abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? "filtrado" : "votos"}
+                  eleitoresAptos={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.eleitoresAptos : dadosGeraisFiltrados.eleitoresAptos}
+                  totalComparecimentos={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.comparecimentos : dadosGeraisFiltrados.comparecimentos}
+                  totalAbstencoes={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.abstencoes : dadosGeraisFiltrados.abstencoes}
+                  taxaAbstencao={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.taxaAbstencao : dadosGeraisFiltrados.taxaAbstencao}
+                  totalLocais={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.locais : dadosGeraisFiltrados.locais}
+                  totalSecoes={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.secoes : dadosGeraisFiltrados.secoes}
+                  votosValidos={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.validos : dadosGeraisFiltrados.validos}
+                  votosBrancos={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.brancos : dadosGeraisFiltrados.brancos}
+                  votosNulos={abaAtiva === 'Visão Geral' || abaAtiva === 'Visão Geral 2º turno' ? dadosGeraisAbaAtiva.nulos : dadosGeraisFiltrados.nulos}
+                  carregando={carregando}
               />
-
+            
               <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Ranking de Votos por Candidato</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -1041,6 +1403,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                         onChange={(e) => {
                           setCargoRankingSelecionado(e.target.value);
                           setSiglaRankingSelecionada('Todas as Siglas');
+                          setCandidatoRankingSelecionado('Todos os Candidatos');
                           setPaginaAtualRanking(1);
                         }}
                         disabled={carregando}
@@ -1070,6 +1433,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                         onChange={(e) => {
                           setMunicipioRankingSelecionado(e.target.value);
                           setSiglaRankingSelecionada('Todas as Siglas');
+                          setCandidatoRankingSelecionado('Todos os Candidatos');
                           setPaginaAtualRanking(1);
                         }}
                         disabled={carregando}
@@ -1104,6 +1468,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                         value={siglaRankingSelecionada}
                         onChange={(e) => {
                           setSiglaRankingSelecionada(e.target.value);
+                          setCandidatoRankingSelecionado('Todos os Candidatos');
                           setPaginaAtualRanking(1);
                         }}
                         disabled={carregando}
@@ -1122,22 +1487,31 @@ const planilhasPorCargo: Record<string, string[]> = {
                   </div>
 
                   <div>
-                    <label htmlFor="busca-candidato-ranking" className="block text-sm font-medium text-gray-700 mb-1">
-                      Buscar Candidato:
+                    <label htmlFor="candidato-ranking-select" className="block text-sm font-medium text-gray-700 mb-1">
+                      Selecionar Candidato:
                     </label>
-                    <input
-                      id="busca-candidato-ranking"
-                      type="text"
-                      className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                      placeholder="Nome do candidato..."
-                      value={termoBuscaCandidatoRanking}
-                      onChange={(e) => {
-                        setTermoBuscaCandidatoRanking(e.target.value);
-                        setSiglaRankingSelecionada('Todas as Siglas');
-                        setPaginaAtualRanking(1);
-                      }}
-                      disabled={carregando}
-                    />
+                    <div className="relative">
+                      <select
+                        id="candidato-ranking-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={candidatoRankingSelecionado}
+                        onChange={(e) => {
+                          setCandidatoRankingSelecionado(e.target.value);
+                          setPaginaAtualRanking(1);
+                        }}
+                        disabled={carregando || siglasParaRankingDropdown.length === 0}
+                      >
+                        <option value="Todos os Candidatos">Todos os Candidatos</option>
+                        {candidatosRankingDropdown.map((candidato) => (
+                            <option key={`${candidato.nome}-${candidato.siglaPartido}-${candidato.numeroCandidato}`} value={candidato.nome}>
+                                {candidato.nome} ({candidato.siglaPartido})
+                            </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                      </div>
+                    </div>
                   </div>
 
                   <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end gap-2">
@@ -1163,30 +1537,30 @@ const planilhasPorCargo: Record<string, string[]> = {
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                           <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
-                        </div>
                       </div>
                     </div>
-                    <button
-                      onClick={() => {
-                        setOrdenacaoDirecaoRanking(ordenacaoDirecaoRanking === 'desc' ? 'asc' : 'desc');
-                        setPaginaAtualRanking(1);
-                      }}
-                      className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
-                      disabled={carregando}
-                    >
-                      {ordenacaoDirecaoRanking === 'desc' ? (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
-                        </svg>
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
-                          <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
-                        </svg>
-                      )}
-                      {ordenacaoDirecaoRanking === 'desc' ? 'Decrescente' : 'Crescente'}
-                    </button>
                   </div>
+                  <button
+                    onClick={() => {
+                      setOrdenacaoDirecaoRanking(ordenacaoDirecaoRanking === 'desc' ? 'asc' : 'desc');
+                      setPaginaAtualRanking(1);
+                    }}
+                    className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
+                    disabled={carregando}
+                  >
+                    {ordenacaoDirecaoRanking === 'desc' ? (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
+                      </svg>
+                    ) : (
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                        <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {ordenacaoDirecaoRanking === 'desc' ? 'Decrescente' : 'Crescente'}
+                  </button>
                 </div>
+              </div>
 
                 {!carregando && candidatosRanking.length > 0 ? (
                   <div className="overflow-x-auto">
@@ -1309,23 +1683,340 @@ const planilhasPorCargo: Record<string, string[]> = {
                               <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          {Array.from({ length: totalPaginasRanking }, (_, i) => i + 1).map(pagina => (
-                            <button
-                              key={pagina}
-                              onClick={() => setPaginaAtualRanking(pagina)}
-                              aria-current={pagina === paginaAtualRanking ? 'page' : undefined}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                                pagina === paginaAtualRanking
-                                  ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                              }`}
-                            >
-                              {pagina}
-                            </button>
-                          ))}
+                          {getPaginationNumbers(paginaAtualRanking, totalPaginasRanking).map((pageNumber, idx) =>
+                            pageNumber === '...' ? (
+                              <span key={`ellipsis-ranking-${idx}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                ...
+                              </span>
+                            ) : (
+                              <button
+                                key={`page-ranking-${pageNumber}`}
+                                onClick={() => setPaginaAtualRanking(Number(pageNumber))}
+                                aria-current={Number(pageNumber) === paginaAtualRanking ? 'page' : undefined}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  Number(pageNumber) === paginaAtualRanking
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            )
+                          )}
                           <button
                             onClick={irParaProximaPaginaRanking}
                             disabled={paginaAtualRanking === totalPaginasRanking}
+                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="sr-only">Próximo</span>
+                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10l-3.938-3.71a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </nav>
+                      </div>
+                    </div>
+                  </nav>
+                )}
+              </div>
+
+              <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Detalhes de Votos por Local de Votação</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  <div>
+                    <label htmlFor="municipio-detalhe-local-select" className="block text-sm font-medium text-gray-700 mb-1">
+                      Município:
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="municipio-detalhe-local-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={municipioDetalheLocalSelecionado}
+                        onChange={(e) => {
+                          setMunicipioDetalheLocalSelecionado(e.target.value);
+                          setCandidatoDetalheLocalSelecionado('Todos os Candidatos');
+                          setPaginaAtualVotosLocalDetalhado(1);
+                        }}
+                        disabled={carregando}
+                      >
+                        <option value="Todos os Municípios">Todos os Municípios</option>
+                        {municipiosDisponiveisParaRanking
+                            .sort((a,b) => {
+                                if (a === 'JOÃO PESSOA') return -1;
+                                if (b === 'JOÃO PESSOA') return 1;
+                                return a.localeCompare(b);
+                            })
+                            .map((municipio) => (
+                          <option key={municipio} value={municipio}>
+                            {municipio}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="candidato-detalhe-local-select" className="block text-sm font-medium text-gray-700 mb-1">
+                      Selecionar Candidato:
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="candidato-detalhe-local-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={candidatoDetalheLocalSelecionado}
+                        onChange={(e) => {
+                          setCandidatoDetalheLocalSelecionado(e.target.value);
+                          setPaginaAtualVotosLocalDetalhado(1);
+                        }}
+                        disabled={carregando || municipiosDisponiveisParaRanking.length === 0}
+                      >
+                        <option value="Todos os Candidatos">Todos os Candidatos</option>
+                        {candidatosParaDetalheLocalDropdown.map((candidato) => (
+                            <option key={`${candidato.nome}-${candidato.siglaPartido}-${candidato.numeroCandidato}`} value={candidato.nome}>
+                                {candidato.nome} ({candidato.siglaPartido})
+                            </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="bairro-detalhe-local-select" className="block text-sm font-medium text-gray-700 mb-1">
+                      Bairro:
+                    </label>
+                    <div className="relative">
+                      <select
+                        id="bairro-detalhe-local-select"
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                        value={bairroDetalheLocalSelecionado}
+                        onChange={(e) => {
+                          setBairroDetalheLocalSelecionado(e.target.value);
+                          setPaginaAtualVotosLocalDetalhado(1);
+                        }}
+                        disabled={carregando || municipiosDisponiveisParaRanking.length === 0 || candidatoDetalheLocalSelecionado === 'Todos os Candidatos'}
+                      >
+                        <option value="Todos os Bairros">Todos os Bairros</option>
+                        {bairrosDisponiveisDetalheLocal.map((bairro) => (
+                          <option key={bairro} value={bairro}>
+                            {bairro}
+                          </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="col-span-1 md:col-span-2 lg:col-span-1 flex items-end gap-2">
+                    <div className="flex-1">
+                      <label htmlFor="ordenacao-coluna-detalhe" className="block text-sm font-medium text-gray-700 mb-1">
+                        Ordenar por:
+                      </label>
+                      <div className="relative">
+                        <select
+                          id="ordenacao-coluna-detalhe"
+                          className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                          value={ordenacaoColunaDetalheLocal}
+                          onChange={(e) => {
+                            setOrdenacaoColunaDetalheLocal(e.target.value);
+                            setPaginaAtualVotosLocalDetalhado(1);
+                          }}
+                          disabled={carregando}
+                        >
+                          <option value="totalVotos">Total de Votos</option>
+                          <option value="nomeLocal">Nome do Local</option>
+                          <option value="porcentagem"> % No Local</option>
+                          <option value="posicaoRankingLocal"> Posição Local</option>
+                        </select>
+                        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                          <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setOrdenacaoDirecaoDetalheLocal(ordenacaoDirecaoDetalheLocal === 'desc' ? 'asc' : 'desc');
+                        setPaginaAtualVotosLocalDetalhado(1);
+                      }}
+                      className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
+                      disabled={carregando}
+                    >
+                      {ordenacaoDirecaoDetalheLocal === 'desc' ? (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
+                        </svg>
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                          <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
+                      </svg>
+                    )}
+                    {ordenacaoDirecaoDetalheLocal === 'desc' ? 'Decrescente' : 'Crescente'}
+                  </button>
+                </div>
+              </div>
+                {!carregando && votosCandidatoPorLocalDetalhado.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
+                      <thead className="bg-gray-50">
+                        <tr>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Local de Votação (Código)
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Número da Seção
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Nome do Local
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Endereço
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Bairro
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total de Votos
+                          </th>
+                           <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            % No Local
+                          </th>
+                          <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Posição Local
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody className="bg-white divide-y divide-gray-200">
+                        {votosCandidatoPorLocalDetalhadoPaginaAtual.map((item, index) => (
+                          <tr key={`${item.localVotacao}-${index}`} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {item.localVotacao}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                              {item.secaoEleitoral}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.nomeLocal}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.enderecoLocal}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.bairroLocal}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.totalVotos.toLocaleString('pt-BR')}
+                            </td>
+                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.porcentagem.toFixed(2)}%
+                            </td>
+                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                              {item.posicaoRankingLocal}º
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                    !carregando && candidatoDetalheLocalSelecionado !== 'Todos os Candidatos' && (
+                        <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
+                            Nenhum voto encontrado para o candidato selecionado neste município/cargo.
+                        </div>
+                    )
+                )}
+
+                {!carregando && votosCandidatoPorLocalDetalhado.length > 0 && (
+                  <nav
+                    className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+                    aria-label="Pagination"
+                  >
+                    <div className="flex flex-1 justify-between sm:hidden">
+                      <button
+                        onClick={irParaPaginaAnteriorVotosLocalDetalhado}
+                        disabled={paginaAtualVotosLocalDetalhado === 1}
+                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        onClick={irParaProximaPaginaVotosLocalDetalhado}
+                        disabled={paginaAtualVotosLocalDetalhado === totalPaginasVotosLocalDetalhado}
+                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Próximo
+                      </button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Mostrando <span className="font-medium">{indicePrimeiroItemVotosLocalDetalhado + 1}</span> a{' '}
+                          <span className="font-medium">{Math.min(indiceUltimoItemVotosLocalDetalhado, votosCandidatoPorLocalDetalhado.length)}</span> de{' '}
+                          <span className="font-medium">{votosCandidatoPorLocalDetalhado.length}</span> resultados
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <label htmlFor="itens-por-pagina-votos-local-detalhado" className="sr-only">Itens por página</label>
+                          <select
+                            id="itens-por-pagina-votos-local-detalhado"
+                            className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                            value={itensPorPaginaVotosLocalDetalhado}
+                            onChange={(e) => {
+                              setItensPorPaginaVotosLocalDetalhado(Number(e.target.value));
+                              setPaginaAtualVotosLocalDetalhado(1);
+                            }}
+                          >
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                          </div>
+                        </div>
+
+                        <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                          <button
+                            onClick={irParaPaginaAnteriorVotosLocalDetalhado}
+                            disabled={paginaAtualVotosLocalDetalhado === 1}
+                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="sr-only">Anterior</span>
+                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          {getPaginationNumbers(paginaAtualVotosLocalDetalhado, totalPaginasVotosLocalDetalhado).map((pageNumber, idx) =>
+                            pageNumber === '...' ? (
+                              <span key={`ellipsis-detalhe-${idx}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                ...
+                              </span>
+                            ) : (
+                              <button
+                                key={`page-detalhe-${pageNumber}`}
+                                onClick={() => setPaginaAtualVotosLocalDetalhado(Number(pageNumber))}
+                                aria-current={Number(pageNumber) === paginaAtualVotosLocalDetalhado ? 'page' : undefined}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  Number(pageNumber) === paginaAtualVotosLocalDetalhado
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            )
+                          )}
+                          <button
+                            onClick={irParaProximaPaginaVotosLocalDetalhado}
+                            disabled={paginaAtualVotosLocalDetalhado === totalPaginasVotosLocalDetalhado}
                             className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             <span className="sr-only">Próximo</span>
@@ -1386,7 +2077,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                             setLocalSelecionado('Todos os Locais');
                             setSecaoSelecionada('Todas as Seções');
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setTermoBuscaCandidato('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando}
@@ -1418,7 +2109,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                             setLocalSelecionado('Todos os Locais');
                             setSecaoSelecionada('Todas as Seções');
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setTermoBuscaCandidato('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando || municipioSelecionado === 'Todos os Municípios'}
@@ -1449,10 +2140,10 @@ const planilhasPorCargo: Record<string, string[]> = {
                             setLocalSelecionado(e.target.value);
                             setSecaoSelecionada('Todas as Seções');
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setTermoBuscaCandidato('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
-                        disabled={carregando || zonaSelecionada === 'Todos as Zonas'}
+                        disabled={carregando || zonaSelecionada === 'Todas as Zonas'}
                         >
                         <option value="Todos os Locais">Todos os Locais</option>
                         {locaisDisponiveisDropdown.map((local) => (
@@ -1479,7 +2170,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                         onChange={(e) => {
                             setSecaoSelecionada(e.target.value);
                             setSiglaSelecionada('Todas as Siglas');
-                            setTermoBuscaCandidato('');
+                            setTermoBuscaCandidato('Todos os Candidatos');
                             setTermoBuscaLocal('');
                         }}
                         disabled={carregando || municipioSelecionado === 'Todos os Municípios' || zonaSelecionada === 'Todas as Zonas' || localSelecionado === 'Todos os Locais'}
@@ -1508,7 +2199,7 @@ const planilhasPorCargo: Record<string, string[]> = {
                         value={siglaSelecionada}
                         onChange={(e) => {
                             setSiglaSelecionada(e.target.value);
-                            setTermoBuscaCandidato('');
+                            setTermoBuscaCandidato('Todos os Candidatos');
                         }}
                         disabled={carregando}
                         >
@@ -1527,17 +2218,27 @@ const planilhasPorCargo: Record<string, string[]> = {
 
                     <div>
                     <label htmlFor="busca-candidato" className="block text-sm font-medium text-gray-700 mb-1">
-                        Buscar Candidato:
+                        Selecionar Candidato:
                     </label>
-                    <input
+                    <div className="relative">
+                      <select
                         id="busca-candidato"
-                        type="text"
-                        className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-                        placeholder="Nome do candidato..."
+                        className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
                         value={termoBuscaCandidato}
                         onChange={(e) => setTermoBuscaCandidato(e.target.value)}
-                        disabled={carregando}
-                    />
+                        disabled={carregando || siglasDisponiveis.length === 0}
+                      >
+                        <option value="Todos os Candidatos">Todos os Candidatos</option>
+                        {candidatosRankingDropdown.map((candidato) => (
+                            <option key={`${candidato.nome}-${candidato.siglaPartido}-${candidato.numeroCandidato}`} value={candidato.nome}>
+                                {candidato.nome} ({candidato.siglaPartido})
+                            </option>
+                        ))}
+                      </select>
+                      <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                        <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                      </div>
+                    </div>
                     </div>
                 </div>
 
@@ -1561,55 +2262,55 @@ const planilhasPorCargo: Record<string, string[]> = {
                             {siglaSelecionada === 'Todas as Siglas' ? (
                                 <>
                                     <li>Total de Votos Válidos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toLowerCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            const isLegenda = nome === sigla?.toUpperCase();
-                                            const isBrancoOuNulo = nome === 'BRANCO' || nome === 'NULO' || sigla === '#nulo#';
-                                            if (!isBrancoOuNulo && !isLegenda) return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const sigla = item['Sigla do Partido']?.toLowerCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
+                                        const isLegenda = nome === sigla?.toUpperCase();
+                                        const isBrancoOuNulo = nome === 'BRANCO' || nome === 'NULO' || sigla === '#nulo#';
+                                        if (!isBrancoOuNulo && !isLegenda) return sum + votos;
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
                                     <li>Total de Votos Brancos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (nome === 'BRANCO') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
+                                        if (nome === 'BRANCO') return sum + votos;
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
 
                                     <li>Total de Votos Nulos (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toLowerCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const sigla = item['Sigla do Partido']?.toLowerCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
 
-                                            if ((nome === 'NULO' || sigla === '#nulo#') && nome !== 'BRANCO') {
-                                                return sum + votos;
-                                            }
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        if ((nome === 'NULO' || sigla === '#nulo#') && nome !== 'BRANCO') {
+                                            return sum + votos;
+                                        }
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
                                     <li>Total de Votos de Legenda (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const sigla = item['Sigla do Partido']?.toUpperCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
+                                        if (nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
                                 </>
                             ) : (
                                 <>
                                     <li>Total de Votos Nominais (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (sigla === siglaSelecionada.toUpperCase() && nome !== sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const sigla = item['Sigla do Partido']?.toUpperCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
+                                        if (sigla === siglaSelecionada.toUpperCase() && nome !== sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
                                     <li>Total de Votos de Legenda ({siglaSelecionada}) (filtrado): {dadosFiltradosSemBuscaCandidatoOuPartido.reduce((sum, item) => {
-                                            const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-                                            const sigla = item['Sigla do Partido']?.toUpperCase();
-                                            const votos = item['Quantidade de Votos'] || 0;
-                                            if (sigla === siglaSelecionada.toUpperCase() && nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
-                                            return sum;
-                                        }, 0).toLocaleString('pt-BR')}</li>
+                                        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+                                        const sigla = item['Sigla do Partido']?.toUpperCase();
+                                        const votos = item['Quantidade de Votos'] || 0;
+                                        if (sigla === siglaSelecionada.toUpperCase() && nome === sigla && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#NULO#') return sum + votos;
+                                        return sum;
+                                    }, 0).toLocaleString('pt-BR')}</li>
                                 </>
                             )}
                         </ul>
@@ -1623,7 +2324,7 @@ const planilhasPorCargo: Record<string, string[]> = {
               </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosAgrupadosCandidatos.length > 0 && !termoBuscaCandidato && (
+            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosAgrupadosCandidatos.length > 0 && termoBuscaCandidato === 'Todos os Candidatos' && (
               <div className="mt-8">
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">
                   Votação por Candidato ({abaAtiva}):
@@ -1641,7 +2342,7 @@ const planilhasPorCargo: Record<string, string[]> = {
               </div>
             )}
 
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosCandidatoPorLocal.length > 0 && termoBuscaCandidato !== '' && (
+            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosCandidatoPorLocal.length > 0 && termoBuscaCandidato !== 'Todos os Candidatos' && (
               <div className="mt-8 bg-white shadow-md rounded-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">
                   Votos de {termoBuscaCandidato} por Local de Votação:
@@ -1668,6 +2369,9 @@ const planilhasPorCargo: Record<string, string[]> = {
                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           % No Local
                         </th>
+                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Posição Local
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
@@ -1690,6 +2394,9 @@ const planilhasPorCargo: Record<string, string[]> = {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
                             {item.porcentagem.toFixed(2)}%
+                          </td>
+                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {item.posicaoRankingLocal}º
                           </td>
                         </tr>
                       ))}
@@ -1755,23 +2462,29 @@ const planilhasPorCargo: Record<string, string[]> = {
                           >
                             <span className="sr-only">Anterior</span>
                             <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L11.168 10l-3.938-3.71a.75.75 0 11-1.04 1.08l4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                             </svg>
                           </button>
-                          {Array.from({ length: totalPaginasVotosLocal }, (_, i) => i + 1).map(pagina => (
-                            <button
-                              key={pagina}
-                              onClick={() => setPaginaAtualVotosLocal(pagina)}
-                              aria-current={pagina === paginaAtualVotosLocal ? 'page' : undefined}
-                              className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                                pagina === paginaAtualVotosLocal
-                                  ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                                  : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                              }`}
-                            >
-                              {pagina}
-                            </button>
-                          ))}
+                          {getPaginationNumbers(paginaAtualVotosLocal, totalPaginasVotosLocal).map((pageNumber, idx) =>
+                            pageNumber === '...' ? (
+                              <span key={`ellipsis-votoslocal-${idx}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                ...
+                              </span>
+                            ) : (
+                              <button
+                                key={`page-votoslocal-${pageNumber}`}
+                                onClick={() => setPaginaAtualVotosLocal(Number(pageNumber))}
+                                aria-current={Number(pageNumber) === paginaAtualVotosLocal ? 'page' : undefined}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  Number(pageNumber) === paginaAtualVotosLocal
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            )
+                          )}
                           <button
                             onClick={irParaProximaPaginaVotosLocal}
                             disabled={paginaAtualVotosLocal === totalPaginasVotosLocal}
@@ -1790,14 +2503,14 @@ const planilhasPorCargo: Record<string, string[]> = {
               </div>
             )}
             
-            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && votosAgrupadosCandidatos.length === 0 && termoBuscaCandidato === '' && (
+            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && votosAgrupadosCandidatos.length === 0 && termoBuscaCandidato === 'Todos os Candidatos' && (
                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
                  <p>Não foram encontrados votos nominais para candidatos com os filtros atuais (pode haver apenas votos brancos, nulos ou de legenda).</p>
                </div>
             )}
 
             {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosCompletosParaMapa.length > 0 &&
-              votosAgrupadosCandidatos.length === 0 && votosCandidatoPorLocal.length === 0 && (termoBuscaCandidato !== '' || !algumFiltroGeograficoAplicado) && (
+              votosAgrupadosCandidatos.length === 0 && votosCandidatoPorLocal.length === 0 && (termoBuscaCandidato !== 'Todos os Candidatos' || !algumFiltroGeograficoAplicado) && (
                 <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
                     Nenhum candidato encontrado para o cargo com os filtros selecionados.
                 </div>
