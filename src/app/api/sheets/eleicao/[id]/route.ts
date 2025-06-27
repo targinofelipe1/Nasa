@@ -1,14 +1,14 @@
-// app/api/sheets/eleicao/[id]/route.ts 
-
+// app/api/sheets/eleicao/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { getSheetData } from '@/services/sheetService';
+import { getOrSetCache } from '@/lib/serverCache';
 
 const PLANILHAS: Record<string, string> = {
   presidente: '1jzmPqJxQDb3HFDCLnipwv9IjdabcArKufoAOl3CwsxI',
   presidente_2: '1JTfd8aGPzbpTgWuZqDqqP4jTL1qntanPCtaFVCFlKoo',
   senador: '1HZeWTnIwjA_spCwShs1nzywtP-VKhLlyvua81IpDvBA',
   governador: '1IVSLlwf4KhylgmtZI0Ww1X8KWKO3Xf-N6iAHbYhPtEY',
-  governador_2: '1nCt2gfe3EwwZ8gtNZlZvWwty14bXbPOAXwSEyTlD8XM',
+  governador_2: '1nCt2gfe3EwwZ8gtNZlZvWwty14bXbPOAXlSEyTlD8XM',
   grupo_federal1: '1nwbckdXt4bINJlBDztIL-cEC1l1IKWLF1JN_9lt5mMM',
   grupo_federal2: '1owUCd9_2KDAjku4glW7vKKzqUaHNGjOjj-28c53hu7M',
   grupo_federal3: '1drzj84mgeXeb54aOW7maPoInpPFaNIyGPKRNLF6mzlI',
@@ -47,14 +47,11 @@ const PLANILHAS: Record<string, string> = {
   feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
 };
 
-const SHEET_RANGE = 'Sheet1!A:P';
-
 export async function GET(
   req: NextRequest,
   { params }: { params: { id: string } }
 ) {
-  // CORREÇÃO: Coloque o 'await' de volta aqui, conforme a mensagem de erro do seu ambiente
-  const { id } = await params; 
+  const { id } = await params;
   const spreadsheetId = PLANILHAS[id];
 
   if (!spreadsheetId) {
@@ -65,7 +62,18 @@ export async function GET(
   }
 
   try {
-    const data = await getSheetData(spreadsheetId, SHEET_RANGE);
+    const data = await getOrSetCache(id, async () => {
+      let rangeToUse: string;
+      if (id.startsWith('masculino') || id.startsWith('feminino')) {
+        rangeToUse = 'Sheet1!A:Q'; // Eleitorado (17 colunas)
+      } else if (id === 'locais') {
+        rangeToUse = 'Sheet1!A:G'; // Locais (7 colunas)
+      } else {
+        rangeToUse = 'Sheet1!A:N'; // Votação (14 colunas, default para outros cargos)
+      }
+      return await getSheetData(spreadsheetId, rangeToUse);
+    });
+
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
     console.error(`Erro ao buscar dados para ID ${id}:`, error);
