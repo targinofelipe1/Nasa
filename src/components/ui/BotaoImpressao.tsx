@@ -36,7 +36,7 @@ const LogoHeader = (
     ">
       
       <h1 style="font-size: 32px; font-weight: bold;">${titulo}</h1>
-      <h2 style="font-size: 24px; margin-top: 10px;">SEDH - Secretaria de Estado do Desenvolvimento Humano</h2>
+      <h2 style="font-size: 24px; margin-top: 10px;">DataMetrics</h2>
 
       ${
         titulo === "Relatório Estadual" && selectedRegionals.length > 0
@@ -90,7 +90,7 @@ const BotaoImpressao = ({ apiData }: { apiData: any[] }) => {
     const pageHeader = `  
       <div class="page-header" style="text-align: center; margin-bottom: 20px; display: ${tabelasSelecionadas.length > 0 ? 'block' : 'none'};">
         <h1 style="font-size: 24px; font-weight: bold; text-align: center;">${getTituloRelatorio()}</h1>
-        <h2 style="font-size: 18px; text-align: center;">SEDH - Secretaria de Estado do Desenvolvimento Humano</h2>
+        <h2 style="font-size: 18px; text-align: center;">DataMetrics</h2>
         
         ${getTituloRelatorio() === "Relatório Estadual" && selectedRegionals.length > 0 
           ? `<p style="font-size: 18px; font-weight: bold;">Regionais Selecionadas: ${selectedRegionals.join(", ")}</p>` 

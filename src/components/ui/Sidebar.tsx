@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // ✅ Importação do roteador do Next.js
 import { FiMenu } from "react-icons/fi";
+import { FaBalanceScale } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -167,13 +168,21 @@ const Sidebar = () => {
                   <AiOutlineBarChart className="mr-2" size={16} />
                   <Link href="/votacao/2020">Eleições 2020</Link>
                 </li>
-                <li className="flex items-center py-1 hover:text-blue-500">
+                <li className="flex items-center py-1 hover:text-blue-500"> 
                   <AiOutlineAreaChart className="mr-2" size={16} />
                   <Link href="/votacao/2022">Eleições 2022</Link>
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
                   <AiOutlineBarChart className="mr-2" size={16} />
                   <Link href="/votacao/2024">Eleições 2024</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <FaBalanceScale className="mr-2" size={16} />
+                  <Link href="/votacao/comparativogeral(2018-2022)">Comparativo 2018 - 2022</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <FaBalanceScale className="mr-2" size={16} />
+                  <Link href="/votacao/comparativogeral(2020-2024)">Comparativo 2020 - 2024</Link>
                 </li>
               </ul>
             )}

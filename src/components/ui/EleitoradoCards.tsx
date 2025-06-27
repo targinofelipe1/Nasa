@@ -22,7 +22,6 @@ interface EleitoradoCardsProps {
   totalJovens: number;
   totalAdultos: number;
   totalIdosos: number;
-  // NOVO: Total de Analfabetos
   totalAnalfabetos: number; // Adicionado
 
   totalEleitoresGeral: number;
@@ -37,7 +36,6 @@ interface EleitoradoCardsProps {
   totalJovensGeral: number;
   totalAdultosGeral: number;
   totalIdososGeral: number;
-  // NOVO: Total de Analfabetos Geral
   totalAnalfabetosGeral: number; // Adicionado
 
   filtrosAtivos: boolean;

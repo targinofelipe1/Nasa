@@ -1,7 +1,7 @@
-// Exemplo de adaptação para src/components/ui/TabelaEleitorado.tsx
-// (Apenas o trecho relevante da interface e do componente, assumindo o restante do código)
+// src/components/ui/TabelaEleitorado.tsx
 
 import React, { Dispatch, SetStateAction } from 'react';
+
 
 interface EleitoradoAgregado {
   'Município': string;
@@ -20,7 +20,22 @@ interface EleitoradoAgregado {
   'Qtd. com Biometria': number;
   'Qtd. com Deficiência': number;
   'Qtd. com Nome Social': number;
+  'Nome do Local'?: string; 
+  'Endereço do Local'?: string;
+  'Bairro do Local'?: string;
 }
+
+
+interface LocalVotacaoDetalhado {
+  'Município': string;
+  'Zona Eleitoral': string;
+  'Seção Eleitoral': string;
+  'Local de Votação': string;
+  'Endereço do Local': string;
+  'Bairro do Local': string;
+  'Nome do Local': string;
+}
+
 
 interface TabelaEleitoradoProps {
   dados: EleitoradoAgregado[];
@@ -29,7 +44,8 @@ interface TabelaEleitoradoProps {
   setPaginaAtual: Dispatch<SetStateAction<number>>;
   itensPorPagina: number;
   setItensPorPagina: Dispatch<SetStateAction<number>>;
-  carregando: boolean; // ADICIONADO: Propriedade de carregamento
+  carregando: boolean;
+  locaisDetalhes: LocalVotacaoDetalhado[]; // <<<< ADICIONE ESTA LINHA >>>>
 }
 
 const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
@@ -39,9 +55,11 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
   setPaginaAtual,
   itensPorPagina,
   setItensPorPagina,
-  carregando, // USADO: Desestruturação da propriedade
+  carregando,
+  locaisDetalhes, 
 }) => {
-  // Lógica de paginação
+ 
+
   const indiceUltimoItem = paginaAtual * itensPorPagina;
   const indicePrimeiroItem = indiceUltimoItem - itensPorPagina;
   const dadosPaginaAtual = dados.slice(indicePrimeiroItem, indiceUltimoItem);
@@ -87,8 +105,6 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
     );
   }
 
-  // ... o restante da lógica de renderização da tabela quando NÃO está carregando
-  // Certifique-se de que os botões de paginação também tenham `disabled={carregando}`
   return (
     <div className="mt-8 bg-white shadow-md rounded-lg p-6">
       <h3 className="text-lg font-bold text-gray-900 mb-4">Detalhes do Eleitorado (Tabela)</h3>
@@ -114,7 +130,6 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
                   <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Qtd. Eleitores</th>
                 </>
               )}
-              {/* Adicione cabeçalhos para outras abas */}
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -138,14 +153,12 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{item['Qtd. Eleitores'].toLocaleString('pt-BR')}</td>
                   </>
                 )}
-                {/* Renderizar células para outras abas */}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      {/* Controles de Paginação */}
       <nav
         className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
         aria-label="Pagination"
@@ -153,14 +166,14 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
         <div className="flex flex-1 justify-between sm:hidden">
           <button
             onClick={irParaPaginaAnterior}
-            disabled={paginaAtual === 1 || carregando} // Desabilitar durante o carregamento
+            disabled={paginaAtual === 1 || carregando}
             className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Anterior
           </button>
           <button
             onClick={irParaProximaPagina}
-            disabled={paginaAtual === totalPaginas || carregando} // Desabilitar durante o carregamento
+            disabled={paginaAtual === totalPaginas || carregando}
             className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             Próximo
@@ -183,9 +196,9 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
                 value={itensPorPagina}
                 onChange={(e) => {
                   setItensPorPagina(Number(e.target.value));
-                  setPaginaAtual(1); // Voltar para a primeira página ao mudar o número de itens
+                  setPaginaAtual(1);
                 }}
-                disabled={carregando} // Desabilitar durante o carregamento
+                disabled={carregando}
               >
                 <option value="10">10</option>
                 <option value="25">25</option>
@@ -200,7 +213,7 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
             <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
               <button
                 onClick={irParaPaginaAnterior}
-                disabled={paginaAtual === 1 || carregando} // Desabilitar durante o carregamento
+                disabled={paginaAtual === 1 || carregando}
                 className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sr-only">Anterior</span>
@@ -208,7 +221,6 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
                   <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                 </svg>
               </button>
-              {/* Renderizar botões de página aqui, também desabilitados durante o carregamento */}
               {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
@@ -219,14 +231,14 @@ const TabelaEleitorado: React.FC<TabelaEleitoradoProps> = ({
                       ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
                       : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
                   }`}
-                  disabled={carregando} // Desabilitar durante o carregamento
+                  disabled={carregando}
                 >
                   {page}
                 </button>
               ))}
               <button
                 onClick={irParaProximaPagina}
-                disabled={paginaAtual === totalPaginas || carregando} // Desabilitar durante o carregamento
+                disabled={paginaAtual === totalPaginas || carregando}
                 className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <span className="sr-only">Próximo</span>
