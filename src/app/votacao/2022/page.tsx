@@ -114,7 +114,7 @@ export default function PainelVotacao() {
   const [algumFiltroAplicado, setAlgumFiltroAplicado] = useState(false);
   const [algumFiltroGeograficoAplicado, setAlgumFiltroGeograficoAplicado] = useState(false);
 
-  const [cargoRankingSelecionado, setCargoRankingSelecionado] = useState('Presidente');
+  const [cargoRankingSelecionado, setCargoRankingSelecionado] = useState('Presidente 1º turno');
   const [municipioRankingSelecionado, setMunicipioRankingSelecionado] = useState('JOÃO PESSOA');
   const [siglaRankingSelecionada, setSiglaRankingSelecionada] = useState('Todas as Siglas');
   const [candidatoRankingSelecionado, setCandidatoRankingSelecionado] = useState('Todos os Candidatos');
@@ -153,7 +153,7 @@ export default function PainelVotacao() {
   const [itensPorPaginaCandidatoCards, setItensPorPaginaCandidatoCards] = useState(12); 
 
 
-  const abas = ['Visão Geral', 'Visão Geral 2º turno','Presidente', 'Presidente 2º turno', 'Senador', 'Governador', 'Governador - 2 Turno', 'Deputado Federal', 'Deputado Estadual'];
+  const abas = ['Visão Geral', 'Visão Geral 2º turno','Presidente 1º turno', 'Presidente 2º turno', 'Senador', 'Governador', 'Governador - 2 Turno', 'Deputado Federal', 'Deputado Estadual'];
     const planilhasPorCargo: Record<string, string[]> = {
     'Visão Geral': [
       'presidente', 'senador', 'governador',
@@ -161,7 +161,7 @@ export default function PainelVotacao() {
       'grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp',
     ],
     'Visão Geral 2º turno': ['presidente_2', 'governador_2'],
-    Presidente: ['presidente'],
+    'Presidente 1º turno': ['presidente'],
     'Presidente 2º turno': ['presidente_2'],
     Senador: ['senador'],
     Governador: ['governador'],
@@ -172,7 +172,13 @@ export default function PainelVotacao() {
     const cargosDisponiveisParaRanking = useMemo(() => {
         let cargos = abas.filter(aba => aba !== 'Visão Geral' && aba !== 'Visão Geral 2º turno');
         if (abaAtiva === 'Visão Geral') {
-          cargos = cargos.filter(cargo => cargo !== 'Presidente 2º turno');
+          if (abaAtiva === 'Visão Geral') {
+            cargos = cargos.filter(
+              cargo =>
+                cargo !== 'Presidente 2º turno' &&
+                cargo !== 'Governador - 2 Turno'
+            );
+          }
         }
         if (abaAtiva === 'Visão Geral 2º turno') {
             cargos = ['Presidente 2º turno', 'Governador - 2 Turno'];
@@ -312,7 +318,7 @@ export default function PainelVotacao() {
                   'Nome do Candidato/Voto': (linha[12] || '').trim().toUpperCase(),
                   'Quantidade de Votos': safeParseVotes(linha[13]),
                   'Sigla do Partido': (linha[6] || '').trim(),
-                  Cargo: 'Presidente',
+                  Cargo: 'Presidente 1º turno',
               }));
           } catch (err) {
               if ((err as any).name === 'AbortError') {
@@ -330,7 +336,7 @@ export default function PainelVotacao() {
           const linhas: string[][] = json.data?.slice(1) || [];
 
              const cargoMap: Record<string, string> = {
-            'presidente': 'Presidente',
+            'presidente': 'Presidente 1º turno',
             'presidente_2': 'Presidente 2º turno',
             'senador': 'Senador',
             'governador': 'Governador',
@@ -1372,7 +1378,7 @@ useEffect(() => {
       <NoScroll />
       <div className="flex h-screen bg-white overflow-hidden">
         <Sidebar />
-        <div className="flex-1 h-full overflow-y-auto">
+        <div className="flex-1 h-full overflow-y-auto" style={{ zoom: '80%' }}>
           <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200 px-6">
             <p className="text-sm text-gray-500 mb-1">
               <span className="text-black font-medium">Painel</span> /
@@ -1408,12 +1414,15 @@ useEffect(() => {
                     setOrdenacaoDirecaoDetalheLocal('desc');
 
                     if (cargo === 'Visão Geral') {
-                            setCargoRankingSelecionado('Presidente'); 
+                          setCargoRankingSelecionado('Presidente 1º turno');
                         } else if (cargo === 'Visão Geral 2º turno') {
-                            setCargoRankingSelecionado('Presidente 2º turno'); 
+                          setCargoRankingSelecionado('Presidente 2º turno');
+                        } else if (cargo === 'Governador - 2 turno') {
+                          setCargoRankingSelecionado('Governador - 2 turno');
                         } else {
-                            setCargoRankingSelecionado(cargo); 
+                          setCargoRankingSelecionado(cargo);
                         }
+
                   }}
                   className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                     abaAtiva === cargo
