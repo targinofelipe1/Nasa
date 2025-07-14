@@ -118,7 +118,7 @@ export default function SignUpForm() {
 
   if (!tokenValido) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center min-h-screen" style={{ zoom: '80%' }}>
         <div className="space-y-6 w-full max-w-xs">
           <div className="flex flex-col items-center gap-2 text-center">
             <h1 className="text-2xl font-bold">Token de Acesso</h1>
