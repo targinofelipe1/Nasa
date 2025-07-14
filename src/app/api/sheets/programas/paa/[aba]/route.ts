@@ -7,8 +7,8 @@ export async function GET(
   req: NextRequest,
   { params }: { params: { aba: string } }
 ) {
-  const { aba } = params;
-
+  const { aba } = await params;
+  
   const validTabs = ['Agricultores', 'Compras', 'Beneficiarios', 'Municipio', 'Entidades', 'Cooperativas', 'Compras_Cooperativas'];
   if (!validTabs.includes(aba)) {
     return NextResponse.json({ success: false, message: 'Aba inválida.' }, { status: 400 });
