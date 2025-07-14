@@ -24,6 +24,10 @@ interface RankingEleitoradoProps {
   carregando: boolean;
 }
 
+const normalizeString = (str: string): string => {
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+};
+
 const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
   mapMunicipioMetrics,
   carregando,
@@ -32,29 +36,38 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
   const [ordenacaoDirecao, setOrdenacaoDirecao] = useState<'asc' | 'desc'>('desc');
   const [paginaAtual, setPaginaAtual] = useState(1);
   const [itensPorPagina, setItensPorPagina] = useState(10);
-  const [filtroMunicipio, setFiltroMunicipio] = useState('');
+  const [filtroMunicipio, setFiltroMunicipio] = useState('Todos os Municípios');
 
   const formatNumber = (num: number) => num.toLocaleString('pt-BR');
   const formatPercentage = (num: number) => `${num.toFixed(2)}%`;
 
-  const dadosParaExibir = useMemo(() => {
+  const municipiosDisponiveisParaFiltro = useMemo(() => {
+    const uniqueMuns = new Set<string>();
+    Object.keys(mapMunicipioMetrics).forEach(mun => {
+        uniqueMuns.add(mun);
+    });
+    return Array.from(uniqueMuns).sort((a, b) => {
+        const normalizedA = normalizeString(a);
+        const normalizedB = normalizeString(b);
+        if (normalizedA === 'JOAO PESSOA') return -1;
+        if (normalizedB === 'JOAO PESSOA') return 1;
+        return normalizedA.localeCompare(normalizedB);
+    });
+  }, [mapMunicipioMetrics]);
+
+  const dadosBaseOrdenados = useMemo(() => {
     let dados = Object.entries(mapMunicipioMetrics).map(([municipio, metrics]) => ({
       municipio,
       ...metrics,
     }));
-
-    if (filtroMunicipio) {
-      const termoNormalizado = filtroMunicipio.trim().toUpperCase();
-      dados = dados.filter(d => d.municipio.includes(termoNormalizado));
-    }
 
     dados.sort((a, b) => {
       let valA: any;
       let valB: any;
 
       if (ordenacaoColuna === 'municipio') {
-        valA = a.municipio;
-        valB = b.municipio;
+        valA = normalizeString(a.municipio);
+        valB = normalizeString(b.municipio);
       } else {
         valA = a[ordenacaoColuna] as number;
         valB = b[ordenacaoColuna] as number;
@@ -66,9 +79,18 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
         return ordenacaoDirecao === 'asc' ? (valA || 0) - (valB || 0) : (valB || 0) - (valA || 0);
       }
     });
-
     return dados;
-  }, [mapMunicipioMetrics, ordenacaoColuna, ordenacaoDirecao, filtroMunicipio]);
+  }, [mapMunicipioMetrics, ordenacaoColuna, ordenacaoDirecao]);
+
+  const dadosParaExibir = useMemo(() => {
+    let dadosFiltradosParaExibicao = [...dadosBaseOrdenados];
+
+    if (filtroMunicipio !== 'Todos os Municípios') {
+      const termoNormalizado = normalizeString(filtroMunicipio);
+      dadosFiltradosParaExibicao = dadosFiltradosParaExibicao.filter(d => normalizeString(d.municipio) === termoNormalizado);
+    }
+    return dadosFiltradosParaExibicao;
+  }, [dadosBaseOrdenados, filtroMunicipio]);
 
   const totalPaginas = Math.ceil(dadosParaExibir.length / itensPorPagina);
   const indiceUltimoItem = paginaAtual * itensPorPagina;
@@ -78,7 +100,105 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
   const irParaProximaPagina = () => setPaginaAtual(prev => Math.min(prev + 1, totalPaginas));
   const irParaPaginaAnterior = () => setPaginaAtual(prev => Math.max(prev - 1, 1));
 
-  // Removido handleSort pois a ordenação será controlada pelos selects
+  const getPaginationNumbers = useCallback((currentPage: number, totalPages: number, siblingCount = 1) => {
+    const totalPageNumbers = siblingCount * 2 + 3;
+    const totalBlocks = totalPageNumbers + 2;
+
+    if (totalPages > totalBlocks) {
+      const startPage = Math.max(2, currentPage - siblingCount);
+      const endPage = Math.min(totalPages - 1, currentPage + siblingCount);
+
+      let pagesToProcess: (number | string)[] = [];
+
+      const hasLeftSpill = startPage > 2;
+      const hasRightSpill = totalPages - endPage > 1;
+
+      pagesToProcess.push(1);
+
+      if (hasLeftSpill) {
+        pagesToProcess.push('...');
+      }
+
+      for (let i = startPage; i <= endPage; i++) {
+        pagesToProcess.push(i);
+      }
+
+      if (hasRightSpill) {
+        pagesToProcess.push('...');
+      }
+
+      if (totalPages > 1 && !pagesToProcess.includes(totalPages)) {
+        pagesToProcess.push(totalPages);
+      }
+
+      const uniqueAndSortedPages: (number | string)[] = [];
+      const seenNumbers = new Set<number>();
+      
+      if (totalPages >= 1 && !pagesToProcess.includes(1)) {
+          uniqueAndSortedPages.push(1);
+          seenNumbers.add(1);
+      }
+
+      pagesToProcess.forEach(page => {
+          if (typeof page === 'number') {
+              if (!seenNumbers.has(page)) {
+                  uniqueAndSortedPages.push(page);
+                  seenNumbers.add(page);
+              }
+          } else if (page === '...') {
+              uniqueAndSortedPages.push('...');
+          }
+      });
+
+      const finalCleanedPages: (number | string)[] = [];
+      for (let i = 0; i < uniqueAndSortedPages.length; i++) {
+          if (uniqueAndSortedPages[i] === '...') {
+              if (typeof uniqueAndSortedPages[i-1] === 'number' && typeof uniqueAndSortedPages[i+1] === 'number' &&
+                  (uniqueAndSortedPages[i+1] as number) - (uniqueAndSortedPages[i-1] as number) <= (siblingCount * 2 + 2) + 1 ) { 
+              } else {
+                  finalCleanedPages.push('...');
+              }
+          } else {
+              finalCleanedPages.push(uniqueAndSortedPages[i]);
+          }
+      }
+      
+      const finalFilteredAndOrdered: (number | string)[] = [];
+      let lastPushed: number | string | null = null;
+
+      finalCleanedPages.forEach((item, index) => {
+          if (item === '...') {
+              if (lastPushed !== '...') {
+                  const prevNum = typeof lastPushed === 'number' ? (lastPushed as number) : null;
+                  const nextNum = typeof finalCleanedPages[index+1] === 'number' ? (finalCleanedPages[index+1] as number) : null;
+
+                  if (prevNum !== null && nextNum !== null && nextNum - prevNum === 2) {
+                      finalFilteredAndOrdered.push(prevNum + 1);
+                  } else {
+                      finalFilteredAndOrdered.push('...');
+                  }
+              }
+          } else {
+              finalFilteredAndOrdered.push(item);
+          }
+          lastPushed = item;
+      });
+
+      if (finalFilteredAndOrdered.length > 1 && finalFilteredAndOrdered[0] === '...' && finalFilteredAndOrdered[1] === 1) {
+          finalFilteredAndOrdered.shift();
+      }
+      if (finalFilteredAndOrdered.length > 1 && finalFilteredAndOrdered[finalFilteredAndOrdered.length - 1] === '...' && finalFilteredAndOrdered[finalFilteredAndOrdered.length - 2] === totalPages) {
+          finalFilteredAndOrdered.pop();
+      }
+      const noConsecutiveEllipses = finalFilteredAndOrdered.filter((item, index, arr) => !(item === '...' && arr[index - 1] === '...'));
+
+      return noConsecutiveEllipses;
+
+    }
+
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }, []);
+
 
   if (carregando) {
     return (
@@ -95,33 +215,48 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
   if (dadosParaExibir.length === 0) {
     return (
       <div className="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800 w-full">
-        Nenhum dado encontrado para exibir o ranking.
+        Nenhum dado encontrado para exibir o ranking com os filtros selecionados.
       </div>
     );
   }
 
-  // Removido renderSortArrow
+  const selectClasses = `
+    appearance-none block w-full bg-white border border-gray-300 rounded-full
+    py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+    shadow-sm transition duration-150 ease-in-out
+    cursor-pointer
+  `;
 
   return (
     <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
       <h3 className="text-lg font-bold text-gray-900 mb-4">Ranking de Municípios do Eleitorado</h3>
 
-      <div className="mb-4 flex flex-wrap gap-4 items-center">
+      <div className="mb-4 flex flex-wrap gap-4 items-end"> 
         <div className="flex-1 min-w-[200px]">
           <label htmlFor="filtro-municipio-ranking" className="block text-sm font-medium text-gray-700 mb-1">
             Filtrar Município:
           </label>
-          <input
-            type="text"
-            id="filtro-municipio-ranking"
-            className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 text-sm font-medium text-gray-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            placeholder="Buscar por município..."
-            value={filtroMunicipio}
-            onChange={(e) => { setFiltroMunicipio(e.target.value.toUpperCase()); setPaginaAtual(1); }}
-          />
+          <div className="relative">
+            <select
+              id="filtro-municipio-ranking"
+              className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out cursor-pointer"
+              value={filtroMunicipio}
+              onChange={(e) => { setFiltroMunicipio(e.target.value); setPaginaAtual(1); }}
+            >
+              <option value="Todos os Municípios">Todos os Municípios</option>
+              {municipiosDisponiveisParaFiltro.map((municipio) => (
+                <option key={municipio} value={municipio}>
+                  {municipio}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+            </div>
+          </div>
         </div>
 
-        {/* NOVO: Dropdown para selecionar a coluna de ordenação */}
+        {/* Grupo "Ordenar por:" (Coluna) */}
         <div className="flex-1 min-w-[200px]">
           <label htmlFor="ordenar-por-coluna" className="block text-sm font-medium text-gray-700 mb-1">
             Ordenar por:
@@ -129,15 +264,15 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
           <div className="relative">
             <select
               id="ordenar-por-coluna"
-              className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+              className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out cursor-pointer"
               value={ordenacaoColuna}
               onChange={(e) => {
                 setOrdenacaoColuna(e.target.value as keyof MapMunicipioMetrics | 'municipio');
-                setPaginaAtual(1); // Resetar para a primeira página ao mudar a ordenação
+                setPaginaAtual(1);
               }}
             >
               <option value="totalEleitores">Total Eleitores</option>
-              <option value="percMulheres">% Mulheres</option>
+              <option value="percFeminino">% Mulheres</option>
               <option value="percMasculino">% Homens</option>
               <option value="percJovens">% Jovens (16-24)</option>
               <option value="percAdultos">% Adultos (25-59)</option>
@@ -145,28 +280,33 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
               <option value="percAnalfabetos">% Analfabetos</option>
               <option value="municipio">Nome do Município</option>
             </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+            </div>
           </div>
         </div>
 
-        {/* NOVO: Dropdown para selecionar a direção da ordenação */}
-        <div className="flex-1 min-w-[150px]">
-          <label htmlFor="ordenar-direcao" className="block text-sm font-medium text-gray-700 mb-1">
-            Direção:
-          </label>
-          <div className="relative">
-            <select
-              id="ordenar-direcao"
-              className="block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
-              value={ordenacaoDirecao}
-              onChange={(e) => {
-                setOrdenacaoDirecao(e.target.value as 'asc' | 'desc');
-                setPaginaAtual(1); // Resetar para a primeira página ao mudar a direção
-              }}
-            >
-              <option value="desc">Descendente</option>
-              <option value="asc">Ascendente</option>
-            </select>
-          </div>
+        {/* Botão de Direção da Ordenação - Agora alinhado com o select */}
+        <div className="min-w-[150px] flex items-end"> {/* Este div agora é um flex container que alinha seu filho (o botão) ao final */}
+          <button
+            id="ordenar-direcao-btn" 
+            onClick={() => {
+              setOrdenacaoDirecao(ordenacaoDirecao === 'asc' ? 'desc' : 'asc');
+              setPaginaAtual(1);
+            }}
+            className="inline-flex items-center justify-center rounded-full border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 h-[42px]"
+          >
+            {ordenacaoDirecao === 'asc' ? (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 3a.75.75 0 01.75.75v10.638l3.96-4.158a.75.75 0 111.08 1.04l-5.25 5.5a.75.75 0 01-1.08 0l-5.25-5.5a.75.75 0 111.08-1.04l3.96 4.158V3.75A.75.75 0 0110 3z" clipRule="evenodd" />
+              </svg>
+            ) : (
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 17a.75.75 0 01-.75-.75V5.612L5.29 9.77a.75.75 0 01-1.08-1.04l5.25-5.5a.75.75 0 011.08 0l5.25 5.5a.75.75 0 11-1.08 1.04L10.75 5.612V16.25A.75.75 0 0110 17z" clipRule="evenodd" />
+              </svg>
+            )}
+            {ordenacaoDirecao === 'asc' ? 'Crescente' : 'Decrescente'}
+          </button>
         </div>
       </div>
 
@@ -174,7 +314,6 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
         <table className="min-w-full divide-y divide-gray-200 shadow-sm rounded-lg">
           <thead className="bg-gray-50">
             <tr>
-              {/* Cabeçalhos da tabela agora sem onClick para ordenação, que será feita pelos dropdowns */}
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Município
               </th>
@@ -218,7 +357,6 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
         </table>
       </div>
 
-      {/* Controles de Paginação */}
       <nav
         className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
         aria-label="Pagination"
@@ -227,9 +365,12 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
           <button
             onClick={irParaPaginaAnterior}
             disabled={paginaAtual === 1}
-            className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            className="relative inline-flex items-center rounded-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Anterior
+            <span className="sr-only">Anterior</span>
+            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+            </svg>
           </button>
           <button
             onClick={irParaProximaPagina}
@@ -280,20 +421,26 @@ const RankingEleitorado: React.FC<RankingEleitoradoProps> = ({
                   <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                 </svg>
               </button>
-              {Array.from({ length: totalPaginas }, (_, i) => i + 1).map(pagina => (
-                <button
-                  key={pagina}
-                  onClick={() => setPaginaAtual(pagina)}
-                  aria-current={pagina === paginaAtual ? 'page' : undefined}
-                  className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
-                    pagina === paginaAtual
-                      ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
-                      : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
-                  }`}
-                >
-                  {pagina}
-                </button>
-              ))}
+              {getPaginationNumbers(paginaAtual, totalPaginas).map((pageNumber, idx) =>
+                pageNumber === '...' ? (
+                  <span key={`ellipsis-eleitorado-${idx}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                    ...
+                  </span>
+                ) : (
+                  <button
+                    key={`page-eleitorado-${pageNumber}`}
+                    onClick={() => setPaginaAtual(Number(pageNumber))}
+                    aria-current={Number(pageNumber) === paginaAtual ? 'page' : undefined}
+                    className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                      Number(pageNumber) === paginaAtual
+                        ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                        : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                )
+              )}
               <button
                 onClick={irParaProximaPagina}
                 disabled={paginaAtual === totalPaginas}
