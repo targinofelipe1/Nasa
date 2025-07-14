@@ -1,16 +1,28 @@
 'use client';
 
 import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import Sidebar from '@/components/ui/Sidebar';
 import NoScroll from '@/components/ui/NoScroll';
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
-import MapaParaibaCandidato from '../../../components/ui/MapaParaibaCandidato';
 import CandidatoCard from '@/components/ui/CandidatoCard';
 import VotacaoCards from '@/components/ui/VotacaoCards';
-import dynamic from 'next/dynamic';
-import CandidatoPerformanceTable from '@/components/ui/CandidatoPerformanceTable';
-import CandidatoPerformanceViz from '@/components/ui/CandidatoPerformanceViz';
-import MapaPorMunicipioEleitoral from '@/components/ui/HeatmapEleitoralParaiba';
+
+// components que usam `window` e devem ser carregados só no cliente
+const MapaParaibaCandidato = dynamic(
+  () => import('../../../components/ui/MapaParaibaCandidato'),
+  { ssr: false }
+)
+
+const CandidatoPerformanceViz = dynamic(
+  () => import('@/components/ui/CandidatoPerformanceViz'),
+  { ssr: false }
+)
+
+const MapaPorMunicipioEleitoral = dynamic(
+  () => import('@/components/ui/HeatmapEleitoralParaiba'),
+  { ssr: false }
+)
 
 interface VotoAgregadoCandidato {
   nome: string;
