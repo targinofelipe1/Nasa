@@ -187,13 +187,6 @@ const Sidebar = () => {
               </ul>
             )}
           </li>
-
-            <li>
-              <Link href="/config" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
-                <AiOutlineSetting className="mr-3" size={20} />
-                {isOpen && "Configurações"}
-              </Link>
-            </li>
           </ul>
         </nav>
       </div>
