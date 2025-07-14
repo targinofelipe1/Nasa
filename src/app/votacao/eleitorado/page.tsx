@@ -852,9 +852,9 @@ export default function PainelEleitorado() {
 
               {abaAtiva === 'Visão Geral' ? (
                   <RankingEleitorado
-                    mapMunicipioMetrics={mapMunicipioMetrics}
-                    carregando={carregando}
-                  />
+                      mapMunicipioMetrics={mapMunicipioMetrics}
+                      carregando={carregando}
+                    />
                 ) : (
                   <GraficoDinamicoEleitorado
                     dadosFiltrados={dadosFiltradosParaExibicao}

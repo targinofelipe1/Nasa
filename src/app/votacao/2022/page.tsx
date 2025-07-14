@@ -7,6 +7,17 @@ import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 import MapaParaibaCandidato from '../../../components/ui/MapaParaibaCandidato';
 import CandidatoCard from '@/components/ui/CandidatoCard';
 import VotacaoCards from '@/components/ui/VotacaoCards';
+const HeatmapParaibaVotos = dynamic(
+  () => import('@/components/ui/HeatmapParaibaVotos'),
+  {
+    ssr: false, 
+    loading: () => <p>Carregando mapa de calor...</p>, 
+  }
+);
+import dynamic from 'next/dynamic';
+import CandidatoPerformanceTable from '@/components/ui/CandidatoPerformanceTable';
+import CandidatoPerformanceViz from '@/components/ui/CandidatoPerformanceViz';
+import RankingCandidatoCidade from '@/components/ui/RankingCandidatoCidade';
 
 interface VotoAgregadoCandidato {
   nome: string;
@@ -138,8 +149,11 @@ export default function PainelVotacao() {
   const localAnteriorRef = useRef(localSelecionado);
   const zonaAnteriorRef = useRef(zonaSelecionada);
   const secaoAnteriorRef = useRef(secaoSelecionada);
+  const [paginaAtualCandidatoCards, setPaginaAtualCandidatoCards] = useState(1);
+  const [itensPorPaginaCandidatoCards, setItensPorPaginaCandidatoCards] = useState(12); 
 
-    const abas = ['Visão Geral', 'Visão Geral 2º turno','Presidente', 'Presidente 2º turno', 'Senador', 'Governador', 'Governador - 2 Turno', 'Deputado Federal', 'Deputado Estadual'];
+
+  const abas = ['Visão Geral', 'Visão Geral 2º turno','Presidente', 'Presidente 2º turno', 'Senador', 'Governador', 'Governador - 2 Turno', 'Deputado Federal', 'Deputado Estadual'];
     const planilhasPorCargo: Record<string, string[]> = {
     'Visão Geral': [
       'presidente', 'senador', 'governador',
@@ -155,18 +169,16 @@ export default function PainelVotacao() {
     'Deputado Federal': ['grupo_federal1', 'grupo_federal2', 'grupo_federal3', 'deputado_federaljp'],
     'Deputado Estadual': ['grupo_estadual1', 'grupo_estadual2', 'grupo_estadual3', 'deputado_estadualjp'],
   };
-    
     const cargosDisponiveisParaRanking = useMemo(() => {
-    let cargos = abas.filter(aba => aba !== 'Visão Geral' && aba !== 'Visão Geral 2º turno');
-    if (abaAtiva === 'Visão Geral') {
-      cargos = cargos.filter(cargo => cargo !== 'Presidente 2º turno' && cargo !== 'Governador - 2 Turno');
-    }
-    if (abaAtiva === 'Visão Geral 2º turno') {
-        cargos = ['Presidente 2º turno', 'Governador - 2 Turno'];
-    }
-    return cargos;
-  }, [abaAtiva, abas]);
-
+        let cargos = abas.filter(aba => aba !== 'Visão Geral' && aba !== 'Visão Geral 2º turno');
+        if (abaAtiva === 'Visão Geral') {
+          cargos = cargos.filter(cargo => cargo !== 'Presidente 2º turno');
+        }
+        if (abaAtiva === 'Visão Geral 2º turno') {
+            cargos = ['Presidente 2º turno', 'Governador - 2 Turno'];
+        }
+        return cargos;
+    }, [abas, abaAtiva]);
   const [municipiosDisponiveisParaRanking, setMunicipiosDisponiveisParaRanking] = useState<string[]>([]);
 
   const getUniqueOptions = useCallback((data: any[], key: string, sort = true) => {
@@ -192,6 +204,8 @@ export default function PainelVotacao() {
     }
     return sortedOptions;
   }, []);
+
+  
 
   const safeParseVotes = useCallback((value: any): number => {
     if (typeof value === 'number') {
@@ -284,13 +298,38 @@ export default function PainelVotacao() {
       const todosOsDadosBrutos: any[] = [];
       const tempSectionDataForMetrics = new Map<string, SectionMetrics>();
 
+      let dadosPrimeiroTurnoPresidente: any[] = [];
+      if (abaAtiva === 'Visão Geral 2º turno') {
+          try {
+              const res1T = await fetch(`/api/sheets/eleicao/presidente_2018`, { signal });
+              const json1T = await res1T.json();
+              const linhas1T: string[][] = json1T.data?.slice(1) || [];
+              dadosPrimeiroTurnoPresidente = linhas1T.map(linha => ({
+                  'Município': linha[0]?.trim(),
+                  'Zona Eleitoral': linha[1]?.trim(),
+                  'Seção Eleitoral': linha[2]?.trim(),
+                  'Local de Votação': linha[3]?.trim(),
+                  'Nome do Candidato/Voto': (linha[12] || '').trim().toUpperCase(),
+                  'Quantidade de Votos': safeParseVotes(linha[13]),
+                  'Sigla do Partido': (linha[6] || '').trim(),
+                  Cargo: 'Presidente',
+              }));
+          } catch (err) {
+              if ((err as any).name === 'AbortError') {
+                console.warn('Requisição do 1º turno abortada.');
+              } else {
+                console.error('Erro ao carregar dados do 1º turno para insights:', err);
+              }
+          }
+      }
+
       for (const id of ids) {
         try {
           const res = await fetch(`/api/sheets/eleicao/${id}`, { signal });
           const json = await res.json();
           const linhas: string[][] = json.data?.slice(1) || [];
 
-          const cargoMap: Record<string, string> = {
+             const cargoMap: Record<string, string> = {
             'presidente': 'Presidente',
             'presidente_2': 'Presidente 2º turno',
             'senador': 'Senador',
@@ -305,7 +344,7 @@ export default function PainelVotacao() {
             'grupo_estadual3': 'Deputado Estadual',
             'deputado_estadualjp': 'Deputado Estadual',
           };
-                    const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
+          const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
 
           for (const linha of linhas) {
             const municipio = linha[0]?.trim();
@@ -408,6 +447,7 @@ export default function PainelVotacao() {
       setDadosGeraisAbaAtiva(resumoParaCards);
       setDadosGeraisFiltrados(resumoParaCards);
 
+
       try {
         if (typeof window !== 'undefined') {
           localStorage.setItem(`votacaoCompletos-${abaAtiva}`, JSON.stringify(todosOsDadosBrutos));
@@ -455,6 +495,7 @@ export default function PainelVotacao() {
           const siglasDoCargo = getUniqueOptions(processedCachedDataWithLocais, 'Sigla do Partido');
           const filteredSiglasDoCargo = siglasDoCargo.filter((sigla: string) => sigla.toLowerCase() !== '#nulo#');
           setSiglasDisponiveis(filteredSiglasDoCargo);
+
 
           shouldFetch = false;
         } catch (e) {
@@ -1305,6 +1346,11 @@ useEffect(() => {
   const votosCandidatoPorLocalDetalhadoPaginaAtual = votosCandidatoPorLocalDetalhado.slice(indicePrimeiroItemVotosLocalDetalhado, indiceUltimoItemVotosLocalDetalhado);
   const totalPaginasVotosLocalDetalhado = Math.ceil(votosCandidatoPorLocalDetalhado.length / itensPorPaginaVotosLocalDetalhado);
 
+  const indiceUltimoItemCandidatoCards = paginaAtualCandidatoCards * itensPorPaginaCandidatoCards;
+  const indicePrimeiroItemCandidatoCards = indiceUltimoItemCandidatoCards - itensPorPaginaCandidatoCards;
+  const candidatosPaginaAtualCandidatoCards = votosAgrupadosCandidatos.slice(indicePrimeiroItemCandidatoCards, indiceUltimoItemCandidatoCards);
+  const totalPaginasCandidatoCards = Math.ceil(votosAgrupadosCandidatos.length / itensPorPaginaCandidatoCards);
+
   const irParaProximaPaginaVotosLocalDetalhado = () => {
     setPaginaAtualVotosLocalDetalhado(prev => Math.min(prev + 1, totalPaginasVotosLocalDetalhado));
   };
@@ -1313,6 +1359,13 @@ useEffect(() => {
     setPaginaAtualVotosLocalDetalhado(prev => Math.max(prev - 1, 1));
   };
 
+  const irParaProximaPaginaCandidatoCards = useCallback(() => {
+    setPaginaAtualCandidatoCards(prev => Math.min(prev + 1, totalPaginasCandidatoCards));
+  }, [totalPaginasCandidatoCards]); 
+
+  const irParaPaginaAnteriorCandidatoCards = useCallback(() => {
+    setPaginaAtualCandidatoCards(prev => Math.max(prev - 1, 1));
+  }, []); 
 
   return (
     <ProtectedRoute>
@@ -1355,12 +1408,12 @@ useEffect(() => {
                     setOrdenacaoDirecaoDetalheLocal('desc');
 
                     if (cargo === 'Visão Geral') {
-                          setCargoRankingSelecionado('Presidente');
-                      } else if (cargo === 'Visão Geral 2º turno') {
-                          setCargoRankingSelecionado('Presidente 2º turno'); 
-                      } else {
-                          setCargoRankingSelecionado(cargo);
-                      }
+                            setCargoRankingSelecionado('Presidente'); 
+                        } else if (cargo === 'Visão Geral 2º turno') {
+                            setCargoRankingSelecionado('Presidente 2º turno'); 
+                        } else {
+                            setCargoRankingSelecionado(cargo); 
+                        }
                   }}
                   className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                     abaAtiva === cargo
@@ -1645,11 +1698,14 @@ useEffect(() => {
                   >
                     <div className="flex flex-1 justify-between sm:hidden">
                       <button
-                        onClick={irParaPaginaAnteriorRanking}
-                        disabled={paginaAtualRanking === 1}
-                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                          onClick={irParaPaginaAnteriorRanking}
+                          disabled={paginaAtualRanking === 1}
+                          className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Anterior
+                          <span className="sr-only">Anterior</span>
+                          <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                          </svg>
                       </button>
                       <button
                         onClick={irParaProximaPaginaRanking}
@@ -1736,6 +1792,8 @@ useEffect(() => {
                   </nav>
                 )}
               </div>
+
+            
 
               <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
                 <h3 className="text-lg font-bold text-gray-900 mb-4">Detalhes de Votos por Local de Votação</h3>
@@ -2073,6 +2131,8 @@ useEffect(() => {
               )
             )}
 
+            
+
             {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && (
               <div className="mt-8 mb-4">
                 <h3 className="text-base font-semibold text-gray-800 mb-3">
@@ -2224,12 +2284,14 @@ useEffect(() => {
                             setTermoBuscaCandidato('Todos os Candidatos');
                         }}
                         disabled={carregando}
-                        >
-                        <option value="Todas as Siglas">Todas as Siglas</option>
-                        {siglasDisponiveis.map((sigla) => (
-                            <option key={sigla} value={sigla}>
-                            {sigla}
-                            </option>
+                         >
+                          <option value="Todas as Siglas">Todas as Siglas</option>
+                          {siglasDisponiveis
+                              .filter(sigla => sigla !== "Sigla do Partido") 
+                              .map((sigla) => (
+                                  <option key={sigla} value={sigla}>
+                                      {sigla}
+                                  </option>
                         ))}
                         </select>
                         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
@@ -2348,11 +2410,11 @@ useEffect(() => {
 
             {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && votosAgrupadosCandidatos.length > 0 && termoBuscaCandidato === 'Todos os Candidatos' && (
               <div className="mt-8">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                <h3 className="text-base font-semibold text-gray-800 mb-5">
                   Votação por Candidato ({abaAtiva}):
                 </h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
-                  {votosAgrupadosCandidatos.map((candidato) => (
+                {candidatosPaginaAtualCandidatoCards.map((candidato) => (
                     <CandidatoCard
                       key={`${abaAtiva}-${candidato.nome}-${candidato.siglaPartido}`}
                       nome={candidato.nome}
@@ -2361,6 +2423,104 @@ useEffect(() => {
                     />
                   ))}
                 </div>
+
+                {!carregando && votosAgrupadosCandidatos.length > 0 && (
+                  <nav
+                    className="flex items-center justify-between border-t border-gray-200 bg-white px-4 py-3 sm:px-6 mt-6"
+                    aria-label="Pagination"
+                  >
+                    <div className="flex flex-1 justify-between sm:hidden">
+                      <button
+                        onClick={irParaPaginaAnteriorCandidatoCards}
+                        disabled={paginaAtualCandidatoCards === 1}
+                        className="relative inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Anterior
+                      </button>
+                      <button
+                        onClick={irParaProximaPaginaCandidatoCards}
+                        disabled={paginaAtualCandidatoCards === totalPaginasCandidatoCards}
+                        className="relative ml-3 inline-flex items-center rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        Próximo
+                      </button>
+                    </div>
+                    <div className="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                      <div>
+                        <p className="text-sm text-gray-700">
+                          Mostrando <span className="font-medium">{indicePrimeiroItemCandidatoCards + 1}</span> a{' '}
+                          <span className="font-medium">{Math.min(indiceUltimoItemCandidatoCards, votosAgrupadosCandidatos.length)}</span> de{' '}
+                          <span className="font-medium">{votosAgrupadosCandidatos.length}</span> resultados
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <div className="relative">
+                          <label htmlFor="itens-por-pagina-candidato-cards" className="sr-only">Itens por página</label>
+                          <select
+                            id="itens-por-pagina-candidato-cards"
+                            className="appearance-none block w-full bg-white border border-gray-300 rounded-full py-2.5 px-5 pr-9 text-sm font-medium text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 shadow-sm transition duration-150 ease-in-out"
+                            value={itensPorPaginaCandidatoCards}
+                            onChange={(e) => {
+                              setItensPorPaginaCandidatoCards(Number(e.target.value));
+                              setPaginaAtualCandidatoCards(1);
+                            }}
+                          >
+                            <option value="12">12</option>
+                            <option value="24">24</option>
+                            <option value="48">48</option>
+                            <option value="96">96</option>
+                          </select>
+                          <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
+                            <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
+                          </div>
+                        </div>
+
+                        <nav className="isolate inline-flex -space-x-px rounded-md shadow-sm" aria-label="Pagination">
+                          <button
+                            onClick={irParaPaginaAnteriorCandidatoCards}
+                            disabled={paginaAtualCandidatoCards === 1}
+                            className="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="sr-only">Anterior</span>
+                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                          {getPaginationNumbers(paginaAtualCandidatoCards, totalPaginasCandidatoCards).map((pageNumber, idx) =>
+                            pageNumber === '...' ? (
+                              <span key={`ellipsis-candidatocards-${idx}`} className="relative inline-flex items-center px-4 py-2 text-sm font-semibold text-gray-700 ring-1 ring-inset ring-gray-300 focus:outline-offset-0">
+                                ...
+                              </span>
+                            ) : (
+                              <button
+                                key={`page-candidatocards-${pageNumber}`}
+                                onClick={() => setPaginaAtualCandidatoCards(Number(pageNumber))}
+                                aria-current={Number(pageNumber) === paginaAtualCandidatoCards ? 'page' : undefined}
+                                className={`relative inline-flex items-center px-4 py-2 text-sm font-semibold ${
+                                  Number(pageNumber) === paginaAtualCandidatoCards
+                                    ? 'z-10 bg-blue-600 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600'
+                                    : 'text-gray-900 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0'
+                                }`}
+                              >
+                                {pageNumber}
+                              </button>
+                            )
+                          )}
+                          <button
+                            onClick={irParaProximaPaginaCandidatoCards}
+                            disabled={paginaAtualCandidatoCards === totalPaginasCandidatoCards}
+                            className="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 hover:bg-gray-50 focus:z-20 focus:outline-offset-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <span className="sr-only">Próximo</span>
+                            <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                              <path fillRule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10l-3.938-3.71a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clipRule="evenodd" />
+                            </svg>
+                          </button>
+                        </nav>
+                      </div>
+                    </div>
+                  </nav>
+                )}
               </div>
             )}
 
@@ -2478,7 +2638,7 @@ useEffect(() => {
                           >
                             <span className="sr-only">Anterior</span>
                             <svg className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L11.168 10l-3.938-3.71a.75.75 0 11-1.04 1.08l4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
+                              <path fillRule="evenodd" d="M12.79 5.23a.75.75 0 01-.02 1.06L8.832 10l3.938 3.71a.75.75 0 11-1.04 1.08l-4.5-4.25a.75.75 0 010-1.08l4.5-4.25a.75.75 0 011.06.02z" clipRule="evenodd" />
                             </svg>
                           </button>
                           {getPaginationNumbers(paginaAtualVotosLocal, totalPaginasVotosLocal).map((pageNumber, idx) =>
@@ -2518,6 +2678,45 @@ useEffect(() => {
                 )}
               </div>
             )}
+
+
+            {
+              (abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') &&
+              !carregando &&
+              dadosCompletosParaMapa.length > 0 && (
+              <RankingCandidatoCidade
+                 data={dadosCompletosParaMapa}
+                 candidatosDisponiveisGlobal={candidatosFiltroPrincipalDropdown} 
+              />
+              )
+           }
+
+             {
+              (abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') &&
+              !carregando &&
+              dadosCompletosParaMapa.length > 0 && (
+                <HeatmapParaibaVotos
+                  apiData={dadosCompletosParaMapa}
+                  candidatosDisponiveis={candidatosFiltroPrincipalDropdown}
+                  currentCargo={abaAtiva}
+                  municipiosDisponiveisGlobal={municipiosDisponiveis}
+                />
+              )
+            }
+
+            {
+              (abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') &&
+              !carregando &&
+              dadosCompletosParaMapa.length > 0 && (
+                <CandidatoPerformanceViz
+                  data={dadosCompletosParaMapa}
+                  municipiosDisponiveis={municipiosDisponiveis}
+                  zonasDisponiveis={zonasDisponiveis}
+                  candidatosDisponiveis={candidatosFiltroPrincipalDropdown} 
+                />
+              )
+            }
+            
             
             {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && algumFiltroAplicado && dadosFiltradosSemBuscaCandidatoOuPartido.length > 0 && votosAgrupadosCandidatos.length === 0 && termoBuscaCandidato === 'Todos os Candidatos' && (
                <div className="mt-6 p-4 bg-orange-50 border border-orange-200 rounded-lg text-sm text-orange-800">
