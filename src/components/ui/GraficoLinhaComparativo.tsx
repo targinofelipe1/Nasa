@@ -49,8 +49,8 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
   const isValid = (value: any): value is number =>
     typeof value === 'number' && !isNaN(value) && isFinite(value);
 
-  const safe2018 = isValid(valor2018) ? valor2018 : 0;
-  const safe2022 = isValid(valor2022) ? valor2022 : 0;
+  const safe2018 = isValid(valor2018) ? valor2018 : null;
+  const safe2022 = isValid(valor2022) ? valor2022 : null;
 
   const color2018Point = 'rgb(80, 162, 235)';
   const color2022Point = 'rgb(255, 99, 132)';
@@ -64,18 +64,24 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center h-full bg-gray-100 rounded-lg shadow-sm" style={{ minHeight: height }}>
+      <div
+        className="flex justify-center items-center h-full bg-gray-100 rounded-lg shadow-sm"
+        style={{ minHeight: height }}
+      >
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-900"></div>
         <p className="ml-4 text-blue-900">Carregando gráfico...</p>
       </div>
     );
   }
 
-  // Evita renderização com dados inválidos
-  if (!isValid(valor2018) || !isValid(valor2022)) {
+  // Se ambos forem null, exibe fallback
+  if (safe2018 === null && safe2022 === null) {
     return (
-      <div className="flex justify-center items-center h-full bg-red-100 text-red-700 rounded-lg shadow" style={{ minHeight: height }}>
-        Erro: dados inválidos para o gráfico.
+      <div
+        className="flex justify-center items-center h-full bg-yellow-100 text-yellow-800 rounded-lg shadow"
+        style={{ minHeight: height }}
+      >
+        Sem dados suficientes para gerar o gráfico.
       </div>
     );
   }
@@ -85,7 +91,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     datasets: [
       {
         label: label2018,
-        data: [safe2018, safe2022],
+        data: [safe2018, null],
         borderColor: 'transparent',
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -99,7 +105,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
       },
       {
         label: label2022,
-        data: [safe2018, safe2022],
+        data: [null, safe2022],
         borderColor: 'transparent',
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -130,7 +136,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: { left: 20, right: 20, top: 20, bottom: 20 }
+      padding: { left: 20, right: 20, top: 20, bottom: 20 },
     },
     plugins: {
       title: {
@@ -154,8 +160,10 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
             const label = context.dataset.label;
             const val = context.parsed.y;
 
-            if ((context.datasetIndex === 0 && context.dataIndex === 0) ||
-                (context.datasetIndex === 1 && context.dataIndex === 1)) {
+            if (
+              (context.datasetIndex === 0 && context.dataIndex === 0 && safe2018 !== null) ||
+              (context.datasetIndex === 1 && context.dataIndex === 1 && safe2022 !== null)
+            ) {
               return `${label}: ${formatValue(val, unidade, digits)}`;
             }
             return '';
@@ -163,8 +171,8 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
           title: (context) => context?.[0]?.label || '',
         },
         filter: (tooltipItem) =>
-          (tooltipItem.datasetIndex === 0 && tooltipItem.dataIndex === 0) ||
-          (tooltipItem.datasetIndex === 1 && tooltipItem.dataIndex === 1),
+          (tooltipItem.datasetIndex === 0 && tooltipItem.dataIndex === 0 && safe2018 !== null) ||
+          (tooltipItem.datasetIndex === 1 && tooltipItem.dataIndex === 1 && safe2022 !== null),
       },
       legend: { display: false },
     },
@@ -193,7 +201,10 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl" style={{ minHeight: height }}>
+    <div
+      className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl"
+      style={{ minHeight: height }}
+    >
       <Line data={data} options={options} />
     </div>
   );
