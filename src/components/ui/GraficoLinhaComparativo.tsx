@@ -1,29 +1,15 @@
 'use client';
 
 import React from 'react';
-import { Line } from 'react-chartjs-2';
 import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
   Tooltip,
-  Legend,
-  ChartOptions,
-  ChartData,
-} from 'chart.js';
-
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend
-);
+  ResponsiveContainer,
+  CartesianGrid,
+} from 'recharts';
 
 interface GraficoLinhaComparativoProps {
   titulo: string;
@@ -52,21 +38,40 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
   const safe2018 = isValid(valor2018) ? valor2018 : null;
   const safe2022 = isValid(valor2022) ? valor2022 : null;
 
-  const color2018Point = 'rgb(80, 162, 235)';
-  const color2022Point = 'rgb(255, 99, 132)';
-  const colorLine = 'rgb(128, 0, 128)';
+  const porcentagemVariacao =
+    safe2018 && safe2022
+      ? ((safe2022 - safe2018) / safe2018) * 100
+      : null;
 
-  const formatValue = (value: number, unit: string, fractionDigits: number = 0) => {
-    return new Intl.NumberFormat('pt-BR', {
-      maximumFractionDigits: fractionDigits,
-    }).format(value) + unit;
+  const data = [
+  {
+    year: '2018',
+    [label2018]: safe2018,
+    variacao: null,
+    ligacao: safe2018,
+  },
+  {
+    year: '2022',
+    [label2022]: safe2022,
+    variacao: safe2022,
+    ligacao: safe2022,
+  },
+];
+
+  const formatValue = (value: number | null, unit: string, digits = 0) => {
+    if (value === null || value === undefined) return '—';
+    return (
+      new Intl.NumberFormat('pt-BR', {
+        maximumFractionDigits: digits,
+      }).format(value) + unit
+    );
   };
 
   if (isLoading) {
     return (
       <div
-        className="flex justify-center items-center h-full bg-gray-100 rounded-lg shadow-sm"
-        style={{ minHeight: height }}
+        style={{ minHeight: height, backgroundColor: '#f3f4f6' }}
+        className="flex justify-center items-center rounded-lg shadow-sm"
       >
         <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-900"></div>
         <p className="ml-4 text-blue-900">Carregando gráfico...</p>
@@ -74,138 +79,87 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     );
   }
 
-  // Se ambos forem null, exibe fallback
   if (safe2018 === null && safe2022 === null) {
     return (
       <div
-        className="flex justify-center items-center h-full bg-yellow-100 text-yellow-800 rounded-lg shadow"
-        style={{ minHeight: height }}
+        style={{ minHeight: height, backgroundColor: '#fef3c7' }}
+        className="flex justify-center items-center text-yellow-800 rounded-lg shadow"
       >
         Sem dados suficientes para gerar o gráfico.
       </div>
     );
   }
 
-  const data: ChartData<'line'> = {
-    labels: ['2018', '2022'],
-    datasets: [
-      {
-        label: label2018,
-        data: [safe2018, null],
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        tension: 0.1,
-        fill: false,
-        pointRadius: 6,
-        pointBackgroundColor: [color2018Point, 'transparent'],
-        pointBorderColor: [color2018Point, 'transparent'],
-        pointBorderWidth: 0,
-        pointHoverRadius: 8,
-        pointHitRadius: 15,
-      },
-      {
-        label: label2022,
-        data: [null, safe2022],
-        borderColor: 'transparent',
-        backgroundColor: 'transparent',
-        tension: 0.1,
-        fill: false,
-        pointRadius: 6,
-        pointBackgroundColor: ['transparent', color2022Point],
-        pointBorderColor: ['transparent', color2022Point],
-        pointBorderWidth: 0,
-        pointHoverRadius: 8,
-        pointHitRadius: 15,
-      },
-      {
-        label: 'Variação',
-        data: [safe2018, safe2022],
-        borderColor: colorLine,
-        backgroundColor: 'transparent',
-        tension: 0.1,
-        fill: false,
-        pointRadius: 0,
-        pointHoverRadius: 0,
-        borderDash: [5, 5],
-        borderWidth: 2,
-      },
-    ],
-  };
-
-  const options: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    layout: {
-      padding: { left: 20, right: 20, top: 20, bottom: 20 },
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: titulo,
-        font: { size: 16, weight: 'normal' },
-        color: '#333',
-        padding: { top: 0, bottom: 10 },
-      },
-      tooltip: {
-        enabled: true,
-        backgroundColor: 'rgba(0,0,0,0.8)',
-        titleFont: { size: 14, weight: 'bold' },
-        bodyFont: { size: 13 },
-        padding: 12,
-        cornerRadius: 6,
-        displayColors: true,
-        callbacks: {
-          label: function (context) {
-            const digits = unidade === '%' ? 2 : 0;
-            const label = context.dataset.label;
-            const val = context.parsed.y;
-
-            if (
-              (context.datasetIndex === 0 && context.dataIndex === 0 && safe2018 !== null) ||
-              (context.datasetIndex === 1 && context.dataIndex === 1 && safe2022 !== null)
-            ) {
-              return `${label}: ${formatValue(val, unidade, digits)}`;
-            }
-            return '';
-          },
-          title: (context) => context?.[0]?.label || '',
-        },
-        filter: (tooltipItem) =>
-          (tooltipItem.datasetIndex === 0 && tooltipItem.dataIndex === 0 && safe2018 !== null) ||
-          (tooltipItem.datasetIndex === 1 && tooltipItem.dataIndex === 1 && safe2022 !== null),
-      },
-      legend: { display: false },
-    },
-    interaction: {
-      mode: 'index',
-      intersect: false,
-    },
-    scales: {
-      x: {
-        grid: { display: false },
-        ticks: { font: { size: 12 }, color: '#333' },
-        border: { display: true, color: '#e0e0e0', width: 1 },
-      },
-      y: {
-        beginAtZero: false,
-        grid: { color: '#f0f0f0' },
-        ticks: {
-          callback: (value) => formatValue(Number(value), unidade, 0),
-          font: { size: 12 },
-          color: '#333',
-          padding: 5,
-        },
-        border: { display: false },
-      },
-    },
-  };
-
   return (
     <div
-      className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl"
-      style={{ minHeight: height }}
+      style={{ minHeight: height, backgroundColor: 'white' }}
+      className="p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl"
     >
-      <Line data={data} options={options} />
+      <h2 className="text-lg font-semibold text-gray-800 text-center mb-4">{titulo}</h2>
+
+      <ResponsiveContainer width="100%" height={300}>
+        <LineChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 20 }}>
+          <CartesianGrid stroke="#f0f0f0" />
+        <XAxis dataKey="year" tick={{ fontSize: 12, dy: 10 }} />
+          <YAxis
+              domain={['dataMin - 0.1 * Math.abs(dataMin)', 'dataMax + 0.05 * Math.abs(dataMax)']}
+              tickFormatter={(val) =>
+                new Intl.NumberFormat('pt-BR', { maximumFractionDigits: 0 }).format(Number(val))
+              }
+              tick={{ fontSize: 12 }}
+            />
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (active && payload && payload.length > 0) {
+                const item = payload[0];
+                const valor = item.value as number;
+                return (
+                  <div className="bg-white border border-gray-200 rounded-lg shadow-md p-3">
+                    <p className="font-semibold">{label}</p>
+                    <p style={{ color: item.color }}>
+                      {item.name} : {formatValue(valor, unidade, unidade === '%' ? 2 : 0)}
+                    </p>
+                    {label === '2022' && porcentagemVariacao !== null && (
+                      <p className="text-purple-600">
+                        variação: {porcentagemVariacao.toFixed(2)}%
+                      </p>
+                    )}
+                  </div>
+                );
+              }
+              return null;
+            }}
+          />
+          {safe2018 !== null && (
+            <Line
+              type="monotone"
+              dataKey={label2018}
+              stroke="rgb(80, 162, 235)"
+              dot={{ r: 6 }}
+              isAnimationActive={false}
+            />
+          )}
+          {safe2022 !== null && (
+            <Line
+              type="monotone"
+              dataKey={label2022}
+              stroke="rgb(255, 99, 132)"
+              dot={{ r: 6 }}
+              isAnimationActive={false}
+            />
+          )}
+          {safe2018 !== null && safe2022 !== null && (
+            <Line
+              type="linear"
+              dataKey="ligacao"
+              stroke="rgb(128, 0, 128)"
+              strokeDasharray="5 5"
+              dot={false}
+              isAnimationActive={false}
+            />
+          )}
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
