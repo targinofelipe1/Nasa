@@ -1,4 +1,3 @@
-// components/ui/GraficoLinhaComparativo.tsx
 'use client';
 
 import React from 'react';
@@ -56,9 +55,10 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     );
   }
 
-  // Valores protegidos
-  const safe2018 = isNaN(valor2018) ? 0 : valor2018;
-  const safe2022 = isNaN(valor2022) ? 0 : valor2022;
+  const isValid = (value: any): value is number => typeof value === 'number' && !isNaN(value);
+
+  const safe2018 = isValid(valor2018) ? valor2018 : 0;
+  const safe2022 = isValid(valor2022) ? valor2022 : 0;
 
   const color2018Point = 'rgb(80, 162, 235)';
   const color2022Point = 'rgb(255, 99, 132)';
@@ -76,7 +76,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     datasets: [
       {
         label: label2018,
-        data: [safe2018, NaN],
+        data: [safe2018, null], // corrigido
         borderColor: colorLine,
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -90,7 +90,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
       },
       {
         label: label2022,
-        data: [NaN, safe2022],
+        data: [null, safe2022], // corrigido
         borderColor: colorLine,
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -121,26 +121,15 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     responsive: true,
     maintainAspectRatio: false,
     layout: {
-      padding: {
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: 20,
-      }
+      padding: { left: 20, right: 20, top: 20, bottom: 20 }
     },
     plugins: {
       title: {
         display: true,
         text: titulo,
-        font: {
-          size: 16,
-          weight: 'normal',
-        },
+        font: { size: 16, weight: 'normal' },
         color: '#333',
-        padding: {
-          top: 0,
-          bottom: 10,
-        },
+        padding: { top: 0, bottom: 10 },
       },
       tooltip: {
         enabled: true,
@@ -151,7 +140,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
         cornerRadius: 6,
         displayColors: true,
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             let label = context.dataset.label || '';
             if (label !== 'Variação' && context.parsed.y !== null && !isNaN(context.parsed.y)) {
               const digits = unidade === '%' ? 2 : 0;
@@ -159,17 +148,15 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
             }
             return label;
           },
-          title: function(context) {
+          title: function (context) {
             return context?.[0]?.label;
           },
         },
-        filter: function(tooltipItem) {
+        filter: function (tooltipItem) {
           return tooltipItem.dataset.label !== 'Variação';
         },
       },
-      legend: {
-        display: false,
-      },
+      legend: { display: false },
     },
     interaction: {
       mode: 'index',
@@ -177,46 +164,31 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     },
     scales: {
       x: {
-        grid: {
-          display: false,
-        },
+        grid: { display: false },
         ticks: {
-          font: {
-            size: 12,
-            weight: 'normal',
-          },
+          font: { size: 12, weight: 'normal' },
           color: '#333',
         },
-        border: {
-          display: true,
-          color: '#e0e0e0',
-          width: 1,
-        },
+        border: { display: true, color: '#e0e0e0', width: 1 },
       },
       y: {
         beginAtZero: false,
-        grid: {
-          color: '#f0f0f0',
-        },
+        grid: { color: '#f0f0f0' },
         ticks: {
-          callback: function(value: string | number) {
+          callback: function (value: string | number) {
             return formatValue(Number(value), unidade, 0);
           },
-          font: {
-            size: 12,
-          },
+          font: { size: 12 },
           color: '#333',
           padding: 5,
         },
-        border: {
-          display: false,
-        },
+        border: { display: false },
       },
     },
   };
 
   return (
-    <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl">
+    <div className="bg-white p-6 rounded-xl shadow-lg flex flex-col h-full border border-gray-100 transition-all duration-300 hover:shadow-xl" style={{ minHeight: height }}>
       <Line data={data} options={options} />
     </div>
   );
