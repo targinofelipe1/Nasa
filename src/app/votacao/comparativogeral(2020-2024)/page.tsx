@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Sidebar from '@/components/ui/Sidebar';
 import NoScroll from '@/components/ui/NoScroll';
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
-import GraficoLinhaComparativo from '@/components/ui/GraficoLinhaComparativo';
+import GraficoLinhaComparativo from '@/components/ui/GraficoLinhaComparativo'; // Corrigido o typo aqui de GraficoLincoComparativo
 import MapaVariacaoParaiba from '@/components/ui/MapaVariacaoParaiba';
 import FiltroDropdown from '@/components/ui/FiltroDropdown';
 
@@ -60,7 +60,7 @@ const removerAcentos = (str: string) => str.normalize('NFD').replace(/[\u0300-\u
 
 const interpolateColor = (value: number, min: number, max: number, minColor: number[], maxColor: number[]): string => {
   if (value <= min) return `rgb(${minColor[0]},${minColor[1]},${minColor[2]})`;
-  if (value >= max) return `rgb(${maxColor[0]},${maxColor[1]},${maxColor[2]})`; 
+  if (value >= max) return `rgb(${maxColor[0]},${maxColor[1]},${maxColor[2]})`;
 
   const ratio = (value - min) / (max - min);
   const r = Math.round(minColor[0] + (maxColor[0] - minColor[0]) * ratio);
@@ -97,7 +97,7 @@ export default function PainelVereadorPrefeito() {
   const [tipoMetricaMapa, setTipoMetricaMapa] = useState<'variacao-votos-validos' | 'variacao-abstencao' | 'variacao-comparecimento'>('variacao-votos-validos');
   const [municipioVisaoGeral, setMunicipioVisaoGeral] = useState('Todos os Municípios');
   
-  const cargosDisponiveisVP = ['Vereador', 'Prefeito'];
+  const cargosDisponiveisVP = useMemo(() => ['Prefeito', 'Vereador'], []); 
 
   const planilhasPorCargoVP: Record<string, { '2020': string[]; '2024': string[] }> = useMemo(() => ({
     Vereador: {
@@ -109,6 +109,9 @@ export default function PainelVereadorPrefeito() {
       '2024': ['prefeito_2024'],
     },
   }), []);
+
+  // Removido o estado `cargoFilterUserInteracted` e sua lógica associada.
+
 
   const safeParseVotes = useCallback((value: any): number => {
     if (typeof value === 'number') return value;
@@ -186,66 +189,90 @@ export default function PainelVereadorPrefeito() {
     let idsToFetch: string[] | undefined;
     idsToFetch = planilhasPorCargoVP[cargoUnico]?.[year];
     
-    if (!idsToFetch) return { allData: [], tempSectionDataForMetrics: new Map() }; 
+    // CARREGA DADOS DE MÉTRICAS GERAIS (Eleitores Aptos, Comparecimento, Abstenção)
+    // Para eleições municipais, podemos usar a planilha de Prefeito como base para métricas gerais.
+    const metricSheetId = year === '2020' ? 'prefeito_2020' : 'prefeito_2024';
 
-    for (const id of idsToFetch) {
-      try {
-        const res = await fetch(`/api/sheets/eleicao/${id}`, { signal });
-        const json = await res.json();
-        const linhas: string[][] = json.data?.slice(1) || [];
+    try {
+      const res = await fetch(`/api/sheets/eleicao/${metricSheetId}`, { signal });
+      const json = await res.json();
+      const linhas: string[][] = json.data?.slice(1) || [];
+      
+      for (const linha of linhas) {
+        const municipio = linha[0]?.trim();
+        const zona = linha[1]?.trim();
+        const secao = linha[2]?.trim();
+        const local = linha[3]?.trim();
 
-        const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
+        const aptRow = safeParseVotes(linha[8]);
+        const compRow = safeParseVotes(linha[9]);
+        const abstRow = safeParseVotes(linha[10]);
 
-        for (const linha of linhas) {
-          const municipio = linha[0]?.trim();
-          const zona = linha[1]?.trim();
-          const secao = linha[2]?.trim();
-          const local = linha[3]?.trim();
-
-          const aptRow = safeParseVotes(linha[8]);
-          const compRow = safeParseVotes(linha[9]);
-          const abstRow = safeParseVotes(linha[10]);
-
-          const numeroCandidato = linha[11]?.trim() || 'N/A';
-          const votos = safeParseVotes(linha[13]);
-          const sigla = (linha[6] || '').trim();
-          const nome = (linha[12] || '').trim().toUpperCase();
-
-          const infoLocal = dadosLocais.find(l =>
-            l['Município'] === municipio &&
-            l['Zona Eleitoral'] === zona &&
-            l['Seção Eleitoral'] === secao &&
-            l['Local de Votação'] === local
-          );
-
-          allData.push({
-            'Município': municipio,
-            'Zona Eleitoral': zona,
-            'Seção Eleitoral': secao,
-            'Local de Votação': local,
-            'Endereço do Local': infoLocal?.['Endereço do Local'] || 'N/A',
-            'Bairro do Local': infoLocal?.['Bairro do Local'] || 'N/A',
-            'Nome do Local': infoLocal?.['Nome do Local'] || 'N/A',
-            'Numero do Candidato': numeroCandidato,
-            'Nome do Candidato/Voto': nome,
-            'Quantidade de Votos': votos,
-            'Sigla do Partido': sigla,
-            Cargo: cargoDoRegistro,
+        const sectionKey = `${municipio}_${zona}_${secao}`;
+        if (!tempSectionDataForMetrics.has(sectionKey)) {
+          tempSectionDataForMetrics.set(sectionKey, {
+            aptos: aptRow, comp: compRow, abst: abstRow,
+            localCode: local, municipio: municipio, zona: zona, secao: secao,
           });
+        }
+      }
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        console.warn(`Requisição de métricas abortada para ${metricSheetId} (${year})`);
+      } else {
+        console.error(`Erro ao carregar dados de métricas de ${metricSheetId} (${year}):`, err);
+      }
+    }
 
-          const sectionKey = `${municipio}_${zona}_${secao}`;
-          if (!tempSectionDataForMetrics.has(sectionKey)) {
-            tempSectionDataForMetrics.set(sectionKey, {
-              aptos: aptRow, comp: compRow, abst: abstRow,
-              localCode: local, municipio: municipio, zona: zona, secao: secao,
+    // Carrega dados específicos de CANDIDATOS/VOTOS
+    if (idsToFetch) { // Apenas se houver planilhas para o cargo específico
+      for (const id of idsToFetch) {
+        try {
+          const res = await fetch(`/api/sheets/eleicao/${id}`, { signal });
+          const json = await res.json();
+          const linhas: string[][] = json.data?.slice(1) || [];
+
+          const cargoDoRegistro = cargoMap[id] || 'Desconhecido';
+
+          for (const linha of linhas) {
+            const municipio = linha[0]?.trim();
+            const zona = linha[1]?.trim();
+            const secao = linha[2]?.trim();
+            const local = linha[3]?.trim();
+
+            const numeroCandidato = linha[11]?.trim() || 'N/A';
+            const votos = safeParseVotes(linha[13]);
+            const sigla = (linha[6] || '').trim();
+            const nome = (linha[12] || '').trim().toUpperCase();
+
+            const infoLocal = dadosLocais.find(l =>
+              l['Município'] === municipio &&
+              l['Zona Eleitoral'] === zona &&
+              l['Seção Eleitoral'] === secao &&
+              l['Local de Votação'] === local
+            );
+
+            allData.push({
+              'Município': municipio,
+              'Zona Eleitoral': zona,
+              'Seção Eleitoral': secao,
+              'Local de Votação': local,
+              'Endereço do Local': infoLocal?.['Endereço do Local'] || 'N/A',
+              'Bairro do Local': infoLocal?.['Bairro do Local'] || 'N/A',
+              'Nome do Local': infoLocal?.['Nome do Local'] || 'N/A',
+              'Numero do Candidato': numeroCandidato,
+              'Nome do Candidato/Voto': nome,
+              'Quantidade de Votos': votos,
+              'Sigla do Partido': sigla,
+              Cargo: cargoDoRegistro,
             });
           }
-        }
-      } catch (err: any) {
-        if (err.name === 'AbortError') {
-          console.warn(`Requisição abortada para ${id} (${year})`);
-        } else {
-          console.error(`Erro ao carregar dados de ${id} (${year}):`, err);
+        } catch (err: any) {
+          if (err.name === 'AbortError') {
+            console.warn(`Requisição abortada para ${id} (${year})`);
+          } else {
+            console.error(`Erro ao carregar dados de ${id} (${year}):`, err);
+          }
         }
       }
     }
@@ -269,7 +296,8 @@ export default function PainelVereadorPrefeito() {
       setMetricasSecao2020(new Map());
       setMetricasSecao2024(new Map());
       setDadosMapaVisaoGeral([]);
-      setMunicipioVisaoGeral('Todos os Municípios');
+      // Não resetamos municipioVisaoGeral aqui para manter o filtro de município ativo se o usuário já o selecionou
+      // setMunicipioVisaoGeral('Todos os Municípios'); 
 
       const [data2020Result, data2024Result] = await Promise.all([
         loadSheetDataByYearAndCargo('2020', cargoAtivo, signal),
@@ -294,11 +322,84 @@ export default function PainelVereadorPrefeito() {
 
 
   useEffect(() => {
-    if (carregando || dados2020Completos.length === 0 || dados2024Completos.length === 0) {
+    if (carregando || dadosLocais.length === 0) {
+      // Zera os dados se estiver carregando ou sem locais
+      setDadosGerais2020({ eleitoresAptos: 0, totalComparecimentos: 0, totalAbstencoes: 0, taxaAbstencao: 0, votosValidos: 0, votosBrancos: 0, votosNulos: 0 });
+      setDadosGerais2024({ eleitoresAptos: 0, totalComparecimentos: 0, totalAbstencoes: 0, taxaAbstencao: 0, votosValidos: 0, votosBrancos: 0, votosNulos: 0 });
       setDadosMapaVisaoGeral([]);
       return;
     }
 
+    // Calcula dadosGerais2020 e dadosGerais2024 para os gráficos principais
+    let aptos2020Geral = 0, comp2020Geral = 0, abst2020Geral = 0;
+    let validos2020Geral = 0, brancos2020Geral = 0, nulos2020Geral = 0;
+    
+    // Filtra dados para o cargo ativo e município selecionado
+    const dados2020Filtrados = dados2020Completos.filter(d => 
+        d.Cargo === cargoAtivo && 
+        (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral)
+    );
+    const dados2024Filtrados = dados2024Completos.filter(d => 
+        d.Cargo === cargoAtivo && 
+        (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral)
+    );
+
+    // Soma métricas de seção (aptos, comparecimentos, abstenções)
+    metricasSecao2020.forEach(metric => {
+        if (metric.municipio === municipioVisaoGeral || municipioVisaoGeral === 'Todos os Municípios') {
+            aptos2020Geral += metric.aptos;
+            comp2020Geral += metric.comp;
+            abst2020Geral += metric.abst;
+        }
+    });
+    // Soma votos válidos, brancos, nulos para 2020
+    dados2020Filtrados.forEach(item => {
+        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+        const sigla = item['Sigla do Partido']?.toLowerCase();
+        if (nome === 'BRANCO') {
+            brancos2020Geral += item['Quantidade de Votos'];
+        } else if (nome === 'NULO' || sigla === '#nulo#') {
+            nulos2020Geral += item['Quantidade de Votos'];
+        } else {
+            validos2020Geral += item['Quantidade de Votos'];
+        }
+    });
+    setDadosGerais2020({
+        eleitoresAptos: aptos2020Geral, totalComparecimentos: comp2020Geral, totalAbstencoes: abst2020Geral,
+        taxaAbstencao: aptos2020Geral > 0 ? (abst2020Geral / aptos2020Geral) * 100 : 0,
+        votosValidos: validos2020Geral, votosBrancos: brancos2020Geral, votosNulos: nulos2020Geral,
+    });
+
+    let aptos2024Geral = 0, comp2024Geral = 0, abst2024Geral = 0;
+    let validos2024Geral = 0, brancos2024Geral = 0, nulos2024Geral = 0;
+
+    // Soma métricas de seção (aptos, comparecimentos, abstenções) para 2024
+    metricasSecao2024.forEach(metric => {
+        if (metric.municipio === municipioVisaoGeral || municipioVisaoGeral === 'Todos os Municípios') {
+            aptos2024Geral += metric.aptos;
+            comp2024Geral += metric.comp;
+            abst2024Geral += metric.abst;
+        }
+    });
+    // Soma votos válidos, brancos, nulos para 2024
+    dados2024Filtrados.forEach(item => {
+        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+        const sigla = item['Sigla do Partido']?.toLowerCase();
+        if (nome === 'BRANCO') {
+            brancos2024Geral += item['Quantidade de Votos'];
+        } else if (nome === 'NULO' || sigla === '#nulo#') {
+            nulos2024Geral += item['Quantidade de Votos'];
+        } else {
+            validos2024Geral += item['Quantidade de Votos'];
+        }
+    });
+    setDadosGerais2024({
+        eleitoresAptos: aptos2024Geral, totalComparecimentos: comp2024Geral, totalAbstencoes: abst2024Geral,
+        taxaAbstencao: aptos2024Geral > 0 ? (abst2024Geral / aptos2024Geral) * 100 : 0,
+        votosValidos: validos2024Geral, votosBrancos: brancos2024Geral, votosNulos: nulos2024Geral,
+    });
+
+    // CÁLCULO PARA O MAPA
     const municipiosUnicosNaParaiba = getUniqueOptions(dadosLocais, 'Município');
     const aggregatedDataForMap: { 
       [key: string]: { 
@@ -309,7 +410,6 @@ export default function PainelVereadorPrefeito() {
       } 
     } = {};
 
-    // Inicializa todos os municípios com zero para evitar `undefined`
     municipiosUnicosNaParaiba.forEach(mun => {
       aggregatedDataForMap[mun] = {
         totalValidos2020: 0, totalValidos2024: 0,
@@ -319,99 +419,43 @@ export default function PainelVereadorPrefeito() {
       };
     });
 
-    // Agrega dados de 2020
-    dados2020Completos.filter(d => d.Cargo === cargoAtivo && (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral))
-                      .forEach(item => {
-      const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-      const sigla = item['Sigla do Partido']?.toLowerCase();
-      if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') { // Adicionada verificação de existência
-        aggregatedDataForMap[item['Município']].totalValidos2020 += item['Quantidade de Votos'];
-      }
+    // Agrega dados de votos para o mapa pelo cargo ativo
+    dados2020Completos.filter(d => d.Cargo === cargoAtivo).forEach(item => {
+        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+        const sigla = item['Sigla do Partido']?.toLowerCase();
+        if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') {
+            aggregatedDataForMap[item['Município']].totalValidos2020 += item['Quantidade de Votos'];
+        }
     });
+    dados2024Completos.filter(d => d.Cargo === cargoAtivo).forEach(item => {
+        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
+        const sigla = item['Sigla do Partido']?.toLowerCase();
+        if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') {
+            aggregatedDataForMap[item['Município']].totalValidos2024 += item['Quantidade de Votos'];
+        }
+    });
+
+    // Métricas de seção para o mapa são sempre baseadas no que está disponível nas metricasSecao
     metricasSecao2020.forEach(metric => {
-      if (aggregatedDataForMap[metric.municipio]) { // Adicionada verificação de existência
+      if (aggregatedDataForMap[metric.municipio]) {
         aggregatedDataForMap[metric.municipio].aptos2020 += metric.aptos;
         aggregatedDataForMap[metric.municipio].abst2020 += metric.abst;
         aggregatedDataForMap[metric.municipio].comp2020 += metric.comp;
       }
     });
-
-    // Agrega dados de 2024
-    dados2024Completos.filter(d => d.Cargo === cargoAtivo && (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral))
-                      .forEach(item => {
-      const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-      const sigla = item['Sigla do Partido']?.toLowerCase();
-      if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') { // Adicionada verificação de existência
-        aggregatedDataForMap[item['Município']].totalValidos2024 += item['Quantidade de Votos'];
-      }
-    });
     metricasSecao2024.forEach(metric => {
-      if (aggregatedDataForMap[metric.municipio]) { // Adicionada verificação de existência
+      if (aggregatedDataForMap[metric.municipio]) {
         aggregatedDataForMap[metric.municipio].aptos2024 += metric.aptos;
         aggregatedDataForMap[metric.municipio].abst2024 += metric.abst;
         aggregatedDataForMap[metric.municipio].comp2024 += metric.comp;
       }
     });
 
-    // Calcula dadosGerais2020 e dadosGerais2024
-    let aptos2020Geral = 0, comp2020Geral = 0, abst2020Geral = 0, validos2020Geral = 0, brancos2020Geral = 0, nulos2020Geral = 0;
-    dados2020Completos.filter(d => d.Cargo === cargoAtivo && (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral))
-                      .forEach(item => {
-        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-        const sigla = item['Sigla do Partido']?.toLowerCase();
-        if (nome === 'BRANCO') {
-          brancos2020Geral += item['Quantidade de Votos'];
-        } else if (nome === 'NULO' || sigla === '#nulo#') {
-          nulos2020Geral += item['Quantidade de Votos'];
-        } else {
-          validos2020Geral += item['Quantidade de Votos'];
-        }
-    });
-    metricasSecao2020.forEach(metric => {
-        if (metric.municipio === municipioVisaoGeral || municipioVisaoGeral === 'Todos os Municípios') {
-            aptos2020Geral += metric.aptos;
-            comp2020Geral += metric.comp;
-            abst2020Geral += metric.abst;
-        }
-    });
-    setDadosGerais2020({
-        eleitoresAptos: aptos2020Geral, totalComparecimentos: comp2020Geral, totalAbstencoes: abst2020Geral,
-        taxaAbstencao: aptos2020Geral > 0 ? (abst2020Geral / aptos2020Geral) * 100 : 0,
-        votosValidos: validos2020Geral, votosBrancos: brancos2020Geral, votosNulos: nulos2020Geral,
-    });
-
-    let aptos2024Geral = 0, comp2024Geral = 0, abst2024Geral = 0, validos2024Geral = 0, brancos2024Geral = 0, nulos2024Geral = 0;
-    dados2024Completos.filter(d => d.Cargo === cargoAtivo && (municipioVisaoGeral === 'Todos os Municípios' || d['Município'] === municipioVisaoGeral))
-                      .forEach(item => {
-        const nome = item['Nome do Candidato/Voto']?.toUpperCase();
-        const sigla = item['Sigla do Partido']?.toLowerCase();
-        if (nome === 'BRANCO') {
-          brancos2024Geral += item['Quantidade de Votos'];
-        } else if (nome === 'NULO' || sigla === '#nulo#') {
-          nulos2024Geral += item['Quantidade de Votos'];
-        } else {
-          validos2024Geral += item['Quantidade de Votos'];
-        }
-    });
-    metricasSecao2024.forEach(metric => {
-        if (metric.municipio === municipioVisaoGeral || municipioVisaoGeral === 'Todos os Municípios') {
-            aptos2024Geral += metric.aptos;
-            comp2024Geral += metric.comp;
-            abst2024Geral += metric.abst;
-        }
-    });
-    setDadosGerais2024({
-        eleitoresAptos: aptos2024Geral, totalComparecimentos: comp2024Geral, totalAbstencoes: abst2024Geral,
-        taxaAbstencao: aptos2024Geral > 0 ? (abst2024Geral / aptos2024Geral) * 100 : 0,
-        votosValidos: validos2024Geral, votosBrancos: brancos2024Geral, votosNulos: nulos2024Geral,
-    });
-
-
     const mapData = municipiosUnicosNaParaiba.map(mun => {
       const data = aggregatedDataForMap[mun];
-      // Verificações de segurança: se 'data' for undefined (o que não deveria acontecer com a inicialização), retorna valores padrão.
       const value2020 = data?.totalValidos2020 || 0;
       const value2024 = data?.totalValidos2024 || 0;
+
       const aptos2020_map = data?.aptos2020 || 0;
       const aptos2024_map = data?.aptos2024 || 0;
       const abst2020_map = data?.abst2020 || 0;
@@ -492,6 +536,7 @@ export default function PainelVereadorPrefeito() {
     setCargoAtivo(e.target.value);
     setMunicipioVisaoGeral('Todos os Municípios');
     setTipoMetricaMapa('variacao-votos-validos');
+    // Removida a linha `setCargoFilterUserInteracted(true);`
   }, []);
 
   const municipiosDisponiveisParaFiltro = useMemo(() => {
@@ -550,6 +595,7 @@ export default function PainelVereadorPrefeito() {
                   </div>
                 </div>
 
+                {/* Exibe os 6 gráficos, SEMPRE */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <GraficoLinhaComparativo
                     titulo="Eleitores Aptos"
@@ -559,6 +605,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.eleitoresAptos}
                     isLoading={carregando}
                     unidade=" eleitores"
+                    height="400px" 
                   />
                   <GraficoLinhaComparativo
                     titulo="Total de Comparecimentos"
@@ -568,6 +615,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.totalComparecimentos}
                     isLoading={carregando}
                     unidade=" comparecimentos"
+                    height="400px" 
                   />
                   <GraficoLinhaComparativo
                     titulo="Total de Abstenções"
@@ -577,6 +625,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.totalAbstencoes}
                     isLoading={carregando}
                     unidade=" abstenções"
+                    height="400px" 
                   />
                   <GraficoLinhaComparativo
                     titulo="Votos Válidos"
@@ -586,6 +635,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.votosValidos}
                     isLoading={carregando}
                     unidade=" votos"
+                    height="400px" 
                   />
                   <GraficoLinhaComparativo
                     titulo="Votos Brancos"
@@ -595,6 +645,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.votosBrancos}
                     isLoading={carregando}
                     unidade=" votos"
+                    height="400px" 
                   />
                   <GraficoLinhaComparativo
                     titulo="Votos Nulos"
@@ -604,6 +655,7 @@ export default function PainelVereadorPrefeito() {
                     valor2022={dadosGerais2024.votosNulos}
                     isLoading={carregando}
                     unidade=" votos"
+                    height="400px" 
                   />
                 </div>
 
