@@ -1,4 +1,3 @@
-// MapaParaibaEleitorado.tsx
 'use client';
 
 import dynamic from 'next/dynamic';
@@ -84,6 +83,59 @@ interface MapMunicipioMetrics {
   perc90a94Anos?: number;
   perc95a99Anos?: number;
   percSuperiorA100Anos?: number;
+  // Adicione os totais brutos correspondentes aqui
+  totalMulheres: number;
+  totalJovens: number;
+  totalAdultos: number;
+  totalIdosos: number;
+  totalMasculino: number;
+  totalFeminino: number;
+  totalSolteiro: number;
+  totalCasado: number;
+  totalDivorciado: number;
+  totalViuvo: number;
+  totalSeparadoJudicialmente: number;
+  totalNaoInformadoEstadoCivil: number;
+  totalAnalfabetos: number;
+  totalFundamentalIncompleto: number;
+  totalFundamentalCompleto: number;
+  totalMedioIncompleto: number;
+  totalMedioCompleto: number;
+  totalSuperiorIncompleto: number;
+  totalSuperiorCompleto: number;
+  totalEscolaridadeNaoInformada: number;
+  totalLeEscreve: number;
+  totalBranca: number;
+  totalPreta: number;
+  totalParda: number;
+  totalAmarela: number;
+  totalIndigena: number;
+  totalRacaCorNaoInformada: number;
+  totalTransgenero: number;
+  totalCisgenero: number;
+  totalIdentidadeNaoInformada: number;
+  total16Anos: number;
+  total17Anos: number;
+  total18Anos: number;
+  total19Anos: number;
+  total20Anos: number;
+  total21a24Anos: number;
+  total25a29Anos: number;
+  total30a34Anos: number;
+  total35a39Anos: number;
+  total40a44Anos: number;
+  total45a49Anos: number;
+  total50a54Anos: number;
+  total55a59Anos: number;
+  total60a64Anos: number;
+  total65a69Anos: number;
+  total70a74Anos: number;
+  total75a79Anos: number;
+  total80a84Anos: number;
+  total85a89Anos: number;
+  total90a94Anos: number;
+  total95a99Anos: number;
+  totalSuperiorA100Anos: number;
 }
 
 interface MapaParaibaEleitoradoProps {
@@ -123,7 +175,7 @@ const ALL_FAIXAS_ETARIAS_DETALHADAS_KEYS = [
   '25a29Anos', '30a34Anos', '35a39Anos', '40a44Anos', '45a49Anos',
   '50a54Anos', '55a59Anos', '60a64Anos', '65a69Anos', '70a74Anos',
   '75a79Anos', '80a84Anos', '85a89Anos', '90a94Anos', '95a99Anos',
-  'SuperiorA100Anos', 'NaoInformadoFaixaEtaria' // Garante que esta chave está aqui
+  'SuperiorA100Anos', 'NaoInformadoFaixaEtaria'
 ];
 
 const ALL_FAIXAS_ETARIAS_LABELS_MAP: Record<string, string> = {
@@ -131,7 +183,8 @@ const ALL_FAIXAS_ETARIAS_LABELS_MAP: Record<string, string> = {
   'perc25a29Anos': '25 a 29 Anos', 'perc30a34Anos': '30 a 34 Anos', 'perc35a39Anos': '35 a 39 Anos', 'perc40a44Anos': '40 a 44 Anos', 'perc45a49Anos': '45 a 49 Anos',
   'perc50a54Anos': '50 a 54 Anos', 'perc55a59Anos': '55 a 59 Anos', 'perc60a64Anos': '60 a 64 Anos', 'perc65a69Anos': '65 a 69 Anos', 'perc70a74Anos': '70 a 74 Anos',
   'perc75a79Anos': '75 a 79 Anos', 'perc80a84Anos': '80 a 84 Anos', 'perc85a89Anos': '85 a 89 Anos', 'perc90a94Anos': '90 a 94 Anos', 'perc95a99Anos': '95 a 99 Anos',
-  'percSuperiorA100Anos': 'Superior a 100 Anos'
+  'percSuperiorA100Anos': 'Superior a 100 Anos',
+  'percNaoInformadoFaixaEtaria': 'Não Informado'
 };
 
 // Define os thresholds de cor para CADA métrica
@@ -290,16 +343,16 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
     return {
       ...baseOptions,
       'Faixa Etária': [
-        ...(ALL_FAIXAS_ETARIAS_DETALHADAS_KEYS.map(key => ({
+        ...ALL_FAIXAS_ETARIAS_DETALHADAS_KEYS.map(key => ({
           value: `perc${key}` as DisplayMetric,
           label: ALL_FAIXAS_ETARIAS_LABELS_MAP[`perc${key}`]
-        }))).sort((a, b) => {
+        })).sort((a, b) => {
           if (a.label === 'Não Informado') return 1;
           if (b.label === 'Não Informado') return -1;
           
           const extractMinAge = (label: string): number => {
             if (typeof label !== 'string' || !label) {
-                return Infinity; // Garante que labels inválidos vão para o final
+                return Infinity;
             }
             const match = label.match(/(\d+)/);
             return match && match[1] ? parseInt(match[1]) : Infinity;
@@ -601,6 +654,59 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
         perc90a94Anos: total > 0 ? (tempMetrics[muni].total90a94Anos / total) * 100 : 0,
         perc95a99Anos: total > 0 ? (tempMetrics[muni].total95a99Anos / total) * 100 : 0,
         percSuperiorA100Anos: total > 0 ? (tempMetrics[muni].totalSuperiorA100Anos / total) * 100 : 0,
+        // E aqui você já está populando os campos `total...` brutos que você mapeou na interface `MapMunicipioMetrics`
+        totalMulheres: tempMetrics[muni].totalMulheres,
+        totalJovens: tempMetrics[muni].totalJovens,
+        totalAdultos: tempMetrics[muni].totalAdultos,
+        totalIdosos: tempMetrics[muni].totalIdosos,
+        totalMasculino: tempMetrics[muni].totalMasculino,
+        totalFeminino: tempMetrics[muni].totalFeminino,
+        totalSolteiro: tempMetrics[muni].totalSolteiro,
+        totalCasado: tempMetrics[muni].totalCasado,
+        totalDivorciado: tempMetrics[muni].totalDivorciado,
+        totalViuvo: tempMetrics[muni].totalViuvo,
+        totalSeparadoJudicialmente: tempMetrics[muni].totalSeparadoJudicialmente,
+        totalNaoInformadoEstadoCivil: tempMetrics[muni].totalNaoInformadoEstadoCivil,
+        totalAnalfabetos: tempMetrics[muni].totalAnalfabetos,
+        totalFundamentalIncompleto: tempMetrics[muni].totalFundamentalIncompleto,
+        totalFundamentalCompleto: tempMetrics[muni].totalFundamentalCompleto,
+        totalMedioIncompleto: tempMetrics[muni].totalMedioIncompleto,
+        totalMedioCompleto: tempMetrics[muni].totalMedioCompleto,
+        totalSuperiorIncompleto: tempMetrics[muni].totalSuperiorIncompleto,
+        totalSuperiorCompleto: tempMetrics[muni].totalSuperiorCompleto,
+        totalEscolaridadeNaoInformada: tempMetrics[muni].totalEscolaridadeNaoInformada,
+        totalLeEscreve: tempMetrics[muni].totalLeEscreve,
+        totalBranca: tempMetrics[muni].totalBranca,
+        totalPreta: tempMetrics[muni].totalPreta,
+        totalParda: tempMetrics[muni].totalParda,
+        totalAmarela: tempMetrics[muni].totalAmarela,
+        totalIndigena: tempMetrics[muni].totalIndigena,
+        totalRacaCorNaoInformada: tempMetrics[muni].totalRacaCorNaoInformada,
+        totalTransgenero: tempMetrics[muni].totalTransgenero,
+        totalCisgenero: tempMetrics[muni].totalCisgenero,
+        totalIdentidadeNaoInformada: tempMetrics[muni].totalIdentidadeNaoInformada,
+        total16Anos: tempMetrics[muni].total16Anos,
+        total17Anos: tempMetrics[muni].total17Anos,
+        total18Anos: tempMetrics[muni].total18Anos,
+        total19Anos: tempMetrics[muni].total19Anos,
+        total20Anos: tempMetrics[muni].total20Anos,
+        total21a24Anos: tempMetrics[muni].total21a24Anos,
+        total25a29Anos: tempMetrics[muni].total25a29Anos,
+        total30a34Anos: tempMetrics[muni].total30a34Anos,
+        total35a39Anos: tempMetrics[muni].total35a39Anos,
+        total40a44Anos: tempMetrics[muni].total40a44Anos,
+        total45a49Anos: tempMetrics[muni].total45a49Anos,
+        total50a54Anos: tempMetrics[muni].total50a54Anos,
+        total55a59Anos: tempMetrics[muni].total55a59Anos,
+        total60a64Anos: tempMetrics[muni].total60a64Anos,
+        total65a69Anos: tempMetrics[muni].total65a69Anos,
+        total70a74Anos: tempMetrics[muni].total70a74Anos,
+        total75a79Anos: tempMetrics[muni].total75a79Anos,
+        total80a84Anos: tempMetrics[muni].total80a84Anos,
+        total85a89Anos: tempMetrics[muni].total85a89Anos,
+        total90a94Anos: tempMetrics[muni].total90a94Anos,
+        total95a99Anos: tempMetrics[muni].total95a99Anos,
+        totalSuperiorA100Anos: tempMetrics[muni].totalSuperiorA100Anos,
       };
     }
     cacheMetricsMunicipio.current = finalMetrics;
@@ -709,6 +815,7 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
             doubleClickZoom={false}
             dragging={false}
             zoomControl={false}
+            attributionControl={false}
             style={{ height: '70vh', width: '100%', backgroundColor: 'white' }}
           >
             <GeoJSON
@@ -728,7 +835,11 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
 
                   if (selectedMetricLabel && typeof displayValue === 'number' && !isNaN(displayValue)) {
                     if (metricToDisplay.startsWith('perc')) {
-                      tooltipContent += `${selectedMetricLabel}: ${displayValue.toFixed(2)}%`;
+                      // EXIBIÇÃO DA PORCENTAGEM E DO NÚMERO BRUTO AQUI!
+                      const totalValueKey = metricToDisplay.replace('perc', 'total') as keyof MapMunicipioMetrics; // Converte 'percX' para 'totalX'
+                      const totalValue = (metrics[totalValueKey] as number) || 0;
+
+                      tooltipContent += `${selectedMetricLabel}: ${displayValue.toFixed(2)}% (${totalValue.toLocaleString('pt-BR')} eleitores)`;
                     } else {
                       tooltipContent += `${selectedMetricLabel}: ${displayValue.toLocaleString('pt-BR')}`;
                     }
@@ -782,7 +893,7 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                     label = `${nextTh.toLocaleString('pt-BR')}${unit} - ${th.toLocaleString('pt-BR')}${unit}`;
                   } else {
                     if (th === 0 && sortedThresholds.length > 1) {
-                         label = `< ${sortedThresholds[sortedThresholds.length - 2].toLocaleString('pt-BR')}${unit}`;
+                        label = `< ${sortedThresholds[sortedThresholds.length - 2].toLocaleString('pt-BR')}${unit}`;
                     } else if (th === 0 && sortedThresholds.length === 1) {
                         label = `0${unit}`;
                     } else {
@@ -813,14 +924,14 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
             <p className="text-sm text-gray-800"><span className="font-semibold">Total de Eleitores:</span> {detalhesMunicipioClicado.metrics.totalEleitores.toLocaleString('pt-BR')}</p>
             {abaAtiva === 'Visão Geral' && (
               <>
-                <p className="text-sm text-gray-800"><span className="font-semibold">Percentual de Mulheres:</span> {detalhesMunicipioClicado.metrics.percMulheres.toFixed(2)}%</p>
+                <p className="text-sm text-gray-800"><span className="font-semibold">Percentual de Mulheres:</span> {detalhesMunicipioClicado.metrics.percMulheres.toFixed(2)}% ({detalhesMunicipioClicado.metrics.totalMulheres.toLocaleString('pt-BR')} mulheres)</p>
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Grupo Etário:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Jovens (16-24)', perc: detalhesMunicipioClicado.metrics.percJovens },
-                    { name: 'Adultos (25-59)', perc: detalhesMunicipioClicado.metrics.percAdultos },
-                    { name: 'Idosos (60+)', perc: detalhesMunicipioClicado.metrics.percIdosos },
-                  ].map((item, index) => (<li key={item.name || `vg-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Jovens (16-24)', perc: detalhesMunicipioClicado.metrics.percJovens, total: detalhesMunicipioClicado.metrics.totalJovens },
+                    { name: 'Adultos (25-59)', perc: detalhesMunicipioClicado.metrics.percAdultos, total: detalhesMunicipioClicado.metrics.totalAdultos },
+                    { name: 'Idosos (60+)', perc: detalhesMunicipioClicado.metrics.percIdosos, total: detalhesMunicipioClicado.metrics.totalIdosos },
+                  ].map((item, index) => (<li key={item.name || `vg-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -829,9 +940,9 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Gênero:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Masculino', perc: detalhesMunicipioClicado.metrics.percMasculino || 0 },
-                    { name: 'Feminino', perc: detalhesMunicipioClicado.metrics.percFeminino || 0 },
-                  ].map((item, index) => (<li key={item.name || `gen-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Masculino', perc: detalhesMunicipioClicado.metrics.percMasculino || 0, total: detalhesMunicipioClicado.metrics.totalMasculino || 0 },
+                    { name: 'Feminino', perc: detalhesMunicipioClicado.metrics.percFeminino || 0, total: detalhesMunicipioClicado.metrics.totalFeminino || 0 },
+                  ].map((item, index) => (<li key={item.name || `gen-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -840,12 +951,12 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Estado Civil:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Solteiros', perc: detalhesMunicipioClicado.metrics.percSolteiro || 0 },
-                    { name: 'Casados', perc: detalhesMunicipioClicado.metrics.percCasado || 0 },
-                    { name: 'Divorciados', perc: detalhesMunicipioClicado.metrics.percDivorciado || 0 },
-                    { name: 'Viúvos', perc: detalhesMunicipioClicado.metrics.percViuvo || 0 },
-                    { name: 'Separados Judicialmente', perc: detalhesMunicipioClicado.metrics.percSeparadoJudicialmente || 0 },
-                  ].map((item, index) => (<li key={item.name || `ec-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Solteiros', perc: detalhesMunicipioClicado.metrics.percSolteiro || 0, total: detalhesMunicipioClicado.metrics.totalSolteiro || 0 },
+                    { name: 'Casados', perc: detalhesMunicipioClicado.metrics.percCasado || 0, total: detalhesMunicipioClicado.metrics.totalCasado || 0 },
+                    { name: 'Divorciados', perc: detalhesMunicipioClicado.metrics.percDivorciado || 0, total: detalhesMunicipioClicado.metrics.totalDivorciado || 0 },
+                    { name: 'Viúvos', perc: detalhesMunicipioClicado.metrics.percViuvo || 0, total: detalhesMunicipioClicado.metrics.totalViuvo || 0 },
+                    { name: 'Separados Judicialmente', perc: detalhesMunicipioClicado.metrics.percSeparadoJudicialmente || 0, total: detalhesMunicipioClicado.metrics.totalSeparadoJudicialmente || 0 },
+                  ].map((item, index) => (<li key={item.name || `ec-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -856,10 +967,11 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                   {[
                     ...ALL_FAIXAS_ETARIAS_DETALHADAS_KEYS.map(key => {
                       const metricKey = `perc${key}` as keyof MapMunicipioMetrics;
+                      const totalKey = `total${key}` as keyof MapMunicipioMetrics; // Chave para o total bruto
                       const name = ALL_FAIXAS_ETARIAS_LABELS_MAP[`perc${key}`];
-                      return { name: name, perc: (detalhesMunicipioClicado.metrics[metricKey] as number) || 0 };
+                      return { name: name, perc: (detalhesMunicipioClicado.metrics[metricKey] as number) || 0, total: (detalhesMunicipioClicado.metrics[totalKey] as number) || 0 };
                     })
-                  ].map((item, index) => (<li key={item.name || `fe-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                  ].map((item, index) => (<li key={item.name || `fe-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -868,15 +980,15 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Escolaridade:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Analfabetos', perc: detalhesMunicipioClicado.metrics.percAnalfabetos || 0 },
-                    { name: 'Lê e Escreve', perc: detalhesMunicipioClicado.metrics.percLeEscreve || 0 },
-                    { name: 'Fundamental Incompleto', perc: detalhesMunicipioClicado.metrics.percFundamentalIncompleto || 0 },
-                    { name: 'Fundamental Completo', perc: detalhesMunicipioClicado.metrics.percFundamentalCompleto || 0 },
-                    { name: 'Médio Incompleto', perc: detalhesMunicipioClicado.metrics.percMedioIncompleto || 0 },
-                    { name: 'Médio Completo', perc: detalhesMunicipioClicado.metrics.percMedioCompleto || 0 },
-                    { name: 'Superior Incompleto', perc: detalhesMunicipioClicado.metrics.percSuperiorIncompleto || 0 },
-                    { name: 'Superior Completo', perc: detalhesMunicipioClicado.metrics.percSuperiorCompleto || 0 },
-                  ].map((item, index) => (<li key={item.name || `es-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Analfabetos', perc: detalhesMunicipioClicado.metrics.percAnalfabetos || 0, total: detalhesMunicipioClicado.metrics.totalAnalfabetos || 0 },
+                    { name: 'Lê e Escreve', perc: detalhesMunicipioClicado.metrics.percLeEscreve || 0, total: detalhesMunicipioClicado.metrics.totalLeEscreve || 0 },
+                    { name: 'Fundamental Incompleto', perc: detalhesMunicipioClicado.metrics.percFundamentalIncompleto || 0, total: detalhesMunicipioClicado.metrics.totalFundamentalIncompleto || 0 },
+                    { name: 'Fundamental Completo', perc: detalhesMunicipioClicado.metrics.percFundamentalCompleto || 0, total: detalhesMunicipioClicado.metrics.totalFundamentalCompleto || 0 },
+                    { name: 'Médio Incompleto', perc: detalhesMunicipioClicado.metrics.percMedioIncompleto || 0, total: detalhesMunicipioClicado.metrics.totalMedioIncompleto || 0 },
+                    { name: 'Médio Completo', perc: detalhesMunicipioClicado.metrics.percMedioCompleto || 0, total: detalhesMunicipioClicado.metrics.totalMedioCompleto || 0 },
+                    { name: 'Superior Incompleto', perc: detalhesMunicipioClicado.metrics.percSuperiorIncompleto || 0, total: detalhesMunicipioClicado.metrics.totalSuperiorIncompleto || 0 },
+                    { name: 'Superior Completo', perc: detalhesMunicipioClicado.metrics.percSuperiorCompleto || 0, total: detalhesMunicipioClicado.metrics.totalSuperiorCompleto || 0 },
+                  ].map((item, index) => (<li key={item.name || `es-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -885,13 +997,13 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Raça/Cor:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Branca', perc: detalhesMunicipioClicado.metrics.percBranca || 0 },
-                    { name: 'Preta', perc: detalhesMunicipioClicado.metrics.percPreta || 0 },
-                    { name: 'Parda', perc: detalhesMunicipioClicado.metrics.percParda || 0 },
-                    { name: 'Amarela', perc: detalhesMunicipioClicado.metrics.percAmarela || 0 },
-                    { name: 'Indígena', perc: detalhesMunicipioClicado.metrics.percIndigena || 0 },
-                    { name: 'Não Informada', perc: detalhesMunicipioClicado.metrics.percRacaCorNaoInformada || 0 },
-                  ].map((item, index) => (<li key={item.name || `rc-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Branca', perc: detalhesMunicipioClicado.metrics.percBranca || 0, total: detalhesMunicipioClicado.metrics.totalBranca || 0 },
+                    { name: 'Preta', perc: detalhesMunicipioClicado.metrics.percPreta || 0, total: detalhesMunicipioClicado.metrics.totalPreta || 0 },
+                    { name: 'Parda', perc: detalhesMunicipioClicado.metrics.percParda || 0, total: detalhesMunicipioClicado.metrics.totalParda || 0 },
+                    { name: 'Amarela', perc: detalhesMunicipioClicado.metrics.percAmarela || 0, total: detalhesMunicipioClicado.metrics.totalAmarela || 0 },
+                    { name: 'Indígena', perc: detalhesMunicipioClicado.metrics.percIndigena || 0, total: detalhesMunicipioClicado.metrics.totalIndigena || 0 },
+                    { name: 'Não Informada', perc: detalhesMunicipioClicado.metrics.percRacaCorNaoInformada || 0, total: detalhesMunicipioClicado.metrics.totalRacaCorNaoInformada || 0 },
+                  ].map((item, index) => (<li key={item.name || `rc-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}
@@ -900,10 +1012,10 @@ const MapaParaibaEleitorado = ({ apiData, abaAtiva, isDataLoading }: MapaParaiba
                 <h3 className="text-sm font-semibold text-gray-700 mt-3 mb-1">Percentual por Identidade de Gênero:</h3>
                 <ul className="list-none text-sm text-gray-800 ml-0 p-0 text-left mx-auto max-w-fit">
                   {[
-                    { name: 'Transgênero', perc: detalhesMunicipioClicado.metrics.percTransgenero || 0 },
-                    { name: 'Cisgênero', perc: detalhesMunicipioClicado.metrics.percCisgenero || 0 },
-                    { name: 'Prefiro Não Dizer / Não Informado', perc: detalhesMunicipioClicado.metrics.percIdentidadeNaoInformada || 0 },
-                  ].map((item, index) => (<li key={item.name || `ig-${index}`}>{item.name}: {item.perc.toFixed(2)}%</li>))} {/* CORRIGIDO AQUI */}
+                    { name: 'Transgênero', perc: detalhesMunicipioClicado.metrics.percTransgenero || 0, total: detalhesMunicipioClicado.metrics.totalTransgenero || 0 },
+                    { name: 'Cisgênero', perc: detalhesMunicipioClicado.metrics.percCisgenero || 0, total: detalhesMunicipioClicado.metrics.totalCisgenero || 0 },
+                    { name: 'Prefiro Não Dizer / Não Informado', perc: detalhesMunicipioClicado.metrics.percIdentidadeNaoInformada || 0, total: detalhesMunicipioClicado.metrics.totalIdentidadeNaoInformada || 0 },
+                  ].map((item, index) => (<li key={item.name || `ig-${index}`}>{item.name}: {item.perc.toFixed(2)}% ({item.total.toLocaleString('pt-BR')})</li>))}
                 </ul>
               </>
             )}

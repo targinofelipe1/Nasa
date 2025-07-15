@@ -1,4 +1,3 @@
-// components/ui/FilterDropdown.tsx
 import React from 'react';
 
 interface Option {
@@ -7,13 +6,13 @@ interface Option {
 }
 
 interface FilterDropdownProps {
-  id: string; // ID único para o elemento select
-  label: string; // Rótulo visível para o dropdown (ex: "Município")
-  value: string; // Valor atualmente selecionado
-  options: Option[]; // Array de objetos { value: string, label: string }
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void; // Função para lidar com a mudança de seleção
-  disabled?: boolean; // Opcional: desabilita o dropdown
-  placeholder?: string; // Opcional: texto da primeira opção (ex: "Selecione uma opção")
+  id: string;
+  label: string;
+  value: string;
+  options: Option[];
+  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
+  disabled?: boolean;
+  placeholder?: string;
 }
 
 const FiltroDropdown: React.FC<FilterDropdownProps> = ({
@@ -38,7 +37,6 @@ const FiltroDropdown: React.FC<FilterDropdownProps> = ({
           onChange={onChange}
           disabled={disabled}
         >
-          {placeholder && <option value="">{placeholder}</option>}
           {options.map((option) => (
             <option key={option.value} value={option.value}>
               {option.label}
@@ -46,7 +44,6 @@ const FiltroDropdown: React.FC<FilterDropdownProps> = ({
           ))}
         </select>
         <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
-          {/* Ícone de seta para baixo */}
           <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
         </div>
       </div>

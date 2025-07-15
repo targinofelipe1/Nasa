@@ -56,6 +56,10 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     );
   }
 
+  // Valores protegidos
+  const safe2018 = isNaN(valor2018) ? 0 : valor2018;
+  const safe2022 = isNaN(valor2022) ? 0 : valor2022;
+
   const color2018Point = 'rgb(80, 162, 235)';
   const color2022Point = 'rgb(255, 99, 132)';
   const colorLine = 'rgb(128, 0, 128)';
@@ -72,7 +76,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     datasets: [
       {
         label: label2018,
-        data: [valor2018, NaN],
+        data: [safe2018, NaN],
         borderColor: colorLine,
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -86,7 +90,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
       },
       {
         label: label2022,
-        data: [NaN, valor2022],
+        data: [NaN, safe2022],
         borderColor: colorLine,
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -100,7 +104,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
       },
       {
         label: 'Variação',
-        data: [valor2018, valor2022],
+        data: [safe2018, safe2022],
         borderColor: colorLine,
         backgroundColor: 'transparent',
         tension: 0.1,
