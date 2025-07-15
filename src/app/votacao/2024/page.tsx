@@ -1357,9 +1357,11 @@ useEffect(() => {
   return (
     <ProtectedRoute>
       <NoScroll />
-      <div className="flex h-screen bg-white overflow-hidden">
-        <Sidebar />
-        <div className="flex-1 h-full overflow-y-auto" style={{ zoom: '80%' }}>
+      <div className="flex bg-white h-screen overflow-hidden">
+       <div style={{ zoom: '80%' }} className="h-screen overflow-auto">
+         <Sidebar />
+        </div>      
+        <div className="flex-1 overflow-auto" style={{ zoom: '80%' }}>
           <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200 px-6">
             <p className="text-sm text-gray-500 mb-1">
               <span className="text-black font-medium">Painel</span> /
