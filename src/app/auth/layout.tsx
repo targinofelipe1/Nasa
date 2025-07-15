@@ -8,9 +8,7 @@ export default function AuthLayout({
   return (
     <div className="grid h-screen overflow-hidden lg:grid-cols-2">
 
-      {/* Coluna Esquerda - Formulário */}
       <div className="flex flex-col gap-4 p-6 md:p-10">
-        {/* Logo e Nome */}
         <div className="flex justify-center items-center gap-2 text-center">
           <a href="/auth/sign-in" className="flex items-center gap-2 font-medium">
             <img

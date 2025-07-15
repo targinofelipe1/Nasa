@@ -64,7 +64,7 @@ export default function ReportsPageEstadual() {
           <h1 className="text-2xl font-bold">Relatório Estadual</h1>
         </div>
 
-        <div className="flex h-screen">
+      <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
           <Sidebar />
 
           <div className="no-print flex flex-row w-full h-full p-4">

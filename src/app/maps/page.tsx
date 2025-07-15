@@ -47,7 +47,7 @@ export default function MapsPage() {
 
   return (
      <ProtectedRoute>
-      <div className="flex h-screen">
+      <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
         {/* Sidebar à esquerda */}
         <Sidebar />
 

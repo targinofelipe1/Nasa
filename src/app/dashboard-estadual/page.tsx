@@ -74,7 +74,8 @@ export default function Dashboard() {
 
   return (
     <ProtectedRoute>
-      <div className="flex w-screen h-screen bg-white">
+      <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
+
         <Sidebar />
         <main className="flex-1 p-6 overflow-x-hidden">
           <Navbar />

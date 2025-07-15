@@ -692,7 +692,7 @@ export default function PainelEleitorado() {
       <NoScroll />
       <div className="flex h-screen bg-white overflow-hidden">
         <Sidebar />
-        <div className="flex-1 h-full overflow-y-auto">
+        <div className="flex-1 h-full overflow-y-auto" style={{ zoom: '80%' }}>
           <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200 px-6">
             <p className="text-sm text-gray-500 mb-1">
               <span className="text-black font-medium">Painel</span> /
@@ -723,14 +723,11 @@ export default function PainelEleitorado() {
                       setIncluirComDeficiencia(false);
                       setIncluirComNomeSocial(false);
                       setPaginaAtualTabela(1);
-                      // Ao trocar de aba, resetamos os dados e ativamos o aviso amarelo
-                      if (dadosCompletos.length > 0) { // Se já havia dados carregados
-                         setDadosCompletos([]); // Zera os dados para que o aviso amarelo apareça
-                         setCarregandoEleitorado(false); // Garante que o spinner não apareça inicialmente
+                      if (dadosCompletos.length > 0) { 
+                         setDadosCompletos([]); 
+                         setCarregandoEleitorado(false); 
                       }
-                      // Forçar um reload do useEffect (mesmo sem incrementar forceReloadCounter)
-                      // para que a lógica de "tenta cache, se não tiver, mostra aviso" seja re-avaliada.
-                      // Se queremos *sempre* a mensagem amarela, é preciso zerar dadosCompletos.
+                 
                     }}
                     className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                       abaAtiva === aba

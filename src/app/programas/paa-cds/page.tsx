@@ -315,10 +315,10 @@ export default function ProgramasPage() {
       <>
         <NoScroll />
         <div className="flex h-screen bg-white overflow-hidden">
-          <div className="h-full">
+        <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
             <Sidebar />
           </div>
-          <div className="flex-1 h-full overflow-y-auto">
+        <div className="flex-1 h-full overflow-y-auto" style={{ zoom: '80%' }}>
             <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200">
               <p className="text-sm text-gray-500 mb-1">
                 <span className="text-black font-medium">Programas</span> /
