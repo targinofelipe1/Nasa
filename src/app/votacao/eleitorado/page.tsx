@@ -723,14 +723,11 @@ export default function PainelEleitorado() {
                       setIncluirComDeficiencia(false);
                       setIncluirComNomeSocial(false);
                       setPaginaAtualTabela(1);
-                      // Ao trocar de aba, resetamos os dados e ativamos o aviso amarelo
-                      if (dadosCompletos.length > 0) { // Se já havia dados carregados
-                         setDadosCompletos([]); // Zera os dados para que o aviso amarelo apareça
-                         setCarregandoEleitorado(false); // Garante que o spinner não apareça inicialmente
+                      if (dadosCompletos.length > 0) { 
+                         setDadosCompletos([]); 
+                         setCarregandoEleitorado(false); 
                       }
-                      // Forçar um reload do useEffect (mesmo sem incrementar forceReloadCounter)
-                      // para que a lógica de "tenta cache, se não tiver, mostra aviso" seja re-avaliada.
-                      // Se queremos *sempre* a mensagem amarela, é preciso zerar dadosCompletos.
+                 
                     }}
                     className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                       abaAtiva === aba
