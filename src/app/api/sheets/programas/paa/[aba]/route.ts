@@ -5,10 +5,10 @@ const SPREADSHEET_ID = '1gZoNPJyo9nFzriKwWHB8aZO0WSEgM-Y9nGWVeN786-Q';
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { aba: string } }
+  { params }: { params: Promise<{ aba: string }> }
 ) {
   const { aba } = await params;
-  
+
   const validTabs = ['Agricultores', 'Compras', 'Beneficiarios', 'Municipio', 'Entidades', 'Cooperativas', 'Compras_Cooperativas'];
   if (!validTabs.includes(aba)) {
     return NextResponse.json({ success: false, message: 'Aba inválida.' }, { status: 400 });
