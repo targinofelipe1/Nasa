@@ -106,9 +106,6 @@ export default function PainelAnaliseEleitoral() {
   const [cargoVisaoGeral, setCargoVisaoGeral] = useState('Presidente 1T');
   const [municipioVisaoGeral, setMunicipioVisaoGeral] = useState('Todos os Municípios');
 
-  // Removido: O estado `cargoFilterUserInteracted` não é mais necessário
-  // pois a lógica de exibição não depende mais da interação do usuário.
-
   const abas = ['Visão Geral Comparativa'];
 
   const planilhasPorCargo: Record<string, { '2018': string[]; '2022': string[]; '2018_1T': string[]; '2022_1T': string[]; '2018_2T'?: string[]; '2022_2T'?: string[] }> = useMemo(() => ({
@@ -258,7 +255,6 @@ export default function PainelAnaliseEleitoral() {
                 else if (cargoInfo[year as '2018' | '2022']) {
                     idsToFetchForCandidates.push(...(cargoInfo[year as '2018' | '2022'] || []));
                 }
-                // Exclui especificamente o 2º turno aqui
             }
         }
     } else {
@@ -274,6 +270,7 @@ export default function PainelAnaliseEleitoral() {
         }
     }
     
+    // O ID da planilha de métricas sempre será do 1º turno de Presidente para garantir consistência
     const metricSheetId = year === '2018' ? 'presidente_2018' : 'presidente';
 
     try {
@@ -368,8 +365,23 @@ export default function PainelAnaliseEleitoral() {
     const signal = controller.signal;
 
     const fetchData = async () => {
+      // Garante que dadosLocais foram carregados antes de tentar carregar dados de candidatos/métricas
       if (dadosLocais.length === 0) {
         setCarregando(true);
+        // Resetar estados para evitar o uso de dados incompletos ou antigos
+        setDados2018Completos([]);
+        setDados2022Completos([]);
+        setMetricasSecao2018(new Map());
+        setMetricasSecao2022(new Map());
+        setDadosGerais2018({
+          eleitoresAptos: 0, totalComparecimentos: 0, totalAbstencoes: 0, taxaAbstencao: 0,
+          votosValidos: 0, votosBrancos: 0, votosNulos: 0,
+        });
+        setDadosGerais2022({
+          eleitoresAptos: 0, totalComparecimentos: 0, totalAbstencoes: 0, taxaAbstencao: 0,
+          votosValidos: 0, votosBrancos: 0, votosNulos: 0,
+        });
+        setDadosMapaVisaoGeral([]);
         return;
       }
 
@@ -402,7 +414,8 @@ export default function PainelAnaliseEleitoral() {
 
 
   useEffect(() => {
-    if (carregando || dadosLocais.length === 0) {
+    // Só prossegue com os cálculos se não estiver carregando e houver dados de candidatos
+    if (carregando || dados2018Completos.length === 0 || dados2022Completos.length === 0 || dadosLocais.length === 0) {
       setDadosGerais2018({
         eleitoresAptos: 0, totalComparecimentos: 0, totalAbstencoes: 0, taxaAbstencao: 0,
         votosValidos: 0, votosBrancos: 0, votosNulos: 0,
@@ -525,6 +538,7 @@ export default function PainelAnaliseEleitoral() {
     mapFilter2018.forEach(item => {
         const nome = item['Nome do Candidato/Voto']?.toUpperCase();
         const sigla = item['Sigla do Partido']?.toLowerCase();
+        // Soma votos se não forem BRANCO ou NULO
         if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') {
             aggregatedDataForMap[item['Município']].totalValidos2018 += item['Quantidade de Votos'];
         }
@@ -532,6 +546,7 @@ export default function PainelAnaliseEleitoral() {
     mapFilter2022.forEach(item => {
         const nome = item['Nome do Candidato/Voto']?.toUpperCase();
         const sigla = item['Sigla do Partido']?.toLowerCase();
+        // Soma votos se não forem BRANCO ou NULO
         if (aggregatedDataForMap[item['Município']] && nome !== 'BRANCO' && nome !== 'NULO' && sigla !== '#nulo#') {
             aggregatedDataForMap[item['Município']].totalValidos2022 += item['Quantidade de Votos'];
         }
@@ -572,7 +587,7 @@ export default function PainelAnaliseEleitoral() {
           if (value2018 > 0) {
             percentageChange = ((value2022 - value2018) / value2018) * 100;
           } else if (value2022 > 0) {
-            percentageChange = 100;
+            percentageChange = 100; // Se 2018 for zero e 2022 for maior que zero, é um aumento de 100% ou mais
           } else {
             percentageChange = 0;
           }
@@ -581,22 +596,22 @@ export default function PainelAnaliseEleitoral() {
         case 'variacao-abstencao':
           const abstPct2018 = aptos2018_map > 0 ? (abst2018_map / aptos2018_map) * 100 : 0;
           const abstPct2022 = aptos2022_map > 0 ? (abst2022_map / aptos2022_map) * 100 : 0;
-          percentageChange = abstPct2022 - abstPct2018;
+          percentageChange = abstPct2022 - abstPct2018; // Variação em pontos percentuais
           infoContent = `Abstenção 2018: ${abstPct2018.toFixed(2)}%<br/>Abstenção 2022: ${abstPct2022.toFixed(2)}%<br/>Variação: ${percentageChange.toFixed(2)} p.p.`;
           break;
         case 'variacao-comparecimento':
           const compPct2018 = aptos2018_map > 0 ? (comp2018_map / aptos2018_map) * 100 : 0;
           const compPct2022 = aptos2022_map > 0 ? (comp2022_map / aptos2022_map) * 100 : 0;
-          percentageChange = compPct2022 - compPct2018;
+          percentageChange = compPct2022 - compPct2018; // Variação em pontos percentuais
           infoContent = `Comparecimento 2018: ${compPct2018.toFixed(2)}%<br/>Comparecimento 2022: ${compPct2022.toFixed(2)}%<br/>Variação: ${percentageChange.toFixed(2)} p.p.`;
           break;
       }
 
       let color = '#CCCCCC';
 
-      const red = [255, 0, 0];
-      const yellow = [255, 255, 0];
-      const green = [0, 128, 0];
+      const red = [255, 0, 0]; // Perda ou aumento de abstenção/queda de comparecimento
+      const yellow = [255, 255, 0]; // Estabilidade
+      const green = [0, 128, 0]; // Ganho ou queda de abstenção/aumento de comparecimento
 
       let minRange = -20;
       let maxRange = 20;
@@ -611,7 +626,7 @@ export default function PainelAnaliseEleitoral() {
       } else if (percentageChange > 0) {
         color = interpolateColor(percentageChange, 0, maxRange, yellow, green);
       } else {
-        color = 'rgb(255, 255, 150)';
+        color = 'rgb(255, 255, 150)'; // Amarelo claro para variação zero
       }
 
       return {
@@ -622,7 +637,7 @@ export default function PainelAnaliseEleitoral() {
         color: color,
         infoContent: infoContent,
       };
-    }).filter(m => m.value2018 !== undefined || m.value2022 !== undefined);
+    }).filter(m => m.value2018 !== undefined || m.value2022 !== undefined); // Filtra municípios sem dados válidos para o mapa
 
     setDadosMapaVisaoGeral(mapData);
 
@@ -638,7 +653,6 @@ export default function PainelAnaliseEleitoral() {
     setCargoVisaoGeral(selectedValue);
     setMunicipioVisaoGeral('Todos os Municípios'); // Reinicia o município ao trocar o cargo
     setTipoMetricaMapa('variacao-votos-validos'); // Reinicia a métrica do mapa
-    // Removido: setCargoFilterUserInteracted(true);
   }, []);
 
   const municipiosDisponiveisParaFiltro = useMemo(() => {
@@ -672,7 +686,6 @@ export default function PainelAnaliseEleitoral() {
                     setCargoVisaoGeral('Presidente 1T'); 
                     setMunicipioVisaoGeral('Todos os Municípios');
                     setTipoMetricaMapa('variacao-votos-validos');
-                    // Removido: setCargoFilterUserInteracted(false);
                   }}
                   className={`pb-2 text-base font-medium transition-colors cursor-pointer ${
                     abaAtiva === aba
@@ -722,7 +735,6 @@ export default function PainelAnaliseEleitoral() {
                       </div>
                     </div>
 
-                    {/* Removida a lógica condicional, agora sempre exibe os 6 gráficos */}
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <GraficoLinhaComparativo
                         titulo="Eleitores Aptos"
