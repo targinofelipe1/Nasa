@@ -537,7 +537,6 @@ export default function PainelAnaliseEleitoral() {
         }
     });
 
-    // Métricas de seção para o mapa são sempre baseadas no que está disponível nas metricasSecao
     metricasSecao2018.forEach(metric => {
       if (aggregatedDataForMap[metric.municipio]) {
         aggregatedDataForMap[metric.municipio].aptos2018 += metric.aptos;
