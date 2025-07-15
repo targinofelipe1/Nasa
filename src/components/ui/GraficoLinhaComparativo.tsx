@@ -76,28 +76,28 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
     datasets: [
       {
         label: label2018,
-        data: [safe2018, null], // corrigido
-        borderColor: colorLine,
+        data: [safe2018, safe2022], // Ambos os valores para garantir que o dataset tenha dados completos
+        borderColor: 'transparent', // Linha transparente para este dataset
         backgroundColor: 'transparent',
         tension: 0.1,
         fill: false,
         pointRadius: 6,
-        pointBackgroundColor: color2018Point,
-        pointBorderColor: color2018Point,
+        pointBackgroundColor: [color2018Point, 'transparent'], // Apenas o ponto 2018 visível
+        pointBorderColor: [color2018Point, 'transparent'],
         pointBorderWidth: 0,
         pointHoverRadius: 8,
         pointHitRadius: 15,
       },
       {
         label: label2022,
-        data: [null, safe2022], // corrigido
-        borderColor: colorLine,
+        data: [safe2018, safe2022], // Ambos os valores para garantir que o dataset tenha dados completos
+        borderColor: 'transparent', // Linha transparente para este dataset
         backgroundColor: 'transparent',
         tension: 0.1,
         fill: false,
         pointRadius: 6,
-        pointBackgroundColor: color2022Point,
-        pointBorderColor: color2022Point,
+        pointBackgroundColor: ['transparent', color2022Point], // Apenas o ponto 2022 visível
+        pointBorderColor: ['transparent', color2022Point],
         pointBorderWidth: 0,
         pointHoverRadius: 8,
         pointHitRadius: 15,
@@ -109,7 +109,7 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
         backgroundColor: 'transparent',
         tension: 0.1,
         fill: false,
-        pointRadius: 0,
+        pointRadius: 0, // Não exibir pontos para este dataset
         pointHoverRadius: 0,
         borderDash: [5, 5],
         borderWidth: 2,
@@ -142,9 +142,16 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
         callbacks: {
           label: function (context) {
             let label = context.dataset.label || '';
-            if (label !== 'Variação' && context.parsed.y !== null && !isNaN(context.parsed.y)) {
+            // Verifique se o ponto atual é o que você quer exibir no tooltip
+            // O dataset de variação já é filtrado, então aqui focamos nos datasets de ano.
+            if (context.parsed.x === 0 && context.dataset.label === label2018 && context.parsed.y !== null && !isNaN(context.parsed.y)) {
               const digits = unidade === '%' ? 2 : 0;
               label += `: ${formatValue(context.parsed.y, unidade, digits)}`;
+            } else if (context.parsed.x === 1 && context.dataset.label === label2022 && context.parsed.y !== null && !isNaN(context.parsed.y)) {
+              const digits = unidade === '%' ? 2 : 0;
+              label += `: ${formatValue(context.parsed.y, unidade, digits)}`;
+            } else {
+              return ''; // Não exibe o tooltip para os outros pontos transparentes
             }
             return label;
           },
@@ -153,7 +160,10 @@ const GraficoLinhaComparativo: React.FC<GraficoLinhaComparativoProps> = ({
           },
         },
         filter: function (tooltipItem) {
-          return tooltipItem.dataset.label !== 'Variação';
+            // Garante que o tooltip só apareça para os pontos de 2018 e 2022 (e não a linha de variação)
+            const is2018Point = tooltipItem.datasetIndex === 0 && tooltipItem.dataIndex === 0;
+            const is2022Point = tooltipItem.datasetIndex === 1 && tooltipItem.dataIndex === 1;
+            return is2018Point || is2022Point;
         },
       },
       legend: { display: false },
