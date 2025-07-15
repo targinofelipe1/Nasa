@@ -1,27 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend } from 'chart.js';
-import { Bar, Line } from 'react-chartjs-2';
+import React, { useState, useEffect, useCallback, useMemo, ReactElement } from 'react';
+import {
+  LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, CartesianGrid
+} from 'recharts';
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, LineElement, PointElement, Title, Tooltip, Legend);
-
-interface ChartData<T extends 'bar' | 'line'> {
-  labels: string[];
-  datasets: {
-    label: string;
-    data: number[];
-    backgroundColor: string;
-    borderColor?: string;
-    borderWidth?: number;
-    type?: T;
-    yAxisID?: string;
-    pointStyle?: string;
-    pointRadius?: number;
-    pointHoverRadius?: number;
-    fill?: boolean;
-    tension?: number;
-  }[];
+interface ChartDataRecharts {
+  LocalCodigo: string;
+  name: string;
+  [candidateName: string]: number | string;
 }
 
 interface CandidatoDropdownOption {
@@ -31,15 +18,15 @@ interface CandidatoDropdownOption {
 }
 
 interface CandidatoPerformanceVizProps {
-  data: any[]; // Dados brutos, sem filtro de município aplicado aqui
-  municipiosDisponiveis: string[]; // Lista completa de municípios para o dropdown da viz
-  zonasDisponiveis: string[]; // Manter como prop, mas não será usada diretamente no filtro de zona
-  candidatosDisponiveis: CandidatoDropdownOption[]; // Lista completa de candidatos para o cargo (sem filtro de município)
+  data: any[];
+  municipiosDisponiveis: string[];
+  zonasDisponiveis: string[];
+  candidatosDisponiveis: CandidatoDropdownOption[];
 }
 
 const colors = [
-  'rgba(75, 192, 192, 0.8)',
-  'rgba(255, 99, 132, 0.8)',
+  'rgba(75, 192, 192, 0.8)', // Cor para o primeiro candidato (Fernando Haddad na imagem)
+  'rgba(255, 99, 132, 0.8)', // Cor para o segundo candidato (Jair Bolsonaro na imagem)
 ];
 
 const borderColors = [
@@ -48,58 +35,49 @@ const borderColors = [
 ];
 
 const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data, municipiosDisponiveis, zonasDisponiveis, candidatosDisponiveis }) => {
-  // Estados para os filtros internos da visualização
-  const [selectedMunicipio, setSelectedMunicipio] = useState<string>(''); // Inicializa como vazio ("Todos os Municípios")
+  const [selectedMunicipio, setSelectedMunicipio] = useState<string>('');
   const [selectedBairro, setSelectedBairro] = useState<string>('');
   const [selectedCandidate1, setSelectedCandidate1] = useState<string>('');
   const [selectedCandidate2, setSelectedCandidate2] = useState<string>('');
   const [chartType, setChartType] = useState<'bar' | 'line'>('line');
-  const [chartData, setChartData] = useState<ChartData<'bar' | 'line'>>({ labels: [], datasets: [] });
+  const [chartDataRecharts, setChartDataRecharts] = useState<ChartDataRecharts[]>([]);
+  const [hiddenDataKeys, setHiddenDataKeys] = useState<string[]>([]);
 
   const [totalValidVotesByLocalVotacaoState, setTotalValidVotesByLocalVotacaoState] = useState<{ [localCodigo: string]: number }>({});
   const [localCodeToNameMap, setLocalCodeToNameMap] = useState<{ [localCodigo: string]: string }>({});
 
-  // Memoização da lista de candidatos disponíveis para os dropdowns de Candidato 1 e 2
-  // Esta lista é filtrada pelo 'selectedMunicipio' INTERNO do componente.
   const candidatosDisponiveisInterno = useMemo(() => {
-    // Se nenhum município foi selecionado (selectedMunicipio é vazio), retorna a lista completa recebida via prop.
-    // Presume-se que 'candidatosDisponiveis' já está filtrada pelo cargo correto (Prefeito/Vereador).
     if (!selectedMunicipio) {
       return candidatosDisponiveis;
     }
 
-    // Filtra os dados brutos recebidos (prop 'data') pelo 'selectedMunicipio' interno
     const filteredDataByMunicipio = data.filter(item => item['Município'] === selectedMunicipio);
-    
+
     const uniqueCandidatos = new Map<string, CandidatoDropdownOption>();
-    
+
     filteredDataByMunicipio.forEach(item => {
       const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
       const siglaPartido = item['Sigla do Partido']?.trim();
       const numeroCandidato = item['Numero do Candidato']?.trim();
 
-      // Adiciona apenas candidatos válidos (não brancos, nulos ou votos de legenda para partido)
       if (nomeCandidato && siglaPartido &&
-          nomeCandidato !== 'BRANCO' && nomeCandidato !== 'NULO' &&
-          siglaPartido.toLowerCase() !== '#nulo#' && nomeCandidato !== siglaPartido.toUpperCase()) {
+        nomeCandidato !== 'BRANCO' && nomeCandidato !== 'NULO' &&
+        siglaPartido.toLowerCase() !== '#nulo#' && nomeCandidato !== siglaPartido.toUpperCase()) {
         const key = `${nomeCandidato}-${siglaPartido}-${numeroCandidato}`;
         if (!uniqueCandidatos.has(key)) {
           uniqueCandidatos.set(key, { nome: nomeCandidato, siglaPartido: siglaPartido, numeroCandidato: numeroCandidato });
         }
       }
     });
-    // Retorna a lista de candidatos únicos, ordenada por nome.
     return Array.from(uniqueCandidatos.values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
-  }, [data, selectedMunicipio, candidatosDisponiveis]); // Re-calcula se 'data', 'selectedMunicipio' ou 'candidatosDisponiveis' mudarem
+  }, [data, selectedMunicipio, candidatosDisponiveis]);
 
 
-  // Bairros disponíveis, filtrados pelo município selecionado *neste componente*.
   const bairrosFiltrados = useCallback(() => {
     if (!selectedMunicipio || selectedMunicipio === 'Todos os Municípios') {
       return [];
     }
     const bairrosDoMunicipio = new Set<string>();
-    // Percorre os dados brutos para encontrar os bairros do município selecionado
     data.forEach(item => {
       if (item['Município'] === selectedMunicipio && item['Bairro do Local']) {
         bairrosDoMunicipio.add(item['Bairro do Local']);
@@ -108,55 +86,46 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
     return Array.from(bairrosDoMunicipio).sort();
   }, [data, selectedMunicipio]);
 
-  // Efeito para resetar os filtros internos *apenas* quando os dados brutos (`data`) mudam.
-  // Isso acontece, por exemplo, ao trocar de aba de cargo no PainelVotacao.
-  // Ele NÃO reage a filtros de município externos.
   useEffect(() => {
-    setSelectedMunicipio(''); // Volta para "Todos os Municípios"
-    setSelectedBairro(''); // Reseta o bairro
+    setSelectedMunicipio('');
+    setSelectedBairro('');
     setSelectedCandidate1('');
     setSelectedCandidate2('');
     setChartType('line');
-    setChartData({ labels: [], datasets: [] });
+    setChartDataRecharts([]);
+    setHiddenDataKeys([]);
     setTotalValidVotesByLocalVotacaoState({});
     setLocalCodeToNameMap({});
-  }, [data]); // Dependência: Apenas 'data'
+  }, [data]);
 
-  // Função para agregar e preparar os dados para o gráfico.
   const aggregateDataForChart = useCallback(() => {
     const selectedCandidatesArray = [selectedCandidate1, selectedCandidate2].filter(Boolean);
 
-    // Se nenhum município foi selecionado *nesta visualização*, ou nenhum candidato, não há dados para o gráfico.
     if (!selectedMunicipio || selectedCandidatesArray.length === 0) {
-      setChartData({ labels: [], datasets: [] });
+      setChartDataRecharts([]);
       setTotalValidVotesByLocalVotacaoState({});
       setLocalCodeToNameMap({});
       return;
     }
 
-    // Filtra os dados baseados no município atualmente selecionado *nesta visualização*.
     let filteredDataByLocation = data.filter(item => item['Município'] === selectedMunicipio);
 
-    // Filtra também por Bairro, se selecionado *nesta visualização*.
     if (selectedBairro && selectedBairro !== 'Todos os Bairros') {
       filteredDataByLocation = filteredDataByLocation.filter(item => item['Bairro do Local'] === selectedBairro);
     }
 
-    const aggregated: { [localVotacaoCodigo: string]: { [candidateName: string]: number } } = {};
-    const uniqueLocaisVotacaoCodigos = new Set<string>();
+    const aggregated: { [localVotacaoCodigo: string]: ChartDataRecharts } = {};
     const currentTotalValidVotesByLocalVotacao: { [localCodigo: string]: number } = {};
     const currentLocalCodeToNameMap: { [localCodigo: string]: string } = {};
 
     filteredDataByLocation.forEach(item => {
       const localVotacaoCodigo = item['Local de Votação']?.trim();
-      const localVotacaoNome = item['Nome do Local']?.trim() || localVotacaoCodigo;
-
+      const localVotacaoNome = item['Nome do Local']?.trim() || `Local ${localVotacaoCodigo}`;
       const candidateName = item['Nome do Candidato/Voto']?.trim().toUpperCase();
       const siglaPartido = item['Sigla do Partido']?.toLowerCase();
       const votos = item['Quantidade de Votos'] || 0;
 
       if (localVotacaoCodigo) {
-        uniqueLocaisVotacaoCodigos.add(localVotacaoCodigo);
         currentLocalCodeToNameMap[localVotacaoCodigo] = localVotacaoNome;
 
         const isLegenda = candidateName === siglaPartido?.toUpperCase();
@@ -164,129 +133,118 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
         if (!isBrancoOuNulo && !isLegenda) {
           currentTotalValidVotesByLocalVotacao[localVotacaoCodigo] = (currentTotalValidVotesByLocalVotacao[localVotacaoCodigo] || 0) + votos;
         }
+
+        if (!aggregated[localVotacaoCodigo]) {
+          aggregated[localVotacaoCodigo] = { LocalCodigo: localVotacaoCodigo, name: localVotacaoNome };
+          selectedCandidatesArray.forEach(cand => {
+            aggregated[localVotacaoCodigo][cand] = 0;
+          });
+        }
+
+        if (selectedCandidatesArray.includes(candidateName)) {
+            aggregated[localVotacaoCodigo][candidateName] = (aggregated[localVotacaoCodigo][candidateName] as number || 0) + votos;
+        }
       }
     });
+
+    const sortedLocaisData = Object.keys(aggregated)
+      .sort((a, b) => a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' }))
+      .map(key => aggregated[key]);
 
     setTotalValidVotesByLocalVotacaoState(currentTotalValidVotesByLocalVotacao);
     setLocalCodeToNameMap(currentLocalCodeToNameMap);
+    setChartDataRecharts(sortedLocaisData);
 
-    selectedCandidatesArray.forEach(candName => {
-      filteredDataByLocation.forEach(item => {
-        const localVotacaoCodigo = item['Local de Votação']?.trim();
-        const candidateDataName = item['Nome do Candidato/Voto']?.trim().toUpperCase();
-        const votos = item['Quantidade de Votos'] || 0;
-
-        if (localVotacaoCodigo && candidateDataName === candName) {
-          if (!aggregated[localVotacaoCodigo]) {
-            aggregated[localVotacaoCodigo] = {};
-          }
-          if (!aggregated[localVotacaoCodigo][candName]) {
-            aggregated[localVotacaoCodigo][candName] = 0;
-          }
-          aggregated[localVotacaoCodigo][candName] += votos;
-        }
-      });
-    });
-
-    const sortedLocaisVotacaoCodigos = Array.from(uniqueLocaisVotacaoCodigos).sort();
-
-    const newDatasets = selectedCandidatesArray.map((cand, index) => {
-      const candidateInfo = candidatosDisponiveisInterno.find(c => c.nome === cand); // Use candidatosDisponiveisInterno aqui
-      const label = candidateInfo ? `${candidateInfo.nome} (${candidateInfo.siglaPartido})` : cand;
-
-      const totalVotesData = sortedLocaisVotacaoCodigos.map(locCodigo => aggregated[locCodigo]?.[cand] || 0);
-
-      return {
-        label: `${label} (Votos)`,
-        data: totalVotesData,
-        backgroundColor: chartType === 'bar' ? colors[index % colors.length] : 'transparent',
-        borderColor: borderColors[index % borderColors.length],
-        borderWidth: chartType === 'line' ? 2 : 1,
-        type: chartType as 'bar' | 'line',
-        yAxisID: 'y',
-        fill: chartType === 'line' ? false : undefined,
-        tension: chartType === 'line' ? 0.3 : undefined,
-        pointStyle: chartType === 'line' ? 'circle' : undefined,
-        pointRadius: chartType === 'line' ? 5 : undefined,
-        pointHoverRadius: chartType === 'line' ? 7 : undefined,
-      };
-    });
-
-    setChartData({
-      labels: sortedLocaisVotacaoCodigos,
-      datasets: newDatasets,
-    });
-  }, [selectedMunicipio, selectedBairro, selectedCandidate1, selectedCandidate2, chartType, data, candidatosDisponiveisInterno]); // Adicionado candidatosDisponiveisInterno como dependência
+  }, [selectedMunicipio, selectedBairro, selectedCandidate1, selectedCandidate2, data]);
 
   useEffect(() => {
     aggregateDataForChart();
-  }, [selectedMunicipio, selectedBairro, selectedCandidate1, selectedCandidate2, chartType, aggregateDataForChart]); // Removido 'data' daqui para evitar loops desnecessários.
+  }, [selectedMunicipio, selectedBairro, selectedCandidate1, selectedCandidate2, chartType, aggregateDataForChart]);
 
-  const options = {
-    responsive: true,
-    maintainAspectRatio: false,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: `Desempenho dos Candidatos em ${selectedMunicipio || 'Município Selecionado'}${selectedBairro ? ` (${selectedBairro})` : ''} por Local de Votação`,
-      },
-      tooltip: {
-        callbacks: {
-          title: function (context: any) {
-            const localCodigo = context[0]?.label || '';
-            return localCodeToNameMap[localCodigo] || localCodigo;
-          },
-          label: function (context: any) {
-            let label = context.dataset.label || '';
-            const candidateVotes = context.parsed.y;
-            const localCodigo = context.label;
-            const totalValid = totalValidVotesByLocalVotacaoState[localCodigo] || 0;
 
-            let percentage = 0;
-            if (totalValid > 0) {
-              percentage = (candidateVotes / totalValid) * 100;
-            }
-            
-            return `${label.replace(' (Votos)', '')}: ${candidateVotes.toLocaleString('pt-BR')} votos (${percentage.toFixed(2)}%)`;
-          },
-        }
+  const [hoveredDataKey, setHoveredDataKey] = useState<string | null>(null);
+
+  const CustomDot = (dataKey: string): ((props: any) => React.ReactElement<SVGElement>) => {
+    return (props: any) => {
+      const { cx, cy, stroke, index } = props;
+
+      if (cx == null || cy == null) {
+        return <g key={`${dataKey}-empty-${index}`} />;
       }
-    },
-    scales: {
-      x: {
-        title: {
-          display: true,
-          text: 'Local de Votação'
-        },
-        ticks: {
-          maxRotation: 45,
-          minRotation: 0,
-          font: {
-            size: 10
-          }
-        }
-      },
-      y: {
-        type: 'linear' as const,
-        position: 'left' as const,
-        title: {
-          display: true,
-          text: 'Total de Votos'
-        },
-        beginAtZero: true,
-        grid: {
-          drawOnChartArea: false,
-        },
-        ticks: {
-          callback: function (value: any) {
-            return value.toLocaleString('pt-BR');
-          }
-        }
-      },
-    },
+
+      return (
+        <circle
+          key={`${dataKey}-${index}`} 
+          cx={cx}
+          cy={cy}
+          r={5}
+          stroke={stroke}
+          strokeWidth={2}
+          fill="#fff"
+          onMouseOver={() => setHoveredDataKey(dataKey)}
+        />
+      );
+    };
+  };
+
+
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload || payload.length === 0 || !hoveredDataKey) return null;
+
+  const entry = payload.find((p: any) => p.dataKey === hoveredDataKey);
+  if (!entry) return null;
+
+  const localCodigo = label;
+  const localName = localCodeToNameMap[localCodigo] || localCodigo;
+  const totalValid = totalValidVotesByLocalVotacaoState[localCodigo] || 0;
+  const candidateVotes = entry.value;
+  const percentage = totalValid > 0 ? (candidateVotes / totalValid) * 100 : 0;
+  const candidateInfo = candidatosDisponiveisInterno.find(c => entry.dataKey === c.nome);
+  const labelText = candidateInfo ? `${candidateInfo.nome} (${candidateInfo.siglaPartido})` : entry.dataKey;
+
+  return (
+    <div className="custom-tooltip bg-white p-3 border border-gray-300 rounded shadow-lg text-sm">
+      <p className="label font-semibold mb-1">
+        {`Local de Votação: ${localName}`}
+      </p>
+      <p style={{ color: entry.color }}>
+        {`${labelText}: ${candidateVotes.toLocaleString('pt-BR')} votos (${percentage.toFixed(2)}%)`}
+      </p>
+    </div>
+  );
+};
+
+  const CustomTooltipBar = ({ active, payload, label }: any) => {
+    if (!active || !payload || payload.length === 0) return null;
+
+    const entry = payload[0];
+    const localCodigo = label;
+    const localName = localCodeToNameMap[localCodigo] || localCodigo;
+    const totalValid = totalValidVotesByLocalVotacaoState[localCodigo] || 0;
+    const candidateVotes = entry.value;
+    const percentage = totalValid > 0 ? (candidateVotes / totalValid) * 100 : 0;
+    const candidateInfo = candidatosDisponiveisInterno.find(c => entry.dataKey === c.nome);
+    const labelText = candidateInfo ? `${candidateInfo.nome} (${candidateInfo.siglaPartido})` : entry.dataKey;
+
+    return (
+      <div className="custom-tooltip bg-white p-3 border border-gray-300 rounded shadow-lg text-sm">
+        <p className="label font-semibold mb-1">{`Local de Votação: ${localName}`}</p>
+        <p style={{ color: entry.color }}>
+          {`${labelText}: ${candidateVotes.toLocaleString('pt-BR')} votos (${percentage.toFixed(2)}%)`}
+        </p>
+      </div>
+    );
+  };
+
+
+
+  const handleLegendClick = (data: any) => {
+    const dataKey = data.dataKey;
+    setHiddenDataKeys(prevKeys =>
+      prevKeys.includes(dataKey)
+        ? prevKeys.filter(key => key !== dataKey)
+        : [...prevKeys, dataKey]
+    );
   };
 
   const selectClasses = `
@@ -301,15 +259,53 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
     bg-gray-100 text-gray-500 cursor-not-allowed
   `;
 
+  const renderLegend = useCallback((props: any) => {
+    const { payload } = props;
+    return (
+      <ul style={{ listStyle: 'none', padding: 0, display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '15px' }}>
+        {payload.map((entry: any) => {
+          const isHidden = hiddenDataKeys.includes(entry.dataKey);
+          const candidateInfo = candidatosDisponiveisInterno.find(c => entry.dataKey === c.nome);
+          const label = candidateInfo ? `${candidateInfo.nome} (${candidateInfo.siglaPartido})` : entry.value;
+
+          return (
+            <li
+              key={entry.value}
+              onClick={() => handleLegendClick(entry)}
+              style={{
+                color: isHidden ? '#ccc' : entry.color,
+                cursor: 'pointer',
+                textDecoration: isHidden ? 'line-through' : 'none',
+                opacity: isHidden ? 0.6 : 1,
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: '10px',
+                  height: '10px',
+                  borderRadius: '50%',
+                  backgroundColor: isHidden ? '#ccc' : entry.color,
+                  marginRight: '5px',
+                }}
+              ></div>
+              {label}
+            </li>
+          );
+        })}
+      </ul>
+    );
+  }, [hiddenDataKeys, candidatosDisponiveisInterno, handleLegendClick]);
+
   return (
     <div className="bg-white shadow-md rounded-lg p-6">
-        <h3 className="text-base font-semibold text-gray-800 mb-5">
-            Visualização de Desempenho de Candidatos
-        </h3>
-      
+      <h3 className="text-base font-semibold text-gray-800 mb-5">
+        Visualização de Desempenho de Candidatos
+      </h3>
+
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        
-        {/* Seleção de Município - Controlado internamente */}
+
         <div>
           <label htmlFor="municipio-select" className="block text-sm font-medium text-gray-700 mb-1">
             Município:
@@ -321,10 +317,11 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
               value={selectedMunicipio}
               onChange={(e) => {
                 setSelectedMunicipio(e.target.value);
-                setSelectedBairro(''); // Resetar Bairro ao mudar Município
-                setSelectedCandidate1(''); // Resetar Candidato 1
-                setSelectedCandidate2(''); // Resetar Candidato 2
+                setSelectedBairro('');
+                setSelectedCandidate1('');
+                setSelectedCandidate2('');
                 setChartType('line');
+                setHiddenDataKeys([]); // Resetar hidden keys ao mudar o município
               }}
               disabled={data.length === 0}
             >
@@ -340,8 +337,7 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
             </div>
           </div>
         </div>
-        
-        {/* Seleção de Candidato 1 - AGORA USA candidatosDisponiveisInterno */}
+
         <div>
           <label htmlFor="candidate-select-1" className="block text-sm font-medium text-gray-700 mb-1">
             Selecionar Candidato 1:
@@ -351,11 +347,14 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
               id="candidate-select-1"
               className={!selectedMunicipio ? disabledSelectClasses : selectClasses}
               value={selectedCandidate1}
-              onChange={(e) => setSelectedCandidate1(e.target.value)}
-              disabled={!selectedMunicipio} // Desabilita se nenhum município estiver selecionado
+              onChange={(e) => {
+                setSelectedCandidate1(e.target.value);
+                setHiddenDataKeys([]); // Resetar hidden keys ao mudar o candidato
+              }}
+              disabled={!selectedMunicipio}
             >
               <option value="">Selecione um Candidato</option>
-              {candidatosDisponiveisInterno.map((candidato) => ( // <<-- MUDANÇA AQUI
+              {candidatosDisponiveisInterno.map((candidato) => (
                 <option
                   key={`cand1-${candidato.nome}-${candidato.siglaPartido}-${candidato.numeroCandidato}`}
                   value={candidato.nome}
@@ -371,7 +370,6 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
           </div>
         </div>
 
-        {/* Seleção de Candidato 2 - AGORA USA candidatosDisponiveisInterno */}
         <div>
           <label htmlFor="candidate-select-2" className="block text-sm font-medium text-gray-700 mb-1">
             Selecionar Candidato 2:
@@ -381,11 +379,14 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
               id="candidate-select-2"
               className={!selectedCandidate1 ? disabledSelectClasses : selectClasses}
               value={selectedCandidate2}
-              onChange={(e) => setSelectedCandidate2(e.target.value)}
-              disabled={!selectedCandidate1} // Desabilita se nenhum candidato 1 for selecionado
+              onChange={(e) => {
+                setSelectedCandidate2(e.target.value);
+                setHiddenDataKeys([]); // Resetar hidden keys ao mudar o candidato
+              }}
+              disabled={!selectedCandidate1}
             >
               <option value="">Selecione um Candidato</option>
-              {candidatosDisponiveisInterno.map((candidato) => ( // <<-- MUDANÇA AQUI
+              {candidatosDisponiveisInterno.map((candidato) => (
                 <option
                   key={`cand2-${candidato.nome}-${candidato.siglaPartido}-${candidato.numeroCandidato}`}
                   value={candidato.nome}
@@ -401,7 +402,6 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
           </div>
         </div>
 
-        {/* Tipo de Gráfico - Permanece como está */}
         <div>
           <label htmlFor="chart-type-select" className="block text-sm font-medium text-gray-700 mb-1">
             Tipo de Gráfico:
@@ -423,7 +423,6 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
           </div>
         </div>
 
-        {/* Seleção de Bairro - Controlado internamente */}
         <div>
           <label htmlFor="bairro-select" className="block text-sm font-medium text-gray-700 mb-1">
             Bairro:
@@ -435,7 +434,6 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
               value={selectedBairro}
               onChange={(e) => {
                 setSelectedBairro(e.target.value);
-                // Não resetar candidatos, apenas refiltrar
               }}
               disabled={!selectedMunicipio || selectedMunicipio === 'Todos os Municípios'}
             >
@@ -453,14 +451,105 @@ const CandidatoPerformanceViz: React.FC<CandidatoPerformanceVizProps> = ({ data,
         </div>
       </div>
 
-      {/* Condicional de exibição do gráfico */}
-      {selectedMunicipio && (selectedCandidate1 || selectedCandidate2) && chartData.labels.length > 0 ? (
+      {selectedMunicipio && (selectedCandidate1 || selectedCandidate2) && chartDataRecharts.length > 0 ? (
         <div className="relative h-96">
-          {chartType === 'bar' ? (
-            <Bar data={chartData as ChartData<'bar'>} options={options} />
-          ) : (
-            <Line data={chartData as ChartData<'line'>} options={options} />
-          )}
+          <ResponsiveContainer width="100%" height="100%">
+            {chartType === 'bar' ? (
+              <BarChart
+                data={chartDataRecharts}
+                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis
+                  dataKey="LocalCodigo"
+                  angle={0}
+                  textAnchor="middle"
+                  height={50}
+                  interval="preserveStartEnd"
+                  padding={{ left: 20, right: 20 }}
+                  style={{
+                    fontSize: '0.75rem',
+                    fontFamily: 'sans-serif'
+                  }}
+                />
+                <YAxis
+                  label={{ value: 'Total de Votos', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                  tickFormatter={(value: number) => value.toLocaleString('pt-BR')}
+                />
+              <Tooltip content={<CustomTooltipBar />} shared={false} cursor={false} />
+                <Legend verticalAlign="top" height={36} content={renderLegend} />
+                {selectedCandidate1 && (
+                  <Bar
+                    dataKey={selectedCandidate1}
+                    name={`${candidatosDisponiveisInterno.find(c => c.nome === selectedCandidate1)?.nome} (${candidatosDisponiveisInterno.find(c => c.nome === selectedCandidate1)?.siglaPartido})`}
+                    fill={hiddenDataKeys.includes(selectedCandidate1) ? 'transparent' : colors[0]}
+                    stroke={hiddenDataKeys.includes(selectedCandidate1) ? 'transparent' : borderColors[0]}
+                    opacity={hiddenDataKeys.includes(selectedCandidate1) ? 0.3 : 1}
+                    isAnimationActive={false}
+                  />
+                )}
+                {selectedCandidate2 && (
+                  <Bar
+                    dataKey={selectedCandidate2}
+                    name={`${candidatosDisponiveisInterno.find(c => c.nome === selectedCandidate2)?.nome} (${candidatosDisponiveisInterno.find(c => c.nome === selectedCandidate2)?.siglaPartido})`}
+                    fill={hiddenDataKeys.includes(selectedCandidate2) ? 'transparent' : colors[1]}
+                    stroke={hiddenDataKeys.includes(selectedCandidate2) ? 'transparent' : borderColors[1]}
+                    opacity={hiddenDataKeys.includes(selectedCandidate2) ? 0.3 : 1}
+                    isAnimationActive={false}
+                  />
+                )}
+              </BarChart>
+            ) : (
+              <LineChart
+                  data={chartDataRecharts}
+                  margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis
+                    dataKey="LocalCodigo"
+                    angle={0}
+                    textAnchor="middle"
+                    height={50}
+                    interval="preserveStartEnd"
+                    padding={{ left: 20, right: 20 }}
+                    style={{
+                      fontSize: '0.75rem',
+                      fontFamily: 'sans-serif'
+                    }}
+                  />
+                  <YAxis
+                    label={{ value: 'Total de Votos', angle: -90, position: 'insideLeft', style: { textAnchor: 'middle' } }}
+                    tickFormatter={(value: number) => value.toLocaleString('pt-BR')}
+                  />
+                  <Tooltip content={<CustomTooltip />} shared={true} cursor={false} />
+                  <Legend verticalAlign="top" height={36} content={renderLegend} />
+                  {selectedCandidate1 && (
+                    <Line
+                      type="monotone"
+                      dataKey={selectedCandidate1}
+                      stroke={hiddenDataKeys.includes(selectedCandidate1) ? '#ccc' : borderColors[0]}
+                      strokeWidth={hiddenDataKeys.includes(selectedCandidate1) ? 1 : 2}
+                      opacity={hiddenDataKeys.includes(selectedCandidate1) ? 0.3 : 1}
+                      dot={CustomDot(selectedCandidate1)}
+                      activeDot={hoveredDataKey === selectedCandidate1 ? { r: 8 } : false}
+                      isAnimationActive={false}
+                    />
+                  )}
+                  {selectedCandidate2 && (
+                    <Line
+                      type="monotone"
+                      dataKey={selectedCandidate2}
+                      stroke={hiddenDataKeys.includes(selectedCandidate2) ? '#ccc' : borderColors[1]}
+                      strokeWidth={hiddenDataKeys.includes(selectedCandidate2) ? 1 : 2}
+                      opacity={hiddenDataKeys.includes(selectedCandidate2) ? 0.3 : 1}
+                      dot={CustomDot(selectedCandidate2)}
+                      activeDot={hoveredDataKey === selectedCandidate2 ? { r: 8 } : false}
+                      isAnimationActive={false}
+                    />
+                  )}
+                </LineChart>
+            )}
+          </ResponsiveContainer>
         </div>
       ) : (
         <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg text-sm text-blue-800">
