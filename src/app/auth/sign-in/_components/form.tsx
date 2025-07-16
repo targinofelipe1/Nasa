@@ -8,8 +8,9 @@ import { useSignIn } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
+
 import {
   Form,
   FormControl,
@@ -26,20 +27,20 @@ import {
   InputOTPSlot,
 } from "@/components/ui/Input-otp";
 
-if (typeof window !== "undefined") {
-  window.CLERK_DEBUG = true;
-}
-
 const formSchema = z.object({
-  email: z.string().email({ message: "E-mail inválido" }),
+  email: z.string().email({ message: "Digite um e-mail válido." }),
   code: z.string().optional(),
 });
 
 export default function LoginPage() {
   const router = useRouter();
   const { isLoaded, signIn, setActive } = useSignIn();
+
   const [pendingVerification, setPendingVerification] = useState(false);
   const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [reenviarDisabled, setReenviarDisabled] = useState(false);
+  const [tempoRestante, setTempoRestante] = useState(0);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -49,10 +50,40 @@ export default function LoginPage() {
     },
   });
 
+  // Timer para reenvio de código
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (reenviarDisabled && tempoRestante > 0) {
+      interval = setInterval(() => {
+        setTempoRestante((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setReenviarDisabled(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [reenviarDisabled, tempoRestante]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     if (!isLoaded) return;
 
+    const validation = formSchema.safeParse(values);
+    if (!validation.success) {
+      toast.error("Digite um e-mail válido.");
+      form.setError("email", {
+        type: "manual",
+        message: "Digite um e-mail válido.",
+      });
+      return;
+    }
+
     try {
+      setLoading(true);
+
       if (!pendingVerification) {
         const result = await signIn.create({
           identifier: values.email,
@@ -62,62 +93,105 @@ export default function LoginPage() {
         if (result.status === "needs_first_factor") {
           setPendingVerification(true);
           setEmail(values.email);
-          toast.success("Código enviado para o seu e-mail!");
+          setTempoRestante(120);
+          setReenviarDisabled(true);
+          toast.success("Código enviado para o seu e-mail.");
         }
       } else {
+        const code = values.code?.trim() || "";
+
+        if (code.length !== 6 || !/^\d{6}$/.test(code)) {
+          toast.error("Digite os 6 dígitos do código enviado para seu e-mail.");
+          return;
+        }
+
         const result = await signIn.attemptFirstFactor({
           strategy: "email_code",
-          code: values.code!,
+          code,
         });
 
         if (result.status === "complete") {
           await setActive({ session: result.createdSessionId });
-          toast.success("Login bem-sucedido!");
+          toast.success("Login realizado com sucesso!");
           router.push("/");
         } else {
-          toast.error("Código inválido. Tente novamente.");
-          return;
+          toast.error("Código inválido. Verifique e tente novamente.");
         }
       }
     } catch (err) {
-
       if (isClerkAPIResponseError(err)) {
-        const message = err.errors?.[0]?.message?.toLowerCase() ?? "";
+        const rawMessage = err.errors?.[0]?.message ?? "Erro inesperado.";
+        const message = rawMessage.toLowerCase();
 
         if (!pendingVerification) {
-          if (message.includes("identifier must be a valid email")) {
+          if (
+            message.includes("valid email") ||
+            message.includes("emailaddress") ||
+            message.includes("identifier") ||
+            message.includes("invalid")
+          ) {
             toast.error("Digite um e-mail válido.");
             return;
           }
-          if (message.includes("couldn't find") || message.includes("not found")) {
+
+          if (
+            message.includes("not found") ||
+            message.includes("couldn't find") ||
+            message.includes("does not exist")
+          ) {
             toast.error("E-mail não cadastrado. Verifique ou registre-se.");
             return;
           }
         }
 
         if (pendingVerification) {
-          if (message.includes("invalid") || message.includes("code")) {
+          if (message.includes("expired")) {
+            toast.error("O código expirou. Solicite um novo.");
+            return;
+          }
+
+          if (
+            message.includes("invalid") ||
+            message.includes("incorrect") ||
+            message.includes("code")
+          ) {
             toast.error("Código inválido. Verifique e tente novamente.");
             return;
           }
         }
 
-        toast.error("Erro: " + err.errors[0]?.message);
-        return;
+        toast.error("Erro ao tentar login. Verifique os dados informados.");
+      } else {
+        toast.error("Erro inesperado. Verifique sua conexão com a internet.");
+        console.error(err);
       }
-
-      toast.error("Erro inesperado ao tentar login. Tente novamente.");
-      return;
+    } finally {
+      setLoading(false);
     }
   }
+
+  const reenviarCodigo = async () => {
+    if (!isLoaded || !pendingVerification || reenviarDisabled) return;
+
+    setLoading(true);
+    setReenviarDisabled(true);
+    setTempoRestante(120);
+
+    try {
+      await signIn.create({ identifier: email, strategy: "email_code" });
+      toast.success("Novo código enviado para o e-mail.");
+    } catch (error) {
+      toast.error("Erro ao reenviar o código. Tente novamente.");
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="flex justify-center items-center min-h-screen" style={{ zoom: "80%" }}>
       <Form {...form}>
-        <form
-          onSubmit={form.handleSubmit(onSubmit)}
-          className="space-y-6 w-full max-w-xs"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full max-w-xs">
           {!pendingVerification ? (
             <>
               <div className="flex flex-col items-center gap-2 text-center">
@@ -133,22 +207,25 @@ export default function LoginPage() {
                   <FormItem className="space-y-2">
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="Digite seu email" {...field} />
+                      <Input type="email" placeholder="Digite seu e-mail" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              <Button type="submit" className="w-full">
-                Continuar
+             <Button
+                type="submit"
+                className="w-full"
+                disabled={loading}
+              >
+                {loading ? "Verificando..." : "Continuar"}
               </Button>
+
+
 
               <div className="text-center text-sm">
                 <span className="mr-1">Ainda não possui uma conta?</span>
-                <Link
-                  href="/auth/sign-up"
-                  className="underline underline-offset-4 font-medium text-primary"
-                >
+                <Link href="/auth/sign-up" className="underline font-medium text-primary">
                   Cadastrar-se
                 </Link>
               </div>
@@ -164,9 +241,8 @@ export default function LoginPage() {
                 <ChevronLeft className="h-5 w-5" /> Voltar
               </Button>
               <h1 className="text-2xl font-bold">Validação da conta</h1>
-              <p className="text-sm">
-                Um código foi enviado para <strong>{email}</strong>. Verifique sua
-                caixa de entrada e insira o código abaixo.
+              <p className="text-sm text-center">
+                Um código foi enviado para <strong>{email}</strong>.
               </p>
               <div className="flex justify-center">
                 <FormField
@@ -188,8 +264,29 @@ export default function LoginPage() {
                   )}
                 />
               </div>
-              <Button className="w-full" type="submit">
-                Verificar Código
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={loading || form.watch("code")?.length !== 6}
+              >
+                {loading ? "Verificando..." : "Verificar Código"}
+              </Button>
+
+
+              <Button
+                type="button"
+                className="w-full"
+                onClick={reenviarCodigo}
+                disabled={loading || reenviarDisabled}
+                variant="outline"
+              >
+                {reenviarDisabled
+                  ? `Aguarde ${Math.floor(tempoRestante / 60)
+                      .toString()
+                      .padStart(2, "0")}:${(tempoRestante % 60)
+                      .toString()
+                      .padStart(2, "0")} para reenviar`
+                  : "Solicitar novo código"}
               </Button>
             </>
           )}
