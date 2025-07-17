@@ -1338,13 +1338,6 @@ const mediaIDH = usedData.length > 0
             </div>
           </div>
 
-          <div className="mt-5 mb-8 p-5 border rounded-lg bg-gray-50">
-          </div>
-  
-
-
-
-
       </div>
     
   );
