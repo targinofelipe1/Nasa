@@ -85,7 +85,6 @@ const BotaoImpressao = ({ apiData }: { apiData: any[] }) => {
     printContainer.id = "print-container";
 
     printContainer.innerHTML += LogoHeader(selectedRegionals, selectedMunicipios, apiData);
-    printContainer.innerHTML += SecretariaHeader();
 
     const pageHeader = `  
       <div class="page-header" style="text-align: center; margin-bottom: 20px; display: ${tabelasSelecionadas.length > 0 ? 'block' : 'none'};">
