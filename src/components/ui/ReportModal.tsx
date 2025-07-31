@@ -91,43 +91,37 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
 
     // Dentro do componente ReportModal
 
-const PdfMakeRef = useRef<any>(null); 
+    const PdfMakeRef = useRef<any>(null);
 
-useEffect(() => {
-    if (isOpen && !PdfMakeRef.current) {
-        const loadPdfLibs = async () => {
-            try {
-                console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
-                
-                // Carrega as bibliotecas em paralelo para melhor performance
-                const [pdfmakeModule, vfsFontsModule] = await Promise.all([
-                    import('pdfmake/build/pdfmake.js'),
-                    import('pdfmake/build/vfs_fonts.js'),
-                ]);
-
-                // Acessa o vfs através da exportação padrão do módulo vfs_fonts
-                // Em alguns ambientes, o objeto vfs pode ser o próprio `default`
-                // Em outros, ele pode estar em uma propriedade chamada `vfs`
-                const vfs = (vfsFontsModule as any).pdfMake?.vfs || (vfsFontsModule as any).default.vfs;
-
-                if (!vfs) {
-                  throw new Error('As fontes do pdfmake não foram encontradas no módulo de fontes.');
+    useEffect(() => {
+        if (isOpen && !PdfMakeRef.current) {
+            const loadPdfLibs = async () => {
+                try {
+                    console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
+                    
+                    // Carrega as bibliotecas em paralelo
+                    const [pdfmakeModule, vfsFontsModule] = await Promise.all([
+                        import('pdfmake/build/pdfmake'),
+                        import('pdfmake/build/vfs_fonts'),
+                    ]);
+                    
+                    // Tenta atribuir a propriedade vfs diretamente da exportação padrão do vfs_fonts
+                    // A maioria dos bundlers modernos usa o .default para a exportação padrão
+                    // Adicionamos 'as any' para resolver o problema de tipagem
+                    (pdfmakeModule as any).vfs = (vfsFontsModule as any).default.vfs;
+                    PdfMakeRef.current = pdfmakeModule;
+                    
+                    console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
+                    setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
+                } catch (error) {
+                    console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
+                    setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
+                    PdfMakeRef.current = null;
                 }
-                
-                (pdfmakeModule as any).vfs = vfs;
-                PdfMakeRef.current = pdfmakeModule;
-                
-                console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
-                setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
-            } catch (error) {
-                console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
-                setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
-                PdfMakeRef.current = null;
-            }
-        };
-        loadPdfLibs();
-    }
-}, [isOpen]);
+            };
+            loadPdfLibs();
+        }
+    }, [isOpen]);
 
     useEffect(() => {
         const fetchLocais = async () => {
