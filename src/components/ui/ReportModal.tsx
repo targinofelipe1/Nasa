@@ -3,17 +3,10 @@
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { format } from 'date-fns';
 
-// Importações removidas de jspdf e jspdf-autotable
-// import { jsPDF } from 'jspdf'; // Não mais necessário
-// import 'jspdf-autotable'; // Não mais necessário
+import { PDFDocument, StandardFonts, rgb } from 'pdf-lib';
+import { degrees } from 'pdf-lib';
 
-// Importações para pdfmake
-// Importa pdfmake base e as fontes padrão.
-// O import '@pdfmake/vfs-fonts/pdfmake'; é um import com efeito colateral que anexa as fontes
-// ao pdfmake global.
-// Para carregamento dinâmico, você faria isso dentro do useEffect.
-
-// Importe as interfaces existentes
+// Definições de interface e funções de utilidade permanecem as mesmas
 interface CandidatoDropdownOption {
     nome: string;
     siglaPartido: string;
@@ -87,41 +80,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
     const [rawDataForReport, setRawDataForReport] = useState<any[]>([]);
     const [locaisData, setLocaisData] = useState<LocalVotacaoDetalhado[]>([]);
     const locaisCarregadosRef = useRef(false);
-
-
-    // Dentro do componente ReportModal
-
-    const PdfMakeRef = useRef<any>(null);
-
-    useEffect(() => {
-        if (isOpen && !PdfMakeRef.current) {
-            const loadPdfLibs = async () => {
-                try {
-                    console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
-                    
-                    // Carrega as bibliotecas em paralelo
-                    const [pdfmakeModule, vfsFontsModule] = await Promise.all([
-                        import('pdfmake/build/pdfmake'),
-                        import('pdfmake/build/vfs_fonts'),
-                    ]);
-                    
-                    // Tenta atribuir a propriedade vfs diretamente da exportação padrão do vfs_fonts
-                    // A maioria dos bundlers modernos usa o .default para a exportação padrão
-                    // Adicionamos 'as any' para resolver o problema de tipagem
-                    (pdfmakeModule as any).vfs = (vfsFontsModule as any).default.vfs;
-                    PdfMakeRef.current = pdfmakeModule;
-                    
-                    console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
-                    setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
-                } catch (error) {
-                    console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
-                    setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
-                    PdfMakeRef.current = null;
-                }
-            };
-            loadPdfLibs();
-        }
-    }, [isOpen]);
 
     useEffect(() => {
         const fetchLocais = async () => {
@@ -416,13 +374,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
     const canSelectCargo = selectedReportElectionYear !== '';
     const canAdvanceToStep2 = canSelectCargo && selectedReportCargo !== '' && !loadingReportData && rawDataForReport.length > 0;
 
-
     const canAdvanceToStep3 = selectedReportScope !== '' &&
-                               (selectedReportScope === 'Estado' || selectedReportCity !== '') &&
-                               !loadingReportData && rawDataForReport.length > 0;
+                                 (selectedReportScope === 'Estado' || selectedReportCity !== '') &&
+                                 !loadingReportData && rawDataForReport.length > 0;
 
-    // Condição para gerar agora depende de PdfMakeRef.current estar disponível
-    const canGenerate = selectedReportLocationType !== '' && selectedReportCandidate !== '' && !loadingReportData && PdfMakeRef.current;
+    const canGenerate = selectedReportLocationType !== '' && selectedReportCandidate !== '';
 
     const reportSteps = ['Ano/Cargo', 'Abrangência', 'Detalhes'];
 
@@ -479,16 +435,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
         setReportError('');
     }, []);
 
-
     const generatePdfReport = async () => {
         setIsGeneratingPdf(true);
         setReportError('');
 
         try {
-            // Verifica se PdfMakeRef.current está disponível
-            if (!PdfMakeRef.current) {
-                throw new Error('Bibliotecas de PDF não carregadas. Por favor, feche e reabra o modal, ou recarregue a página.');
-            }
             if (!rawDataForReport.length) {
                 throw new Error('Dados para o relatório não carregados. Por favor, selecione as opções novamente.');
             }
@@ -508,7 +459,6 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
             if (filteredData.length === 0) {
                 throw new Error('Nenhum dado encontrado para os critérios selecionados. Por favor, ajuste suas seleções.');
             }
-
 
             const aggregatedDataMap = new Map<string, VotoAgregadoCandidatoRanking>();
             const totalsByLocation: { [key: string]: { totalValid: number; totalBrancos: number; totalNulos: number; totalLegenda: number; } } = {};
@@ -589,100 +539,256 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                 rankedData[i].posicaoRanking = currentOverallRank;
             }
 
-            // Define as colunas da tabela para pdfmake
-            const tableColumnPdfMake = [
-                { text: 'Município', style: 'tableHeader' },
-                { text: selectedReportLocationType === 'Secao' ? 'Zona Eleitoral' : 'Local Votação (Código)', style: 'tableHeader' },
-                { text: selectedReportLocationType === 'Secao' ? 'Seção Eleitoral' : 'Nome do Local', style: 'tableHeader' },
-                { text: selectedReportLocationType === 'Secao' ? 'Nome do Local' : 'Endereço', style: 'tableHeader' },
-                { text: selectedReportLocationType === 'Secao' ? 'Endereço' : 'Bairro', style: 'tableHeader' },
-                { text: 'Votos', style: 'tableHeader' },
-                { text: '% Válidos no Local', style: 'tableHeader' },
-                { text: 'Ranking', style: 'tableHeader' },
-            ];
+            // --- Lógica de Geração do PDF com pdf-lib ---
+            const pdfDoc = await PDFDocument.create();
+            const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
+            const helveticaBoldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
+            let page = pdfDoc.addPage([842, 595]); // A4 Paisagem
+            const { width, height } = page.getSize();
+            const margin = 30;
+            let yPosition = height - margin;
+            const fontSize = 12;
+            const smallFontSize = 8;
+            const lineHeight = 12;
 
-            // Define as linhas da tabela para pdfmake
-            const tableRowsPdfMake = rankedData.map(data => {
-                const row = [];
-                row.push(data.municipio);
-                if (selectedReportLocationType === 'Secao') {
-                    row.push(data.zonaEleitoral);
-                    row.push(data.secaoEleitoral);
-                    row.push(data.nomeLocal);
-                    row.push(data.enderecoLocal);
-                } else {
-                    row.push(data.localVotacao);
-                    row.push(data.nomeLocal);
-                    row.push(data.enderecoLocal);
-                    row.push(data.bairroLocal);
-                }
-                row.push(data.totalVotos.toLocaleString('pt-BR'));
-                row.push(`${data.porcentagem.toFixed(2)}%`);
-                row.push(`${data.posicaoRanking}º`);
-                return row.map(cell => ({ text: cell ?? '', style: 'tableCell' }));
-            });
-
-            // Definição do documento PDF para pdfmake
-            const docDefinition = {
-                pageOrientation: 'landscape',
-                content: [
-                    { text: `Relatório de Votação - Eleições ${selectedReportElectionYear}`, style: 'header' },
-                    { text: `Cargo: ${selectedReportCargo}`, style: 'subheader' },
-                    { text: `Candidato: ${selectedReportCandidate} (${availableReportCandidates.find(c => c.nome === selectedReportCandidate)?.siglaPartido || 'N/A'})`, style: 'subheader' },
-                    { text: `Abrangência: ${selectedReportScope === 'Estado' ? 'Estado da Paraíba' : `Cidade de ${selectedReportCity}`}`, style: 'subheader' },
-                    { text: `Agregação: Por ${selectedReportLocationType === 'Secao' ? 'Seção Eleitoral' : 'Local de Votação'}`, style: 'subheader' },
-                    { text: `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}`, style: 'dateInfo' },
-                    {
-                        style: 'tableExample',
-                        table: {
-                            headerRows: 1,
-                            widths: ['auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto', 'auto'], // Ajuste conforme necessário
-                            body: [
-                                tableColumnPdfMake,
-                                ...tableRowsPdfMake
-                            ]
-                        },
-                        layout: 'lightHorizontalLines' // Um layout de tabela simples
+            // Função para quebra de linha
+            const wrapText = (text: string, font: any, size: number, maxWidth: number) => {
+                const words = text.split(' ');
+                const lines = [];
+                let currentLine = words[0] || '';
+            
+                for (let i = 1; i < words.length; i++) {
+                    const word = words[i];
+                    const testLine = currentLine + ' ' + word;
+                    const testWidth = font.widthOfTextAtSize(testLine, size);
+                    if (testWidth < maxWidth) {
+                        currentLine = testLine;
+                    } else {
+                        lines.push(currentLine);
+                        currentLine = word;
                     }
-                ],
-                styles: {
-                    header: {
-                        fontSize: 18,
-                        bold: true,
-                        margin: [0, 0, 0, 10] // top, right, bottom, left
-                    },
-                    subheader: {
-                        fontSize: 12,
-                        margin: [0, 2, 0, 2]
-                    },
-                    dateInfo: {
-                        fontSize: 10,
-                        margin: [0, 5, 0, 15]
-                    },
-                    tableExample: {
-                        margin: [0, 5, 0, 15]
-                    },
-                    tableHeader: {
-                        bold: true,
-                        fontSize: 9,
-                        color: 'white',
-                        fillColor: '#1464C8', // Azul (equivalente a [20, 100, 200] do jspdf)
-                        alignment: 'center'
-                    },
-                    tableCell: {
-                        fontSize: 8,
-                        margin: [0, 1, 0, 1]
-                    }
-                },
-                defaultStyle: {
-                    // Sem estilo padrão aqui, os estilos são aplicados por nome
                 }
+                lines.push(currentLine);
+                return lines;
             };
 
-            // Cria o PDF e baixa
-            PdfMakeRef.current.createPdf(docDefinition).download(
-                `relatorio_${selectedReportCandidate.replace(/ /g, '_')}_${selectedReportCargo.replace(/ /g, '_')}_${selectedReportElectionYear}.pdf`
-            );
+            // Header
+            page.drawText(`Relatório de Votação - Eleições ${selectedReportElectionYear}`, {
+                x: margin,
+                y: yPosition,
+                font: helveticaBoldFont,
+                size: 18,
+                color: rgb(0, 0, 0),
+            });
+            yPosition -= 2 * lineHeight;
+
+            // Sub-headers
+            page.drawText(`Cargo: ${selectedReportCargo}`, {
+                x: margin,
+                y: yPosition,
+                font: helveticaFont,
+                size: fontSize,
+                color: rgb(0, 0, 0),
+            });
+            yPosition -= lineHeight;
+            page.drawText(`Candidato: ${selectedReportCandidate} (${availableReportCandidates.find(c => c.nome === selectedReportCandidate)?.siglaPartido || 'N/A'})`, {
+                x: margin,
+                y: yPosition,
+                font: helveticaFont,
+                size: fontSize,
+                color: rgb(0, 0, 0),
+            });
+            yPosition -= lineHeight;
+            page.drawText(`Abrangência: ${selectedReportScope === 'Estado' ? 'Estado da Paraíba' : `Cidade de ${selectedReportCity}`}`, {
+                x: margin,
+                y: yPosition,
+                font: helveticaFont,
+                size: fontSize,
+                color: rgb(0, 0, 0),
+            });
+            yPosition -= lineHeight;
+            page.drawText(`Agregação: Por ${selectedReportLocationType === 'Secao' ? 'Seção Eleitoral' : 'Local de Votação'}`, {
+                x: margin,
+                y: yPosition,
+                font: helveticaFont,
+                size: fontSize,
+                color: rgb(0, 0, 0),
+            });
+            yPosition -= 1.5 * lineHeight;
+            
+            const dateText = `Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm:ss')}`;
+            const dateTextWidth = helveticaFont.widthOfTextAtSize(dateText, smallFontSize);
+            page.drawText(dateText, {
+                x: width - margin - dateTextWidth,
+                y: height - margin - 20,
+                font: helveticaFont,
+                size: smallFontSize,
+                color: rgb(0.5, 0.5, 0.5),
+            });
+
+            // Table
+            yPosition -= 2 * lineHeight;
+            const tableHeaders = [
+                'Município',
+                selectedReportLocationType === 'Secao' ? 'Zona' : 'Local (Código)',
+                selectedReportLocationType === 'Secao' ? 'Seção' : 'Nome do Local',
+                selectedReportLocationType === 'Secao' ? 'Nome do Local' : 'Endereço',
+                selectedReportLocationType === 'Secao' ? 'Endereço' : 'Bairro',
+                'Votos',
+                '% Válidos',
+                'Ranking',
+            ];
+            
+            // Larguras das colunas
+            const availableWidth = width - 2 * margin;
+            const colWidths: number[] = [
+                0.15 * availableWidth, // Município
+                0.08 * availableWidth, // Local (Código) / Zona
+                0.08 * availableWidth, // Nome do Local / Seção
+                0.22 * availableWidth, // Endereço / Nome do Local
+                0.22 * availableWidth, // Bairro / Endereço
+                0.08 * availableWidth, // Votos
+                0.08 * availableWidth, // % Válidos
+                0.08 * availableWidth, // Ranking
+            ];
+            
+            let currentY = yPosition;
+            const cellPadding = 5;
+            const tableWidth = colWidths.reduce((sum, w) => sum + w, 0);
+            const headerHeight = lineHeight + 5;
+
+            // Função para desenhar a linha do cabeçalho
+            const drawTableHeader = (pageToDraw: any, y: number) => {
+                let xOffset = margin;
+                pageToDraw.drawRectangle({
+                    x: margin,
+                    y: y - headerHeight,
+                    width: tableWidth,
+                    height: headerHeight,
+                    color: rgb(0.078, 0.392, 0.784),
+                });
+                for (let i = 0; i < tableHeaders.length; i++) {
+                    const headerText = tableHeaders[i];
+                    const headerTextWidth = helveticaBoldFont.widthOfTextAtSize(headerText, smallFontSize);
+                    pageToDraw.drawText(headerText, {
+                        x: xOffset + (colWidths[i] / 2) - (headerTextWidth / 2),
+                        y: y - (headerHeight / 2) - (smallFontSize / 2),
+                        font: helveticaBoldFont,
+                        size: smallFontSize,
+                        color: rgb(1, 1, 1),
+                    });
+                    xOffset += colWidths[i];
+                }
+                return y - headerHeight;
+            };
+
+            currentY = drawTableHeader(page, currentY);
+
+            rankedData.forEach(data => {
+                const rowData = [
+                    data.municipio || '',
+                    selectedReportLocationType === 'Secao' ? data.zonaEleitoral || '' : data.localVotacao || '',
+                    selectedReportLocationType === 'Secao' ? data.secaoEleitoral || '' : data.nomeLocal || '',
+                    selectedReportLocationType === 'Secao' ? data.nomeLocal || '' : data.enderecoLocal || '',
+                    selectedReportLocationType === 'Secao' ? data.enderecoLocal || '' : data.bairroLocal || '',
+                    data.totalVotos.toLocaleString('pt-BR'),
+                    `${data.porcentagem.toFixed(2)}%`,
+                    `${data.posicaoRanking}º`,
+                ];
+
+                const rowHeight = (lines: string[]) => lines.length * lineHeight + 2 * cellPadding;
+                
+                const lines = rowData.map((text, i) => 
+                    wrapText(text, helveticaFont, smallFontSize, colWidths[i] - 2 * cellPadding)
+                );
+                
+                const maxLinesInRow = Math.max(...lines.map(l => l.length));
+                const rowMaxHeight = maxLinesInRow * lineHeight + 2 * cellPadding;
+
+                if (currentY < margin + rowMaxHeight) {
+                    page = pdfDoc.addPage([842, 595]);
+                    currentY = height - margin;
+                    currentY = drawTableHeader(page, currentY);
+                }
+
+                // Desenha a linha de fundo da linha
+                page.drawLine({
+                    start: { x: margin, y: currentY },
+                    end: { x: margin + tableWidth, y: currentY },
+                    thickness: 1,
+                    color: rgb(0.8, 0.8, 0.8),
+                });
+
+                let xOffset = margin;
+                const yStartOfRow = currentY - rowMaxHeight;
+
+                for (let i = 0; i < rowData.length; i++) {
+                    const text = rowData[i];
+                    const columnWidth = colWidths[i];
+                    
+                    const textLines = lines[i];
+                    
+                    let yLine = yStartOfRow + rowMaxHeight - lineHeight - cellPadding;
+                    
+                    // Condição para centralizar colunas numéricas
+                    const isNumericColumn = i === 1 || i >= 5;
+
+                    textLines.forEach(line => {
+                        const textWidth = helveticaFont.widthOfTextAtSize(line, smallFontSize);
+                        let xText = xOffset + cellPadding;
+                        if (isNumericColumn) {
+                            xText = xOffset + (columnWidth / 2) - (textWidth / 2);
+                        }
+                        
+                        page.drawText(line, {
+                            x: xText,
+                            y: yLine,
+                            font: helveticaFont,
+                            size: smallFontSize,
+                            color: rgb(0, 0, 0),
+                        });
+                        yLine -= lineHeight;
+                    });
+                    
+                    // Desenha a linha vertical entre as colunas
+                    page.drawLine({
+                        start: { x: xOffset, y: currentY },
+                        end: { x: xOffset, y: currentY - rowMaxHeight },
+                        thickness: 1,
+                        color: rgb(0.8, 0.8, 0.8),
+                    });
+
+                    xOffset += columnWidth;
+                }
+                
+                // Desenha a última linha vertical
+                page.drawLine({
+                    start: { x: xOffset, y: currentY },
+                    end: { x: xOffset, y: currentY - rowMaxHeight },
+                    thickness: 1,
+                    color: rgb(0.8, 0.8, 0.8),
+                });
+                
+                currentY -= rowMaxHeight;
+            });
+            
+            // Desenha a linha final da tabela
+            page.drawLine({
+                start: { x: margin, y: currentY },
+                end: { x: margin + tableWidth, y: currentY },
+                thickness: 1,
+                color: rgb(0.8, 0.8, 0.8),
+            });
+
+            // Salva o PDF
+            const pdfBytes = await pdfDoc.save();
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = `relatorio_${selectedReportCandidate.replace(/ /g, '_')}_${selectedReportCargo.replace(/ /g, '_')}_${selectedReportElectionYear}.pdf`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
 
             alert('Relatório PDF gerado com sucesso!');
             handleClose();
@@ -891,12 +997,11 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                                     </select>
                                     <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                                         <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
-                                    </div>
                                 </div>
                             </div>
+                        </div>
                         )}
-
-                        <div className="flex justify-between space-x-3">
+                        <div className="flex justify-end space-x-3">
                             <button
                                 onClick={handleBackToStep1}
                                 className="px-4 py-2 border border-gray-300 rounded-full shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors duration-200"
@@ -920,7 +1025,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                     <div>
                         <div className="mb-4">
                             <label htmlFor="report-location-type" className="block text-sm font-medium text-gray-700 mb-1">
-                                Tipo de Agregação de Local:
+                                Agrupar Votos Por:
                             </label>
                             <div className="relative">
                                 <select
@@ -931,8 +1036,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                                     disabled={loadingReportData}
                                 >
                                     <option value="">Selecione...</option>
-                                    <option value="Secao">Por Seção Eleitoral</option>
-                                    <option value="Local">Por Local de Votação</option>
+                                    <option value="Local">Local de Votação</option>
+                                    <option value="Secao">Seção Eleitoral</option>
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
                                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 6.757 7.586 5.343 9l4.59 4.59z"/></svg>
@@ -952,10 +1057,8 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                                     disabled={loadingReportData || availableReportCandidates.length === 0}
                                 >
                                     <option value="">Selecione...</option>
-                                    {availableReportCandidates.map(cand => (
-                                        <option key={`${cand.nome}-${cand.siglaPartido}-${cand.numeroCandidato}`} value={cand.nome}>
-                                            {cand.nome} ({cand.siglaPartido})
-                                        </option>
+                                    {availableReportCandidates.map(c => (
+                                        <option key={c.nome} value={c.nome}>{`${c.nome} (${c.siglaPartido})`}</option>
                                     ))}
                                 </select>
                                 <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-700">
@@ -963,6 +1066,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
                                 </div>
                             </div>
                         </div>
+
                         <div className="flex justify-between space-x-3">
                             <button
                                 onClick={handleBackToStep2}
