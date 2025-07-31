@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation"; // ✅ Importação do roteador do Next.js
 import { FiMenu } from "react-icons/fi";
-import { FaBalanceScale } from "react-icons/fa";
+import { FaBalanceScale, FaFileAlt } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -183,6 +183,10 @@ const Sidebar = () => {
                 <li className="flex items-center py-1 hover:text-blue-500">
                   <FaBalanceScale className="mr-2" size={16} />
                   <Link href="/votacao/comparativogeral(2020-2024)">Comparativo 2020 - 2024</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500">
+                  <FaFileAlt className="mr-2" size={16} />
+                  <Link href="votacao/relatorios">Gerar Relatório</Link>
                 </li>
               </ul>
             )}
