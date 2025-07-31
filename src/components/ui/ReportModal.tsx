@@ -89,33 +89,45 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
     const locaisCarregadosRef = useRef(false);
 
 
-    const PdfMakeRef = useRef<any>(null); 
+    // Dentro do componente ReportModal
 
-    useEffect(() => {
-        if (isOpen && !PdfMakeRef.current) {
-            const loadPdfLibs = async () => {
-                try {
-                    console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
-                    
-                    const [pdfmakeModule, vfsFontsModule] = await Promise.all([
-                        import('pdfmake/build/pdfmake.js'),
-                        import('pdfmake/build/vfs_fonts.js'),
-                    ]);
+const PdfMakeRef = useRef<any>(null); 
 
-                    (pdfmakeModule as any).vfs = (vfsFontsModule as any).pdfMake.vfs;
-                    PdfMakeRef.current = pdfmakeModule;
-                    
-                    console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
-                    setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
-                } catch (error) {
-                    console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
-                    setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
-                    PdfMakeRef.current = null;
+useEffect(() => {
+    if (isOpen && !PdfMakeRef.current) {
+        const loadPdfLibs = async () => {
+            try {
+                console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
+                
+                // Carrega as bibliotecas em paralelo para melhor performance
+                const [pdfmakeModule, vfsFontsModule] = await Promise.all([
+                    import('pdfmake/build/pdfmake.js'),
+                    import('pdfmake/build/vfs_fonts.js'),
+                ]);
+
+                // Acessa o vfs através da exportação padrão do módulo vfs_fonts
+                // Em alguns ambientes, o objeto vfs pode ser o próprio `default`
+                // Em outros, ele pode estar em uma propriedade chamada `vfs`
+                const vfs = (vfsFontsModule as any).pdfMake?.vfs || (vfsFontsModule as any).default.vfs;
+
+                if (!vfs) {
+                  throw new Error('As fontes do pdfmake não foram encontradas no módulo de fontes.');
                 }
-            };
-            loadPdfLibs();
-        }
-    }, [isOpen]);
+                
+                (pdfmakeModule as any).vfs = vfs;
+                PdfMakeRef.current = pdfmakeModule;
+                
+                console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
+                setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
+            } catch (error) {
+                console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
+                setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
+                PdfMakeRef.current = null;
+            }
+        };
+        loadPdfLibs();
+    }
+}, [isOpen]);
 
     useEffect(() => {
         const fetchLocais = async () => {
