@@ -88,35 +88,34 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
     const [locaisData, setLocaisData] = useState<LocalVotacaoDetalhado[]>([]);
     const locaisCarregadosRef = useRef(false);
 
-    // Ref para a instância ou construtor do pdfmake
+
     const PdfMakeRef = useRef<any>(null); 
 
-    // Carregamento dinâmico de pdfmake e suas fontes
     useEffect(() => {
         if (isOpen && !PdfMakeRef.current) {
             const loadPdfLibs = async () => {
                 try {
                     console.log('Iniciando carregamento de bibliotecas PDF (pdfmake)...');
                     
-                    // Importe pdfmake
-                    const pdfmakeModule = await import('pdfmake/build/pdfmake');
-                    const vfsFontsModule = await import('pdfmake/build/vfs_fonts'); 
+                    const [pdfmakeModule, vfsFontsModule] = await Promise.all([
+                        import('pdfmake/build/pdfmake.js'),
+                        import('pdfmake/build/vfs_fonts.js'),
+                    ]);
 
-                    // Configura as fontes para pdfmake
-                    pdfmakeModule.default.vfs = vfsFontsModule.default.vfs;                    
-                    PdfMakeRef.current = pdfmakeModule.default; // Armazena o objeto pdfmake
+                    (pdfmakeModule as any).vfs = (vfsFontsModule as any).pdfMake.vfs;
+                    PdfMakeRef.current = pdfmakeModule;
+                    
                     console.log('Bibliotecas PDF (pdfmake) carregadas com sucesso.');
                     setReportError(prev => prev.includes('Bibliotecas de PDF não carregadas') ? '' : prev);
                 } catch (error) {
                     console.error("Falha ao carregar bibliotecas de PDF (pdfmake):", error);
                     setReportError("Erro ao carregar bibliotecas de PDF. Por favor, recarregue a página.");
-                    PdfMakeRef.current = null; // Resetar ref em caso de falha
+                    PdfMakeRef.current = null;
                 }
             };
             loadPdfLibs();
         }
     }, [isOpen]);
-
 
     useEffect(() => {
         const fetchLocais = async () => {
