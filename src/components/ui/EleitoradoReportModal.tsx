@@ -64,8 +64,14 @@ const safeParseNumber = (value: any): number => {
     return 0;
 };
 
+// Função utilitária para normalizar strings (remover acentos)
+const normalizeString = (str: string) => {
+    return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+};
+
+// Ajustado para usar a função de normalização no nome do arquivo da planilha
 const getSheetId = (gender: string, maritalStatus: string) => {
-    const normalizedMaritalStatus = maritalStatus.toLowerCase().replace(/ /g, '_');
+    const normalizedMaritalStatus = normalizeString(maritalStatus).toLowerCase().replace(/ /g, '_');
     return `${gender.toLowerCase()}_${normalizedMaritalStatus}`;
 };
 
@@ -76,7 +82,7 @@ const getAllRelevantSheetIds = (selectedGenders: string[], selectedMaritalStatus
         allPlanilhas.forEach(sheet => relevantSheets.add(sheet));
     } else {
         const maritalStatusList = selectedMaritalStatus.length > 0
-            ? selectedMaritalStatus.map(ms => ms.toLowerCase())
+            ? selectedMaritalStatus.map(ms => normalizeString(ms).toLowerCase())
             : ['solteiro', 'casado', 'separado_judicialmente', 'divorciado', 'viuvo', 'nao_informado'];
 
         const genderList = selectedGenders.length > 0
