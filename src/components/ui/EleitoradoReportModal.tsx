@@ -120,7 +120,7 @@ const EleitoradoReportModal: React.FC<EleitoradoReportModalProps> = ({ isOpen, o
 
     const allOptionsForVariables = useMemo(() => ({
         'Gênero': ['MASCULINO', 'FEMININO'],
-        'Estado Civil': ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'SEPARADO JUDICIALMENTE', 'VIUVO', 'NÃO INFORMADO'],
+        'Estado Civil': ['SOLTEIRO', 'CASADO', 'DIVORCIADO', 'SEPARADO JUDICIALMENTE', 'VIÚVO', 'NÃO INFORMADO'],
         'Faixa Etária': [
             '16 ANOS', '17 ANOS', '18 ANOS', '19 ANOS', '20 ANOS', '21 A 24 ANOS',
             '25 A 29 ANOS', '30 A 34 ANOS', '35 A 39 ANOS', '40 A 44 ANOS', '45 A 49 ANOS',
