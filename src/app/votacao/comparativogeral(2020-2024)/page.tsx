@@ -677,12 +677,23 @@ export default function PainelVereadorPrefeito() {
                       disabled={carregando}
                     />
                   </div>
-                  <MapaVariacaoParaiba
-                    dadosMunicipios={dadosMapaVisaoGeral}
-                    isLoading={carregando}
-                  />
-                </div>
-              </>
+                    <div className="hidden md:block">
+                        <MapaVariacaoParaiba
+                          dadosMunicipios={dadosMapaVisaoGeral}
+                          isLoading={carregando}
+                        />
+                      </div>
+
+                      <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
+                        <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                          <p className="text-base text-gray-500">
+                            O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+             </>
+
             )}
           </div>
         </div>
