@@ -1,4 +1,3 @@
-// src/app/dashboard-municipal/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -11,14 +10,14 @@ import Charts from "../dashboard-estadual/Charts";
 import Ranking from "../dashboard-estadual/Ranking";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import MapaParaiba from "../maps/MapaParaiba";
-import useMediaQuery from "@/hooks/useMediaQuery"; // ➡️ Importe o hook
+import useMediaQuery from "@/hooks/useMediaQuery";
 
 export default function Dashboard() {
   const [data, setData] = useState<{ Município: string }[]>([]);
   const [filteredData, setFilteredData] = useState<{ Município: string }[]>([]);
   const [selectedMunicipalities, setSelectedMunicipalities] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const isMobile = useMediaQuery("(max-width: 768px)"); // ➡️ Usa o hook para detectar a tela
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     const fetchData = async () => {
@@ -63,9 +62,7 @@ export default function Dashboard() {
           <DashboardHeader />
 
           {data.length > 0 && (
-            // ➡️ Ajusta o layout para mobile e desktop
             <div className="flex flex-col lg:flex-row justify-between gap-6 mb-6 min-h-[360px]">
-              {/* Filtro ocupa a largura total em mobile e 1/3 em desktop */}
               <div className="flex items-center justify-center w-full lg:w-1/3">
                 <div className="w-full max-w-md">
                   <Filters
@@ -76,13 +73,13 @@ export default function Dashboard() {
                 </div>
               </div>
 
-              {/* ➡️ Renderiza o mapa APENAS se NÃO for mobile */}
               {!isMobile && (
                 <div className="w-full lg:w-2/3 -ml-10">
                   <MapaParaiba
                     apiData={data}
                     filteredMunicipalities={selectedMunicipalities}
                     setFilteredMunicipalities={setSelectedMunicipalities}
+                    allowDragging={true} // ✅ prop obrigatória adicionada
                   />
                 </div>
               )}
