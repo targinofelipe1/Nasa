@@ -782,11 +782,21 @@ export default function PainelEleitorado() {
               </div>
             ) : (
               <>
-                <MapaParaibaEleitorado
-                  apiData={dadosCompletos}
-                  abaAtiva={abaAtiva}
-                  isDataLoading={carregando}
-                />
+                <div className="hidden md:block">
+                  <MapaParaibaEleitorado
+                    apiData={dadosCompletos}
+                    abaAtiva={abaAtiva}
+                    isDataLoading={carregando}
+                  />
+                </div>
+
+                <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
+                  <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                    <p className="text-base text-gray-500">
+                      O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+                    </p>
+                  </div>
+                </div>
 
                 <div className="mt-8 mb-4 bg-white shadow-md rounded-lg p-6">
                   <h3 className="text-base font-semibold text-gray-800 mb-3">Filtros Geográficos:</h3>

@@ -1,10 +1,10 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import Sidebar from '@/components/ui/Sidebar';
-import NoScroll from '@/components/ui/NoScroll';
-import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
-import CardPrograma from '@/components/ui/CardProgramaProps';
+import { useEffect, useState } from "react";
+import Sidebar from "@/components/ui/Sidebar";
+import NoScroll from "@/components/ui/NoScroll";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
+import CardPrograma from "@/components/ui/CardProgramaProps";
 import {
   FaBuilding,
   FaFemale,
@@ -12,7 +12,7 @@ import {
   FaMapMarkedAlt,
   FaTractor,
   FaUsers,
-} from 'react-icons/fa';
+} from "react-icons/fa";
 import {
   BarChart,
   Bar,
@@ -21,7 +21,7 @@ import {
   Tooltip,
   Legend,
   ResponsiveContainer,
-} from 'recharts';
+} from "recharts";
 
 type LinhaCSV = string[];
 
@@ -34,7 +34,7 @@ type Agricultor = {
 };
 
 export default function ProgramasPage() {
-  const [abaAtiva, setAbaAtiva] = useState('Visão Geral');
+  const [abaAtiva, setAbaAtiva] = useState("Visão Geral");
   const [agricultores, setAgricultores] = useState(0);
   const [mulheres, setMulheres] = useState(0);
   const [beneficiarios, setBeneficiarios] = useState(0);
@@ -337,11 +337,12 @@ export default function ProgramasPage() {
       <>
         <NoScroll />
         <div className="flex bg-white h-screen overflow-hidden">
-          <div style={{ zoom: '80%' }} className="h-screen overflow-auto">
+              <div style={{ zoom: '80%' }} className="h-screen overflow-auto">
                   <Sidebar />
-            </div>   
-        <div className="flex-1 overflow-auto" style={{ zoom: '80%' }}>
-            <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200 px-10">
+                </div>      
+
+          <div className="flex-1 overflow-auto p-4 md:p-10" style={{ zoom: '80%' }}>
+            <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200">
               <p className="text-sm text-gray-500 mb-1">
                 <span className="text-black font-medium">Programas</span> /
                 <span className="text-black"> Segurança Alimentar</span> /
@@ -383,9 +384,10 @@ export default function ProgramasPage() {
               </div>
             </div>
 
+            {/* Conteúdo da aba "Visão Geral" */}
             {abaAtiva === 'Visão Geral' && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-white rounded-xl p-10">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 bg-white rounded-xl p-4 md:p-10">
                   <CardPrograma
                     value={beneficiarios}
                     label="Total de beneficiários"
@@ -430,7 +432,7 @@ export default function ProgramasPage() {
                   />
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-10 p-10">
+                <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-2 mt-4 md:mt-10 p-4 md:p-10">
                   <div className="h-[600px] bg-white rounded-xl shadow p-4 flex flex-col">
                     <h2 className="text-lg font-bold text-center mb-2">
                       Beneficiários por Município
@@ -492,7 +494,7 @@ export default function ProgramasPage() {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 4 mt-0 p-10">
+                <div className="hidden md:grid grid-cols-1 md:grid-cols-2 gap-2 mt-4 md:mt-10 p-4 md:p-10">
                   <div className="h-[600px] bg-white rounded-xl shadow p-4 flex flex-col">
                     <h2 className="text-lg font-bold text-center mb-2">
                       Investimento (R$) por Município
@@ -557,17 +559,22 @@ export default function ProgramasPage() {
                     </div>
                   </div>
                 </div>
+
+                <div className="p-4 md:hidden">
+                  <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                    <p className="text-base text-gray-500">
+                      A visualização gráfica não está disponível para dispositivos móveis. Acesse por um computador para visualizar o conteúdo.                    </p>
+                  </div>
+                </div>
               </>
             )}
 
             {abaAtiva === 'Agricultores' && (
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <h2 className="text-2xl font-bold mb-4 text-black">
                   Lista de Agricultores
                 </h2>
-
                 <div className="flex flex-wrap items-center gap-4 mb-6">
-                  {/* Ordenação */}
                   <select
                     value={ordenacao}
                     onChange={(e) => {
@@ -580,7 +587,6 @@ export default function ProgramasPage() {
                     <option value="desc">Ordenar: Z → A</option>
                   </select>
 
-                  {/* Filtro Município */}
                   <select
                     value={filtroMunicipio}
                     onChange={(e) => {
@@ -599,7 +605,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Filtro Status */}
                   <select
                     value={filtroStatus}
                     onChange={(e) => {
@@ -618,7 +623,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Campo pesquisa */}
                   <select
                     value={campoPesquisa}
                     onChange={(e) =>
@@ -631,7 +635,6 @@ export default function ProgramasPage() {
                     <option value="endereco">Endereço</option>
                   </select>
 
-                  {/* Barra de pesquisa com lupa */}
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       🔍
@@ -766,14 +769,14 @@ export default function ProgramasPage() {
                 </div>
               </div>
             )}
+
             {abaAtiva === 'Entidades' && (
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <h2 className="text-2xl font-bold mb-4 text-black">
                   Lista de Entidades
                 </h2>
 
                 <div className="flex items-center gap-4 mb-4">
-                  {/* Ordenação */}
                   <select
                     value={ordenacaoEntidade}
                     onChange={(e) => {
@@ -786,7 +789,6 @@ export default function ProgramasPage() {
                     <option value="desc">Ordenar: Z → A</option>
                   </select>
 
-                  {/* Filtro Município */}
                   <select
                     value={filtroMunicipioEntidade}
                     onChange={(e) => {
@@ -923,13 +925,12 @@ export default function ProgramasPage() {
             )}
 
             {abaAtiva === 'Cooperativas' && (
-              <div className="p-10">
+              <div className="p-4 md:p-10">
                 <h2 className="text-2xl font-bold mb-4 text-black">
                   Compras por Cooperativa
                 </h2>
 
                 <div className="flex flex-wrap items-center gap-4 mb-6">
-                  {/* Filtro Cooperativa */}
                   <select
                     value={filtroCooperativa}
                     onChange={(e) => {
@@ -948,7 +949,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Filtro Produto */}
                   <select
                     value={filtroProduto}
                     onChange={(e) => {
@@ -967,7 +967,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Filtro Município */}
                   <select
                     value={filtroMunicipioCompras}
                     onChange={(e) => {
@@ -986,7 +985,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Filtro Entidade */}
                   <select
                     value={filtroEntidadeCompras}
                     onChange={(e) => {
@@ -1005,7 +1003,6 @@ export default function ProgramasPage() {
                     )}
                   </select>
 
-                  {/* Campo de pesquisa (Nome ou CNPJ) */}
                   <select
                     value={campoPesquisaCompras}
                     onChange={(e) =>
@@ -1017,7 +1014,6 @@ export default function ProgramasPage() {
                     <option value="cnpj">CNPJ</option>
                   </select>
 
-                  {/* Barra de pesquisa com lupa */}
                   <div className="relative">
                     <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       🔍
@@ -1037,7 +1033,6 @@ export default function ProgramasPage() {
                   </div>
                 </div>
 
-                {/* Tabela */}
                 <table className="min-w-full bg-white rounded shadow">
                   <thead>
                     <tr className="text-left text-sm font-medium text-gray-600 border-b">
@@ -1117,7 +1112,6 @@ export default function ProgramasPage() {
                   </tbody>
                 </table>
 
-                {/* Paginação */}
                 <div className="flex justify-center mt-6 space-x-2">
                   <button
                     className={`px-4 py-2 rounded-md transition-all duration-300 ${

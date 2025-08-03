@@ -6,12 +6,12 @@ import Reports from "./Reports";
 import FiltersEstadual from "./FiltersEstadual";
 import NoScroll from "@/components/ui/NoScroll";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
-import BotaoImpressao from "@/components/ui/BotaoImpressao"; // Importe o botão
+import BotaoImpressao from "@/components/ui/BotaoImpressao";
 
 export default function ReportsPageEstadual() {
   const [apiData, setApiData] = useState<any[]>([]);
   const [selectedRegionals, setSelectedRegionals] = useState<string[]>([]);
-  const [showButton, setShowButton] = useState(false); // Novo estado para controlar a visibilidade do botão
+  const [showButton, setShowButton] = useState(false);
 
   useEffect(() => {
     if (selectedRegionals.length > 0) {
@@ -51,7 +51,6 @@ export default function ReportsPageEstadual() {
   }, []);
 
   useEffect(() => {
-    // Lógica para mostrar o botão quando houver dados
     if (apiData.length > 0) {
       setShowButton(true);
     } else {
@@ -73,20 +72,20 @@ export default function ReportsPageEstadual() {
           <Sidebar />
 
           <div className="no-print flex flex-col md:flex-row w-full h-full p-4">
-            {/* Div do filtro - visível em todas as telas */}
-            <div className="w-full md:w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
-              <FiltersEstadual data={apiData} onRegionalChange={setSelectedRegionals} />
-              
-              {/* Adicione o botão de gerar PDF aqui */}
-              {showButton && (
-                <div className="mt-4 flex justify-center md:justify-start">
-                  <BotaoImpressao apiData={apiData} />
-                </div>
-              )}
-              
+            {/* Contêiner de filtros - Agora também com ml-16 */}
+            <div className="w-full md:w-1/4 pr-4 overflow-y-auto ml-16">
+              <div className="flex flex-col items-center">
+                <FiltersEstadual data={apiData} onRegionalChange={setSelectedRegionals} />
+              </div>
             </div>
 
-            <div className="hidden md:block w-full md:w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
+            {/* Contêiner de relatórios - visível em todas as telas */}
+            <div className="block w-full md:w-3/4 pl-6 pr-8 h-screen overflow-auto ml-16">
+              {/* Botão de impressão alinhado à direita em telas grandes */}
+              <div className="md:flex md:justify-end md:mb-4 hidden">
+                {showButton && <BotaoImpressao apiData={apiData} />}
+              </div>
+              
               <Reports data={apiData} selectedRegionals={selectedRegionals} />
             </div>
           </div>

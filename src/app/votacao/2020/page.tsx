@@ -1918,15 +1918,25 @@ export default function PainelVotacao() {
           </div>
 
           <div className="p-6 space-y-10">
-            {abaAtiva !== 'Visão Geral' &&
-              abaAtiva !== 'Visão Geral 2º turno' &&
-              !carregando && (
-                <MapaParaibaCandidato
-                  key={`${abaAtiva}-mapa`}
-                  apiData={dadosCompletosParaMapa}
-                  abaAtiva={abaAtiva}
-                />
-              )}
+            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno') && !carregando && (
+              <>
+                <div className="hidden md:block">
+                  <MapaParaibaCandidato
+                    key={`${abaAtiva}-mapa`}
+                    apiData={dadosCompletosParaMapa}
+                    abaAtiva={abaAtiva}
+                  />
+                </div>
+
+                <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
+                  <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                    <p className="text-base text-gray-500">
+                      O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+                    </p>
+                  </div>
+                </div>
+              </>
+            )}
 
             {abaAtiva === 'Visão Geral' ||
             abaAtiva === 'Visão Geral 2º turno' ? (
@@ -3957,17 +3967,29 @@ export default function PainelVotacao() {
                 </div>
               )}
 
-            {abaAtiva !== 'Visão Geral' &&
-              abaAtiva !== 'Visão Geral 2º turno' &&
-              abaAtiva !== 'Vereador' &&
-              !carregando &&
-              dadosCompletosParaMapa.length > 0 && (
-                <MapaPorMunicipioEleitoral
-                  apiData={dadosCompletosParaMapa}
-                  currentCargo={abaAtiva}
-                  municipiosDisponiveisGlobal={municipiosDisponiveis}
-                />
-              )}
+            {(abaAtiva !== 'Visão Geral' && abaAtiva !== 'Visão Geral 2º turno' && abaAtiva !== 'Vereador') &&
+                  !carregando &&
+                  dadosCompletosParaMapa.length > 0 && (
+                    <>
+                      {/* Div que exibe o mapa apenas em telas maiores (md) */}
+                      <div className="hidden md:block">
+                        <MapaPorMunicipioEleitoral
+                          apiData={dadosCompletosParaMapa}
+                          currentCargo={abaAtiva}
+                          municipiosDisponiveisGlobal={municipiosDisponiveis}
+                        />
+                      </div>
+
+                      {/* Div que exibe a mensagem de aviso apenas em telas menores (sm) */}
+                      <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
+                        <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                          <p className="text-base text-gray-500">
+                            O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+                          </p>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
             {abaAtiva !== 'Visão Geral' &&
               abaAtiva !== 'Visão Geral 2º turno' &&
