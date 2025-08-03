@@ -1,4 +1,4 @@
-"use client";
+// src/components/ui/Filters.tsx
 import ProgramFilter from "@/components/ui/ProgramFilter";
 import { FC } from "react";
 
@@ -9,7 +9,7 @@ interface FiltersProps {
 
 const Filters: FC<FiltersProps> = ({ data, onFilterChange }) => {
   return (
-    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
+    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg w-full"> {/* ➡️ Adiciona w-full */}
       {/* 🔹 Filtro de Programas */}
       <ProgramFilter data={data} onFilterChange={onFilterChange} />
     </div>

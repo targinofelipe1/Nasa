@@ -1,3 +1,4 @@
+// src/app/maps/map-rga/map-rga.tsx (exemplo com a prop ajustada)
 "use client";
 
 import dynamic from "next/dynamic";
@@ -145,7 +146,7 @@ const rgaColors: Record<string, string> = {
       </div>
     );
   };
-  
+
   return (
     <div className="relative flex justify-center items-center bg-white">
       {isClient && geoJsonData && (
