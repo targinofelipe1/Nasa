@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import MunicipalFilter from "@/components/ui/MunicipalFilter";
 
 interface FiltersProps {
-  data: { Município: string; RGA: string }[]; // ✅ RGA é obrigatória aqui
+  data: { Município: string; RGA?: string }[]; // ✅ RGA opcional
   onMunicipalChange: (selectedMunicipals: string[]) => void;
 }
 
@@ -22,6 +22,7 @@ const FiltersMunicipal: React.FC<FiltersProps> = ({ data, onMunicipalChange }) =
         data
           .filter((row) => municipals.includes(row.Município))
           .map((row) => row.RGA)
+          .filter(Boolean) as string[]
       )];
       setRegionaisAssociadas(uniqueRegionais.sort());
       setMunicipiosFiltrados(municipals.sort());

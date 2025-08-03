@@ -4,18 +4,16 @@ import { FC } from 'react';
 import Select, { MultiValue } from 'react-select';
 
 interface MunicipalFilterProps {
-  data: { Município: string; RGA: string }[];
+  data: { Município: string; RGA?: string }[]; // ✅ RGA opcional
   onFilterChange: (selectedMunicipals: string[]) => void;
   selectedMunicipals: string[];
 }
 
 const MunicipalFilter: FC<MunicipalFilterProps> = ({ data, onFilterChange, selectedMunicipals }) => {
-
-  const uniqueMunicipals = [...new Set(data.map((row: { Município: string }) => row.Município).filter(Boolean))]
+  const uniqueMunicipals = [...new Set(data.map((row) => row.Município).filter(Boolean))]
     .map((municipio) => ({ value: municipio, label: municipio }))
     .sort((a, b) => a.value.localeCompare(b.value));
 
-  // Filtra as opções para corresponder aos municípios selecionados
   const selectedValues = uniqueMunicipals.filter(option => selectedMunicipals.includes(option.value));
 
   const handleChange = (newValue: MultiValue<{ value: string; label: string }>) => {
@@ -27,7 +25,7 @@ const MunicipalFilter: FC<MunicipalFilterProps> = ({ data, onFilterChange, selec
     <div className="mb-6 p-4 bg-white shadow-lg rounded-lg w-full">
       <h2 className="text-lg font-semibold mb-2">Filtrar por Município</h2>
       <Select
-        isMulti={true} // ➡️ AQUI: Habilita a seleção múltipla
+        isMulti
         options={uniqueMunicipals}
         value={selectedValues}
         onChange={handleChange}
