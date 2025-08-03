@@ -3,20 +3,22 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import NoScroll from "@/components/ui/NoScroll";
+import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
+import BotaoImpressao from "@/components/ui/BotaoImpressao"; 
+import FiltersEstadual from "../relatorios-estadual/FiltersEstadual";
 import Reports from "../relatorios-estadual/Reports";
 import FiltersMunicipal from "./FilterMunicipal";
-import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 
-
-
-export default function ReportsPageMunicipal() {
+export default function ReportsPageEstadual() {
   const [apiData, setApiData] = useState<any[]>([]);
-  const [selectedMunicipals, setMunicipiosFiltrados] = useState<string[]>([]);
-
+  const [selectedMunicipals, setSelectedMunicipals] = useState<string[]>([]);
+  const [showButton, setShowButton] = useState(false); 
 
   useEffect(() => {
     if (selectedMunicipals.length > 0) {
-      sessionStorage.setItem("selectedMunicipios", JSON.stringify(selectedMunicipals));
+      sessionStorage.setItem("selectedMunicipals", JSON.stringify(selectedMunicipals));
+    } else {
+      sessionStorage.removeItem("selectedMunicipals");
     }
   }, [selectedMunicipals]);
 
@@ -49,40 +51,44 @@ export default function ReportsPageMunicipal() {
     fetchData();
   }, []);
 
-  const filteredData = apiData.filter((row) =>
-    Object.values(row).some((value) => {
-      const stringValue = value ? String(value).trim().toLowerCase() : ""; // Converte para string e remove espaços extras
-      return stringValue !== "0" && stringValue !== "" && stringValue !== "não";
-    })
-  );
-  
-  return (
+  useEffect(() => {
+    // Lógica para mostrar o botão quando houver dados
+    if (apiData.length > 0) {
+      setShowButton(true);
+    } else {
+      setShowButton(false);
+    }
+    console.log("📌 Regionais Selecionadas:", selectedMunicipals);
+  }, [selectedMunicipals, apiData]);
 
+  return (
     <ProtectedRoute>
       <>
-        <NoScroll /> {/* 🔹 Impede a rolagem vertical apenas nesta página */}
-
-        
+        <NoScroll />
 
         <div className="w-full bg-white p-4 shadow-md text-center">
           <h1 className="text-2xl font-bold">Relatório Municipal</h1>
         </div>
 
-      <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
-          {/* Sidebar à esquerda */}
+        <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
           <Sidebar />
 
-          {/* Layout Flexível: Filtros à esquerda e relatório à direita */}
-          <div className="no-print flex flex-row w-full h-full p-4">
-            {/* 🔹 Área dos filtros ajustada */}
-            <div className="w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
-              <FiltersMunicipal data={apiData} onMunicipalChange={setMunicipiosFiltrados} />
+          <div className="no-print flex flex-col md:flex-row w-full h-full p-4">
+            {/* Div do filtro - visível em todas as telas */}
+            <div className="w-full md:w-1/4 pr-4 h-screen sticky top-4 overflow-y-auto">
+              <FiltersMunicipal data={apiData} onMunicipalChange={setSelectedMunicipals} />
+              
+              {/* Adicione o botão de gerar PDF aqui */}
+              {showButton && (
+                <div className="mt-4 flex justify-center md:justify-start">
+                  <BotaoImpressao apiData={apiData} />
+                </div>
+              )}
+              
             </div>
 
-            {/* 🔹 Área do relatório */}
-            <div className="w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
-              {/* Passa os dados filtrados para o Reports */}
-              <Reports data={filteredData} selectedMunicipals={selectedMunicipals} />
+            <div className="hidden md:block w-full md:w-3/4 pl-6 sticky top-0 h-screen overflow-auto">
+              <Reports data={apiData} selectedMunicipals={selectedMunicipals}/>
             </div>
           </div>
         </div>

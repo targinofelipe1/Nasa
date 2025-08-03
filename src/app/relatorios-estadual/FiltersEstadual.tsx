@@ -26,7 +26,7 @@ const FiltersEstadual: React.FC<FiltersProps> = ({ data, onRegionalChange }) => 
 
   return (
     <div className="p-4 bg-white shadow-lg rounded-lg mb-12">
-      <RegionalFilter data={data} onFilterChange={handleRegionalChange} />
+      <RegionalFilter data={data} onFilterChange={handleRegionalChange} selectedRegionals={selectedRegional}/>
 
       {selectedRegional.length > 0 && (
         <div className="mt-4 p-3 border rounded-lg bg-gray-50">

@@ -1,6 +1,5 @@
 "use client";
 
-
 import React, { useState } from "react";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -19,7 +18,7 @@ const Reports = ({
   const findKey = (columnName: string) => {
     if (!data || data.length === 0 || !data[0]) return "";
     return Object.keys(data[0]).find(
-      key => key.replace(/\s+/g, " ").trim().toLowerCase() === columnName.replace(/\s+/g, " ").trim().toLowerCase()
+      (key) => key.replace(/\s+/g, " ").trim().toLowerCase() === columnName.replace(/\s+/g, " ").trim().toLowerCase()
     ) || "";
   };
 
@@ -31,7 +30,7 @@ const Reports = ({
 
   const [tabelasSelecionadas, setTabelasSelecionadas] = useState<string[]>([]);
 
-
+  // ... (o restante da sua lógica de cálculo e variáveis é mantida) ...
 
   const total2010Key = findKey("População - CENSO - IBGE/2010 - Total 2010");
   const urbana2010Key = findKey("População - CENSO - IBGE/2010 - Urbana");
@@ -41,7 +40,7 @@ const Reports = ({
   const urbana2022PercentKey = findKey("População  CENSO - IBGE/2022 - % Urbana  ref 2010");
   const rural2022PercentKey = findKey("População  CENSO - IBGE/2022 - % Rural  ref 2010");
 
- const isRegionalSelected = selectedRegionals.length > 0;
+  const isRegionalSelected = selectedRegionals.length > 0;
   const isMunicipalSelected = selectedMunicipals.length > 0;
 
   const usedData = data.filter((row) => {
@@ -51,9 +50,8 @@ const Reports = ({
     if (isRegionalSelected) {
       return selectedRegionals.includes(row["RGA"]);
     }
-    return true; 
+    return true;
   });
-
 
   const total2010 = usedData.reduce((sum, row) => sum + parseNumber(row[total2010Key]), 0);
   const total2022 = usedData.reduce((sum, row) => sum + parseNumber(row[total2022Key]), 0);
@@ -68,15 +66,14 @@ const Reports = ({
     ? Math.round(total2022 * (parseNumber(usedData[0][rural2022PercentKey]) / 100))
     : 0;
 
-    const calcPercentChange = (oldValue: number, newValue: number) => {
-      if (oldValue === 0) return "N/A";
-      const percent = ((newValue - oldValue) / oldValue) * 100;
-    
-      if (percent === 0) return "0%";
-      const sinal = percent > 0 ? "+ " : "- ";
-      return `${sinal}${Math.abs(percent).toFixed(3)}%`;
-    };
-    
+  const calcPercentChange = (oldValue: number, newValue: number) => {
+    if (oldValue === 0) return "N/A";
+    const percent = ((newValue - oldValue) / oldValue) * 100;
+
+    if (percent === 0) return "0%";
+    const sinal = percent > 0 ? "+ " : "- ";
+    return `${sinal}${Math.abs(percent).toFixed(3)}%`;
+  };
 
   const generateAnalysisText = () => {
     let analysis = "\n\n";
@@ -88,7 +85,7 @@ const Reports = ({
     } else {
       analysis += `A população total permaneceu estável ${calcPercentChange(total2010, total2022)}.\n`;
     }
-    
+
     if (urbana2022 > urbana2010) {
       analysis += `A população urbana cresceu ${calcPercentChange(urbana2010, urbana2022)}.\n`;
     } else if (urbana2022 < urbana2010) {
@@ -96,30 +93,27 @@ const Reports = ({
     } else {
       analysis += `A população urbana permaneceu estável ${calcPercentChange(urbana2010, urbana2022)}.\n`;
     }
-    
+
     if (rural2022 > rural2010) {
       analysis += `A população rural aumentou ${calcPercentChange(rural2010, rural2022)}, sugerindo maior fixação no campo.\n`;
     } else if (rural2022 < rural2010) {
       analysis += `A população rural diminuiu ${calcPercentChange(rural2010, rural2022)}.\n`;
     } else {
       analysis += `A população rural permaneceu estável ${calcPercentChange(rural2010, rural2022)}.\n`;
-    }    
+    }
 
     return analysis;
   };
 
-  // 🔹 Pegando as chaves das colunas corretas
   const pobrezaKey = findKey("CADASTRO ÚNICO - Famílias em situação de Pobreza - Renda per capita (R$) de 0,00 a 218,00");
   const baixaRendaKey = findKey("CADASTRO ÚNICO - Famílias em situação de Baixa Renda - Renda per capita (R$) de 218,01 até 1/2 S.M.");
   const acimaMeioSMKey = findKey("CADASTRO ÚNICO - Famílias com Renda mensal acima de Meio Salário Mínimo");
   const totalFamiliasKey = findKey("CADASTRO ÚNICO - Total de Familias CadÚnico");
 
-  // 🔹 Somando os valores para obter o total de cada categoria
   const totalPobreza = usedData.reduce((sum, row) => sum + parseNumber(row[pobrezaKey]), 0);
   const totalBaixaRenda = usedData.reduce((sum, row) => sum + parseNumber(row[baixaRendaKey]), 0);
   const totalAcimaMeioSM = usedData.reduce((sum, row) => sum + parseNumber(row[acimaMeioSMKey]), 0);
   const totalFamilias = usedData.reduce((sum, row) => sum + parseNumber(row[totalFamiliasKey]), 0);
-
 
   const pobrezaKey1 = findKey("CADASTRO ÚNICO - Pessoas em situação de Pobreza - Renda per capita (R$) de 0,00 a 218,00");
   const totalpessoaKey = findKey("CADASTRO ÚNICO - Total de Pessoas CadÚnico");
@@ -143,7 +137,6 @@ const Reports = ({
   const empregadorKey = findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Empregador");
   const estagiarioKey = findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Estagiário ou aprendiz");
 
-  // 🔹 Somando os valores
   const totalContaPropria = usedData.reduce((sum, row) => sum + parseNumber(row[contaPropriaKey]), 0);
   const totalRural = usedData.reduce((sum, row) => sum + parseNumber(row[ruralKey]), 0);
   const totalSemCarteira = usedData.reduce((sum, row) => sum + parseNumber(row[semCarteiraKey]), 0);
@@ -154,9 +147,6 @@ const Reports = ({
   const totalEmpregador = usedData.reduce((sum, row) => sum + parseNumber(row[empregadorKey]), 0);
   const totalEstagiario = usedData.reduce((sum, row) => sum + parseNumber(row[estagiarioKey]), 0);
 
-
-
-  // 🔹 Calculando o total geral
   const totalTrabalho =
     totalContaPropria +
     totalRural +
@@ -168,418 +158,369 @@ const Reports = ({
     totalEmpregador +
     totalEstagiario;
 
+  const trabalhomenor14 = findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador por conta própria");
+  const trabanhomaior14 = findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador temporário em área rural");
+  const totaltrabalhomenor14 = usedData.reduce((sum, row) => sum + parseNumber(row[trabalhomenor14]), 0);
+  const totaltrabanhomaior14 = usedData.reduce((sum, row) => sum + parseNumber(row[trabanhomaior14]), 0);
 
-    const trabalhomenor14= findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador por conta própria");
-    const trabanhomaior14 = findKey("Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador temporário em área rural");
-    const totaltrabalhomenor14 = usedData.reduce((sum, row) => sum + parseNumber(row[trabalhomenor14]), 0);
-    const totaltrabanhomaior14 = usedData.reduce((sum, row) => sum + parseNumber(row[trabanhomaior14]), 0);
+  const totalTrabalhomenoremaior =
+    totaltrabalhomenor14 +
+    totaltrabanhomaior14;
 
-    const totalTrabalhomenoremaior =
-      totaltrabalhomenor14 +
-      totaltrabanhomaior14;
-   
+  const familiasPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família 06/2024");
+  const familiasBaixaRendaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Renda per capita até R$218,00 06/2024");
+  const familiasPobrezaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Baixa renda 06/2024");
 
-    const familiasPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família 06/2024");
-    const familiasBaixaRendaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Renda per capita até R$218,00 06/2024");
-    const familiasPobrezaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Baixa renda 06/2024");
+  const pessoasPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família 06/2024");
+  const pessoasBaixaRendaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Renda per capita até R$218");
+  const pessoasPobrezaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Baixa renda 06/2024");
 
-    const pessoasPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família 06/2024");
-    const pessoasBaixaRendaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Renda per capita até R$218");
-    const pessoasPobrezaPBFKey = findKey("PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Baixa renda 06/2024");
+  const totalFamiliasPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasPBFKey]), 0);
+  const totalFamiliasBaixaRendaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasBaixaRendaPBFKey]), 0);
+  const totalFamiliasPobrezaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasPobrezaPBFKey]), 0);
 
-    const totalFamiliasPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasPBFKey]), 0);
-    const totalFamiliasBaixaRendaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasBaixaRendaPBFKey]), 0);
-    const totalFamiliasPobrezaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[familiasPobrezaPBFKey]), 0);
+  const totalPessoasPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasPBFKey]), 0);
+  const totalPessoasBaixaRendaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasBaixaRendaPBFKey]), 0);
+  const totalPessoasPobrezaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasPobrezaPBFKey]), 0);
 
-    const totalPessoasPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasPBFKey]), 0);
-    const totalPessoasBaixaRendaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasBaixaRendaPBFKey]), 0);
-    const totalPessoasPobrezaPBF = usedData.reduce((sum, row) => sum + parseNumber(row[pessoasPobrezaPBFKey]), 0);
+  const totalFamiliaBolsaF =
+    totalFamiliasBaixaRendaPBF +
+    totalFamiliasPobrezaPBF;
 
+  const totalPessoasBolsaF =
+    totalPessoasBaixaRendaPBF +
+    totalPessoasPobrezaPBF;
 
-    const totalFamiliaBolsaF = 
-      totalFamiliasBaixaRendaPBF +
-      totalFamiliasPobrezaPBF;  
+  const isMunicipal = window.location.pathname.includes("relatorio-municipal");
 
+  const crasKey = findKey("Proteção Social Básica - Unidade de CRAS");
+  const primeiraInfanciaKey = findKey("Proteção Social Básica - Primeira Infância no SUAS");
+  const orfaosKey = findKey("Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe");
+  const acessuasKey = findKey("Proteção Social Básica - Acessuas Trabalho");
+  const cidadeMaduraKey = findKey("Proteção Social Básica - Residenciais Cidade Madura");
+  const csuKey = findKey("Proteção Social Básica - Centros Sociais Urbanos - CSUs");
+  const centrosConvivenciaKey = findKey("Proteção Social Básica - Centros de Convivência");
 
-    const totalPessoasBolsaF =
-      totalPessoasBaixaRendaPBF +
-      totalPessoasPobrezaPBF; 
+  const convertSimNao = (value: any) => {
+    return value?.toString().trim().toLowerCase() === "sim" ? 1 : 0;
+  };
 
+  const totalCras = usedData.reduce((sum, row) => sum + parseNumber(row[crasKey]), 0);
+  const totalPrimeiraInfancia = usedData.reduce((sum, row) => sum + convertSimNao(row[primeiraInfanciaKey]), 0);
+  const totalOrfaos = usedData.reduce((sum, row) => sum + parseNumber(row[orfaosKey]), 0);
+  const totalAcessuas = usedData.reduce((sum, row) => sum + convertSimNao(row[acessuasKey]), 0);
+  const totalCidadeMadura = usedData.reduce((sum, row) => sum + parseNumber(row[cidadeMaduraKey]), 0);
+  const totalCSU = usedData.reduce((sum, row) => sum + parseNumber(row[csuKey]), 0);
+  const totalCentrosConvivencia = usedData.reduce((sum, row) => sum + parseNumber(row[centrosConvivenciaKey]), 0);
 
-    const isMunicipal = window.location.pathname.includes("relatorio-municipal");
+  const servicesData = [
+    { name: "Unidades de CRAS", value: totalCras },
+    { name: "Primeira Infância no SUAS", value: totalPrimeiraInfancia },
+    { name: "Órfãos do Programa Paraíba que Acolhe", value: totalOrfaos },
+    { name: "Acessuas Trabalho", value: totalAcessuas },
+    { name: "Residenciais Cidade Madura", value: totalCidadeMadura },
+    { name: "Centros Sociais Urbanos (CSUs)", value: totalCSU },
+    { name: "Centros de Convivência", value: totalCentrosConvivencia },
+  ];
 
-
-
-    const crasKey = findKey("Proteção Social Básica - Unidade de CRAS");
-    const primeiraInfanciaKey = findKey("Proteção Social Básica - Primeira Infância no SUAS");
-    const orfaosKey = findKey("Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe");
-    const acessuasKey = findKey("Proteção Social Básica - Acessuas Trabalho");
-    const cidadeMaduraKey = findKey("Proteção Social Básica - Residenciais Cidade Madura");
-    const csuKey = findKey("Proteção Social Básica - Centros Sociais Urbanos - CSUs");
-    const centrosConvivenciaKey = findKey("Proteção Social Básica - Centros de Convivência");
-
-    const convertSimNao = (value: any) => {
-      return value?.toString().trim().toLowerCase() === "sim" ? 1 : 0;
-    };
-
-    const totalCras = usedData.reduce((sum, row) => sum + parseNumber(row[crasKey]), 0); // Apenas soma numérica
-    const totalPrimeiraInfancia = usedData.reduce((sum, row) => sum + convertSimNao(row[primeiraInfanciaKey]), 0); // Conversão Sim/Não
-    const totalOrfaos = usedData.reduce((sum, row) => sum + parseNumber(row[orfaosKey]), 0); // Apenas soma numérica
-    const totalAcessuas = usedData.reduce((sum, row) => sum + convertSimNao(row[acessuasKey]), 0); // Conversão Sim/Não
-    const totalCidadeMadura = usedData.reduce((sum, row) => sum + parseNumber(row[cidadeMaduraKey]), 0); // Apenas soma numérica
-    const totalCSU = usedData.reduce((sum, row) => sum + parseNumber(row[csuKey]), 0); // Apenas soma numérica
-    const totalCentrosConvivencia = usedData.reduce((sum, row) => sum + parseNumber(row[centrosConvivenciaKey]), 0); 
-
-    const servicesData = [
-      { name: "Unidades de CRAS", value: totalCras },
-      { name: "Primeira Infância no SUAS", value: totalPrimeiraInfancia },
-      { name: "Órfãos do Programa Paraíba que Acolhe", value: totalOrfaos },
-      { name: "Acessuas Trabalho", value: totalAcessuas },
-      { name: "Residenciais Cidade Madura", value: totalCidadeMadura },
-      { name: "Centros Sociais Urbanos (CSUs)", value: totalCSU },
-      { name: "Centros de Convivência", value: totalCentrosConvivencia },
-    ];
-    
-    const filteredServices = isMunicipal
+  const filteredServices = isMunicipal
     ? servicesData.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
     : servicesData;
 
+  const creasKey = findKey("Proteção Social Especial - Unidade de CREAS");
+  const centroPopKey = findKey("Proteção Social Especial - Unidade de Centro Pop");
+  const centroDiaKey = findKey("Proteção Social Especial - Unidade de Centro Dia");
+  const acolhimentoEstadualKey = findKey("Proteção Social Especial - Unidades de Acolhimento (Estadual )");
+  const acolhimentoMunicipalKey = findKey("Proteção Social Especial - Unidades de Acolhimento (Municipal)");
+  const familiaAcolhedoraKey = findKey("Proteção Social Especial - Municípios com Serviço de Família Acolhedora");
+  const projetoAcolherKey = findKey("Proteção Social Especial - Projeto Acolher (municípios)");
 
+  const totalCREAS = usedData.reduce((sum, row) => sum + parseNumber(row[creasKey]), 0);
+  const totalCentroPop = usedData.reduce((sum, row) => sum + parseNumber(row[centroPopKey]), 0);
+  const totalCentroDia = usedData.reduce((sum, row) => sum + parseNumber(row[centroDiaKey]), 0);
+  const totalAcolhimentoEstadual = usedData.reduce((sum, row) => sum + convertSimNao(row[acolhimentoEstadualKey]), 0);
+  const totalAcolhimentoMunicipal = usedData.reduce((sum, row) => sum + parseNumber(row[acolhimentoMunicipalKey]), 0);
+  const totalFamiliaAcolhedora = usedData.reduce((sum, row) => sum + parseNumber(row[familiaAcolhedoraKey]), 0);
+  const totalProjetoAcolher = usedData.reduce((sum, row) => sum + convertSimNao(row[projetoAcolherKey]), 0);
 
-    const creasKey = findKey("Proteção Social Especial - Unidade de CREAS");
-    const centroPopKey = findKey("Proteção Social Especial - Unidade de Centro Pop");
-    const centroDiaKey = findKey("Proteção Social Especial - Unidade de Centro Dia");
-    const acolhimentoEstadualKey = findKey("Proteção Social Especial - Unidades de Acolhimento (Estadual )");
-    const acolhimentoMunicipalKey = findKey("Proteção Social Especial - Unidades de Acolhimento (Municipal)");
-    const familiaAcolhedoraKey = findKey("Proteção Social Especial - Municípios com Serviço de Família Acolhedora");
-    const projetoAcolherKey = findKey("Proteção Social Especial - Projeto Acolher (municípios)");
+  const servicesEspecialData = [
+    { name: "Unidades de CREAS", value: totalCREAS },
+    { name: "Unidade de Centro Pop", value: totalCentroPop },
+    { name: "Unidade de Centro Dia", value: totalCentroDia },
+    { name: "Unidades de Acolhimento (Estadual)", value: totalAcolhimentoEstadual },
+    { name: "Unidades de Acolhimento (Municipal)", value: totalAcolhimentoMunicipal },
+    { name: "Municípios com Serviço de Família Acolhedora", value: totalFamiliaAcolhedora },
+    { name: "Projeto Acolher (municípios)", value: totalProjetoAcolher },
+  ];
 
-
-
-    // 🔹 Calcula os totais
-    const totalCREAS = usedData.reduce((sum, row) => sum + parseNumber(row[creasKey]), 0);
-    const totalCentroPop = usedData.reduce((sum, row) => sum + parseNumber(row[centroPopKey]), 0);
-    const totalCentroDia = usedData.reduce((sum, row) => sum + parseNumber(row[centroDiaKey]), 0);
-    const totalAcolhimentoEstadual = usedData.reduce((sum, row) => sum + convertSimNao(row[acolhimentoEstadualKey]), 0);
-    const totalAcolhimentoMunicipal = usedData.reduce((sum, row) => sum + parseNumber(row[acolhimentoMunicipalKey]), 0);
-    const totalFamiliaAcolhedora = usedData.reduce((sum, row) => sum + parseNumber(row[familiaAcolhedoraKey]), 0);
-    const totalProjetoAcolher = usedData.reduce((sum, row) => sum + convertSimNao(row[projetoAcolherKey]), 0);
-
-    const servicesEspecialData = [
-      { name: "Unidades de CREAS", value: totalCREAS },
-      { name: "Unidade de Centro Pop", value: totalCentroPop },
-      { name: "Unidade de Centro Dia", value: totalCentroDia },
-      { name: "Unidades de Acolhimento (Estadual)", value: totalAcolhimentoEstadual },
-      { name: "Unidades de Acolhimento (Municipal)", value: totalAcolhimentoMunicipal },
-      { name: "Municípios com Serviço de Família Acolhedora", value: totalFamiliaAcolhedora },
-      { name: "Projeto Acolher (municípios)", value: totalProjetoAcolher },
-    ];
-
-
-    const filteredServicesEspecial = isMunicipal
+  const filteredServicesEspecial = isMunicipal
     ? servicesEspecialData.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
     : servicesEspecialData;
 
-  
+  const taNaMesaMunicipiosKey = findKey('Segurança Alimentar - Programa "Tá na mesa" (municípios)');
+  const taNaMesaRefeicoesDiaKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Quant de refeição/dia');
+  const taNaMesaRefeicoesMesKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Quant de refeição/mês');
+  const taNaMesaValorMunicipalKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Valor por município mensal');
+  const cartaoAlimentacaoBeneficiariosKey = findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)");
+  const cartaoAlimentacaoMunicipiosKey = findKey("Segurança Alimentar - Cartão Alimentação (municípios)");
+  const cartaoAlimentacaoValorMunicipalKey = findKey("Segurança Alimentar - Cartão Alimentação - valor por município");
+  const restaurantePopularKey = findKey("Segurança Alimentar - Restaurante Popular (municípios)");
+  const paaLeiteKey = findKey("Segurança Alimentar - PAA LEITE (municípios)");
+  const paaCdsKey = findKey("Segurança Alimentar - PAA CDS (municípios)");
 
-    const taNaMesaMunicipiosKey = findKey('Segurança Alimentar - Programa "Tá na mesa" (municípios)');
-    const taNaMesaRefeicoesDiaKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Quant de refeição/dia');
-    const taNaMesaRefeicoesMesKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Quant de refeição/mês');
-    const taNaMesaValorMunicipalKey = findKey('Segurança Alimentar - Programa "Tá na mesa" - Valor por município mensal');
-    const cartaoAlimentacaoBeneficiariosKey = findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)");
-    const cartaoAlimentacaoMunicipiosKey = findKey("Segurança Alimentar - Cartão Alimentação (municípios)");
-    const cartaoAlimentacaoValorMunicipalKey = findKey("Segurança Alimentar - Cartão Alimentação - valor por município");
-    const restaurantePopularKey = findKey("Segurança Alimentar - Restaurante Popular (municípios)");
-    const paaLeiteKey = findKey("Segurança Alimentar - PAA LEITE (municípios)");
-    const paaCdsKey = findKey("Segurança Alimentar - PAA CDS (municípios)");
+  const parseCurrency = (value: any): number => {
+    if (!value) return 0;
+    return parseFloat(value.toString().replace("R$", "").replace(/\./g, "").replace(",", ".").trim()) || 0;
+  };
 
-    const parseCurrency = (value: any): number => {
-      if (!value) return 0;
-      return parseFloat(value.toString().replace("R$", "").replace(/\./g, "").replace(",", ".").trim()) || 0;
-    };
-    
-  
-    const totalTaNaMesaMunicipios = usedData.reduce((sum, row) => sum + convertSimNao(row[taNaMesaMunicipiosKey]), 0);
-    const totalTaNaMesaRefeicoesDia = usedData.reduce((sum, row) => sum + parseNumber(row[taNaMesaRefeicoesDiaKey]), 0);
-    const totalTaNaMesaRefeicoesMes = usedData.reduce((sum, row) => sum + parseNumber(row[taNaMesaRefeicoesMesKey]), 0);
-    const totalTaNaMesaValorMunicipal = usedData.reduce((sum, row) => sum + parseCurrency(row[taNaMesaValorMunicipalKey]), 0);
-  
-    const totalCartaoAlimentacaoBeneficiarios = usedData.reduce((sum, row) => sum + parseNumber(row[cartaoAlimentacaoBeneficiariosKey]), 0);
-    const totalCartaoAlimentacaoMunicipios = usedData.reduce((sum, row) => sum + convertSimNao(row[cartaoAlimentacaoMunicipiosKey]), 0);
-    const totalCartaoAlimentacaoValorMunicipal = usedData.reduce((sum, row) => sum + parseCurrency(row[cartaoAlimentacaoValorMunicipalKey]), 0);
-  
-    const totalRestaurantePopular = usedData.reduce((sum, row) => sum + parseNumber(row[restaurantePopularKey]), 0);
-    const totalPaaLeite = usedData.reduce((sum, row) => sum + convertSimNao(row[paaLeiteKey]), 0);
-    const totalPaaCds = usedData.reduce((sum, row) => sum + convertSimNao(row[paaCdsKey]), 0);
+  const totalTaNaMesaMunicipios = usedData.reduce((sum, row) => sum + convertSimNao(row[taNaMesaMunicipiosKey]), 0);
+  const totalTaNaMesaRefeicoesDia = usedData.reduce((sum, row) => sum + parseNumber(row[taNaMesaRefeicoesDiaKey]), 0);
+  const totalTaNaMesaRefeicoesMes = usedData.reduce((sum, row) => sum + parseNumber(row[taNaMesaRefeicoesMesKey]), 0);
+  const totalTaNaMesaValorMunicipal = usedData.reduce((sum, row) => sum + parseCurrency(row[taNaMesaValorMunicipalKey]), 0);
 
+  const totalCartaoAlimentacaoBeneficiarios = usedData.reduce((sum, row) => sum + parseNumber(row[cartaoAlimentacaoBeneficiariosKey]), 0);
+  const totalCartaoAlimentacaoMunicipios = usedData.reduce((sum, row) => sum + convertSimNao(row[cartaoAlimentacaoMunicipiosKey]), 0);
+  const totalCartaoAlimentacaoValorMunicipal = usedData.reduce((sum, row) => sum + parseCurrency(row[cartaoAlimentacaoValorMunicipalKey]), 0);
 
-    const servicesTaNaMesa = [
-      { name: "Municípios atendidos", value: totalTaNaMesaMunicipios },
-      { name: "Refeições por dia", value: totalTaNaMesaRefeicoesDia },
-      { name: "Refeições por mês", value: totalTaNaMesaRefeicoesMes },
-      { name: "Valor por município mensal", value: totalTaNaMesaValorMunicipal },
-    ];
-    
-    const servicesCartaoAlimentacao = [
-      { name: "Beneficiários", value: totalCartaoAlimentacaoBeneficiarios },
-      { name: "Municípios atendidos", value: totalCartaoAlimentacaoMunicipios },
-      { name: "Valor por município", value: totalCartaoAlimentacaoValorMunicipal },
-    ];
-    
-    const servicesOutrosProgramas = [
-      { name: "Restaurantes Populares (municípios)", value: totalRestaurantePopular },
-      { name: "PAA LEITE (municípios)", value: totalPaaLeite },
-      { name: "PAA CDS (municípios)", value: totalPaaCds },
-    ];
-    
-    // 🔹 Aplicar filtro apenas se for Relatório Municipal
-    const filteredServicesTaNaMesa = isMunicipal
-      ? servicesTaNaMesa.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
-      : servicesTaNaMesa;
-    
-    const filteredServicesCartaoAlimentacao = isMunicipal
-      ? servicesCartaoAlimentacao.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
-      : servicesCartaoAlimentacao;
-    
-    const filteredServicesOutrosProgramas = isMunicipal
-      ? servicesOutrosProgramas.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
-      : servicesOutrosProgramas;    
-    
+  const totalRestaurantePopular = usedData.reduce((sum, row) => sum + parseNumber(row[restaurantePopularKey]), 0);
+  const totalPaaLeite = usedData.reduce((sum, row) => sum + convertSimNao(row[paaLeiteKey]), 0);
+  const totalPaaCds = usedData.reduce((sum, row) => sum + convertSimNao(row[paaCdsKey]), 0);
 
-    const casacidadania = findKey('Quantidade de Casa da Cidadania');
-    const totalcasacidadania = usedData.reduce((sum, row) => sum + parseNumber(row[casacidadania]), 0);
+  const servicesTaNaMesa = [
+    { name: "Municípios atendidos", value: totalTaNaMesaMunicipios },
+    { name: "Refeições por dia", value: totalTaNaMesaRefeicoesDia },
+    { name: "Refeições por mês", value: totalTaNaMesaRefeicoesMes },
+    { name: "Valor por município mensal", value: totalTaNaMesaValorMunicipal },
+  ];
 
-    const servicesCasaCidadania = [
-      { name: "Casas da Cidadania", value: totalcasacidadania },
-    ];
-    
-    // 🔹 Aplicar filtro apenas se for Relatório Municipal
-    const filteredServicesCasaCidadania = isMunicipal
-      ? servicesCasaCidadania.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
-      : servicesCasaCidadania;
-    
+  const servicesCartaoAlimentacao = [
+    { name: "Beneficiários", value: totalCartaoAlimentacaoBeneficiarios },
+    { name: "Municípios atendidos", value: totalCartaoAlimentacaoMunicipios },
+    { name: "Valor por município", value: totalCartaoAlimentacaoValorMunicipal },
+  ];
 
-    const abonofamilia = findKey('Abono Natalino (quantidade de famílias atendidas - Dez/2023)');
-    const totalabonofamilia = usedData.reduce((sum, row) => sum + parseNumber(row[abonofamilia]), 0);
-    const abononatalinovalor = findKey('Abono Natalino (valores - previsão 2024 - Fonte: Folha de Pagamentos do Programa Bolsa Família,mar/2024)');
-    const totalabononatalinovalor = usedData.reduce((sum, row) => sum + parseCurrency(row[abononatalinovalor]), 0);
+  const servicesOutrosProgramas = [
+    { name: "Restaurantes Populares (municípios)", value: totalRestaurantePopular },
+    { name: "PAA LEITE (municípios)", value: totalPaaLeite },
+    { name: "PAA CDS (municípios)", value: totalPaaCds },
+  ];
 
-    const saudevacinas = findKey('Saúde - Vacinas (doses aplicadas)');
-    const totalsaudevacinas = usedData.reduce((sum, row) => sum + parseNumber(row[saudevacinas]), 0);
+  const filteredServicesTaNaMesa = isMunicipal
+    ? servicesTaNaMesa.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
+    : servicesTaNaMesa;
 
-    const saudevacinaspercent = findKey('Saúde - Vacinas (% média da cobertura)');
-    const totalVacinasPercent = usedData.length > 0
+  const filteredServicesCartaoAlimentacao = isMunicipal
+    ? servicesCartaoAlimentacao.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
+    : servicesCartaoAlimentacao;
+
+  const filteredServicesOutrosProgramas = isMunicipal
+    ? servicesOutrosProgramas.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
+    : servicesOutrosProgramas;
+
+  const casacidadania = findKey('Quantidade de Casa da Cidadania');
+  const totalcasacidadania = usedData.reduce((sum, row) => sum + parseNumber(row[casacidadania]), 0);
+
+  const servicesCasaCidadania = [
+    { name: "Casas da Cidadania", value: totalcasacidadania },
+  ];
+
+  const filteredServicesCasaCidadania = isMunicipal
+    ? servicesCasaCidadania.filter((service) => service.value !== 0 && service.value !== "" && service.value?.toString().trim().toLowerCase() !== "não")
+    : servicesCasaCidadania;
+
+  const abonofamilia = findKey('Abono Natalino (quantidade de famílias atendidas - Dez/2023)');
+  const totalabonofamilia = usedData.reduce((sum, row) => sum + parseNumber(row[abonofamilia]), 0);
+  const abononatalinovalor = findKey('Abono Natalino (valores - previsão 2024 - Fonte: Folha de Pagamentos do Programa Bolsa Família,mar/2024)');
+  const totalabononatalinovalor = usedData.reduce((sum, row) => sum + parseCurrency(row[abononatalinovalor]), 0);
+
+  const saudevacinas = findKey('Saúde - Vacinas (doses aplicadas)');
+  const totalsaudevacinas = usedData.reduce((sum, row) => sum + parseNumber(row[saudevacinas]), 0);
+
+  const saudevacinaspercent = findKey('Saúde - Vacinas (% média da cobertura)');
+  const totalVacinasPercent = usedData.length > 0
     ? usedData.reduce((sum, row) => sum + parseCurrency(row[saudevacinaspercent]), 0) / usedData.length
     : 0;
 
-    // Pegando as chaves corretas no conjunto de dados
-    const saudeHospitalGeral = findKey('Saúde - Hospital Geral');
-    const saudeCentroSaude = findKey('Saúde - Centro de Saúde/Unidade Básica de Saúde');
-    const saudePostoSaude = findKey('Saúde - Posto de Saúde');
+  const saudeHospitalGeral = findKey('Saúde - Hospital Geral');
+  const saudeCentroSaude = findKey('Saúde - Centro de Saúde/Unidade Básica de Saúde');
+  const saudePostoSaude = findKey('Saúde - Posto de Saúde');
 
-    // Somando os valores para cada categoria
-    const totalHospitalGeral = usedData.reduce((sum, row) => sum + parseNumber(row[saudeHospitalGeral] || 0), 0);
-    const totalCentroSaude = usedData.reduce((sum, row) => sum + parseNumber(row[saudeCentroSaude] || 0), 0);
-    const totalPostoSaude = usedData.reduce((sum, row) => sum + parseNumber(row[saudePostoSaude] || 0), 0);
+  const totalHospitalGeral = usedData.reduce((sum, row) => sum + parseNumber(row[saudeHospitalGeral] || 0), 0);
+  const totalCentroSaude = usedData.reduce((sum, row) => sum + parseNumber(row[saudeCentroSaude] || 0), 0);
+  const totalPostoSaude = usedData.reduce((sum, row) => sum + parseNumber(row[saudePostoSaude] || 0), 0);
 
-
-    const saudeMortalidadeInfantil = findKey('Saúde - Mortalidade infantil - óbitos por mil nascidos vivos (IBGE, 2022)');
-    const mediaMortalidadeInfantil = usedData.length > 0
+  const saudeMortalidadeInfantil = findKey('Saúde - Mortalidade infantil - óbitos por mil nascidos vivos (IBGE, 2022)');
+  const mediaMortalidadeInfantil = usedData.length > 0
     ? usedData.reduce((sum, row) => sum + parseNumber(row[saudeMortalidadeInfantil] || 0), 0) / usedData.length
     : 0;
 
-  
-    const educacaoTaxaEscolarizacao = findKey('Educação - Taxa de Escolarização 6 a 14 anos - % (2010)');
+  const educacaoTaxaEscolarizacao = findKey('Educação - Taxa de Escolarização 6 a 14 anos - % (2010)');
 
-    const mediaEscolarizacaoPercent = usedData.length > 0
+  const mediaEscolarizacaoPercent = usedData.length > 0
     ? usedData.reduce((sum, row) => sum + parseNumber(row[educacaoTaxaEscolarizacao] || 0), 0) / usedData.length
     : 0;
-  
-  // Convertendo a taxa de escolarização em número absoluto com base na população de 2010
+
   const totalEscolarizados2010 = total2010 > 0
     ? Math.round(total2010 * (mediaEscolarizacaoPercent / 100))
     : 0;
-   
-    // Pegando a chave da Taxa de Alfabetização
-const educacaoTaxaAlfabetizacao = findKey('Educação - Taxa de alfabetização das pessoas de 15 anos ou mais de idade % (IBGE, 2022)');
 
-// Obtendo a média da taxa de alfabetização (convertendo para número)
-const mediaAlfabetizacaoPercent = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[educacaoTaxaAlfabetizacao] || 0), 0) / usedData.length
-  : 0;
+  const educacaoTaxaAlfabetizacao = findKey('Educação - Taxa de alfabetização das pessoas de 15 anos ou mais de idade % (IBGE, 2022)');
 
-// Convertendo a taxa de alfabetização em número absoluto com base na população de 2022
-const totalAlfabetizados2022 = total2022 > 0
-  ? Math.round(total2022 * (mediaAlfabetizacaoPercent / 100))
-  : 0;
+  const mediaAlfabetizacaoPercent = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[educacaoTaxaAlfabetizacao] || 0), 0) / usedData.length
+    : 0;
 
+  const totalAlfabetizados2022 = total2022 > 0
+    ? Math.round(total2022 * (mediaAlfabetizacaoPercent / 100))
+    : 0;
 
-
-  // 🔹 Função para calcular a porcentagem
   const calcPercent = (value: number, total: number) => {
     if (total === 0) return "0.00%";
     return `${((value / total) * 100).toFixed(2)}%`;
   };
-  
 
-  // Pegando as chaves dos indicadores
-const idebAnosIniciais = findKey('Educação - IDEB Anos iniciais do ensino fundamental (2023)');
-const idebAnosFinais = findKey('Educação - IDEB Anos finais do ensino fundamental (2023)');
-const idebEnsinoMedio = findKey('Educação - IDEB Ensino Médio (2023)');
-const indiceGini = findKey('Saúde - Índice de Gini (IBGE, 2010)');
-const idhMunicipal = findKey('IDH_M (IBGE, 2010)');
+  const idebAnosIniciais = findKey('Educação - IDEB Anos iniciais do ensino fundamental (2023)');
+  const idebAnosFinais = findKey('Educação - IDEB Anos finais do ensino fundamental (2023)');
+  const idebEnsinoMedio = findKey('Educação - IDEB Ensino Médio (2023)');
+  const indiceGini = findKey('Saúde - Índice de Gini (IBGE, 2010)');
+  const idhMunicipal = findKey('IDH_M (IBGE, 2010)');
 
-// Calculando as médias de cada indicador
-const mediaIdebIniciais = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[idebAnosIniciais] || 0), 0) / usedData.length
-  : 0;
+  const mediaIdebIniciais = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[idebAnosIniciais] || 0), 0) / usedData.length
+    : 0;
 
-const mediaIdebFinais = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[idebAnosFinais] || 0), 0) / usedData.length
-  : 0;
+  const mediaIdebFinais = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[idebAnosFinais] || 0), 0) / usedData.length
+    : 0;
 
-const mediaIdebEnsinoMedio = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[idebEnsinoMedio] || 0), 0) / usedData.length
-  : 0;
+  const mediaIdebEnsinoMedio = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[idebEnsinoMedio] || 0), 0) / usedData.length
+    : 0;
 
-const mediaIndiceGini = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[indiceGini] || 0), 0) / usedData.length
-  : 0;
+  const mediaIndiceGini = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[indiceGini] || 0), 0) / usedData.length
+    : 0;
 
-const mediaIDH = usedData.length > 0
-  ? usedData.reduce((sum, row) => sum + parseNumber(row[idhMunicipal] || 0), 0) / usedData.length
-  : 0;
+  const mediaIDH = usedData.length > 0
+    ? usedData.reduce((sum, row) => sum + parseNumber(row[idhMunicipal] || 0), 0) / usedData.length
+    : 0;
 
 
-  
   return (
-        <div
-            id="relatorio"
-            className="w-3/4 pl-6 h-screen overflow-auto"
-            style={{
-              visibility: "visible",
-              position: "absolute",
-              left: 0,
-              top: 0,
-              width: "100%",
-            }}
-          >
+    <>
+      <div id="relatorio-content" className="w-full"> 
 
-    <BotaoImpressao apiData={data} />
+        <div id="Indicadores" className="mt-4">
+          <h2 className="text-2xl font-semibold mb-6 flex items-center">
+            📊 Indicadores Gerais
+          </h2>
+          <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
+            <thead>
+              <tr className="bg-gray-200 text-black text-lg">
+                <th className="border border-gray-300 px-4 py-2 text-left">Indicador</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Média</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800 text-lg">
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  IDH Municipal (2010)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaIDH.toFixed(3)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  IDEB - Anos Iniciais (2023)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaIdebIniciais.toFixed(2)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  IDEB - Anos Finais (2023)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaIdebFinais.toFixed(2)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  IDEB - Ensino Médio (2023)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaIdebEnsinoMedio.toFixed(2)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  Índice de Gini (2010)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaIndiceGini.toFixed(3)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-
-          <div id="Indicadores" className="mt-4">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center">
-              📊 Indicadores Gerais
-            </h2>
-            <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-              <thead>
-                <tr className="bg-gray-200 text-black text-lg">
-                  <th className="border border-gray-300 px-4 py-2 text-left">Indicador</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Média</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-800 text-lg">
-               <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    IDH Municipal (2010)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaIDH.toFixed(3)}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    IDEB - Anos Iniciais (2023)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaIdebIniciais.toFixed(2)}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    IDEB - Anos Finais (2023)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaIdebFinais.toFixed(2)}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    IDEB - Ensino Médio (2023)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaIdebEnsinoMedio.toFixed(2)}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    Índice de Gini (2010)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaIndiceGini.toFixed(3)}
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-
-            <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-              <p className="text-lg font-semibold">📑 Análise: Indicadores Gerais</p>
-              Em 2023, a média do IDEB foi de <strong>{mediaIdebIniciais.toFixed(2)}</strong> nos anos iniciais,  
-              <strong>{mediaIdebFinais.toFixed(2)}</strong> nos anos finais do ensino fundamental,  
-              e <strong>{mediaIdebEnsinoMedio.toFixed(2)}</strong> no ensino médio.  
-              Em 2010, o Índice de Gini, que mede a desigualdade social, teve um valor médio de <strong>{mediaIndiceGini.toFixed(3)}</strong>, 
-              enquanto o IDH Municipal alcançou <strong>{mediaIDH.toFixed(3)}</strong>.
-            </div>
+          <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+            <p className="text-lg font-semibold">📑 Análise: Indicadores Gerais</p>
+            Em 2023, a média do IDEB foi de <strong>{mediaIdebIniciais.toFixed(2)}</strong> nos anos iniciais,
+            <strong>{mediaIdebFinais.toFixed(2)}</strong> nos anos finais do ensino fundamental,
+            e <strong>{mediaIdebEnsinoMedio.toFixed(2)}</strong> no ensino médio.
+            Em 2010, o Índice de Gini, que mede a desigualdade social, teve um valor médio de <strong>{mediaIndiceGini.toFixed(3)}</strong>,
+            enquanto o IDH Municipal alcançou <strong>{mediaIDH.toFixed(3)}</strong>.
           </div>
+        </div>
 
-        
-            <div id="População" className="mt-4">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center">📊 População</h2>
 
-              <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-                <thead>
-                  <tr className="bg-gray-200 text-black text-lg">
-                    <th className="border border-gray-300 px-4 py-2 text-left">População</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">2010</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">2022</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Crescimento/Redução</th>
-                  </tr>
-                </thead>
-                <tbody className="text-gray-800 text-lg">
-                  <tr className="border">
-                    <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Total</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{total2010.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{total2022.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
-                      {calcPercentChange(total2010, total2022)}
-                    </td>
-                  </tr>
-                  <tr className="border">
-                    <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Urbana</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{urbana2010.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{urbana2022.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
-                      {calcPercentChange(urbana2010, urbana2022)}
-                    </td>
-                  </tr>
-                  <tr className="border">
-                    <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Rural</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{rural2010.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center">{rural2022.toLocaleString("pt-BR")}</td>
-                    <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
-                      {calcPercentChange(rural2010, rural2022)}
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+        <div id="População" className="mt-4">
+          <h2 className="text-2xl font-semibold mb-6 flex items-center">📊 População</h2>
 
-              {/* Agora a análise está dentro da mesma div da tabela */}
-              <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-                <strong>📄 Análise:</strong>
-                <p className="mt-2">{generateAnalysisText()}</p>
-              </div>
-            </div>
+          <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
+            <thead>
+              <tr className="bg-gray-200 text-black text-lg">
+                <th className="border border-gray-300 px-4 py-2 text-left">População</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">2010</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">2022</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Crescimento/Redução</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800 text-lg">
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Total</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{total2010.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{total2022.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                  {calcPercentChange(total2010, total2022)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Urbana</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{urbana2010.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{urbana2022.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                  {calcPercentChange(urbana2010, urbana2022)}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Rural</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{rural2010.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{rural2022.toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center font-semibold">
+                  {calcPercentChange(rural2010, rural2022)}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+            <strong>📄 Análise:</strong>
+            <p className="mt-2">{generateAnalysisText()}</p>
+          </div>
+        </div>
 
         <div id="Cadastro Único" className="mt-4">
           <h2 className="text-2xl font-semibold mt-6 mb-6 flex items-center">
@@ -600,7 +541,7 @@ const mediaIDH = usedData.length > 0
             </thead>
             <tbody className="text-gray-800 text-lg">
               <tr className="border">
-              <td className="border border-gray-300 px-4 py-2">Pobreza (R$ 0,00 - R$ 218,00)</td>
+                <td className="border border-gray-300 px-4 py-2">Pobreza (R$ 0,00 - R$ 218,00)</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">{totalPobreza.toLocaleString("pt-BR")}</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {((totalPobreza / totalFamilias) * 100).toFixed(1)}%
@@ -630,15 +571,15 @@ const mediaIDH = usedData.length > 0
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <strong>📄 Análise:</strong>
             <p className="mt-2">
-              O Cadastro Único registra um total de <strong>{totalFamilias.toLocaleString("pt-BR")}</strong> famílias. 
+              O Cadastro Único registra um total de <strong>{totalFamilias.toLocaleString("pt-BR")}</strong> famílias.
               Destas, <strong> {((totalPobreza / totalFamilias) * 100).toFixed(1)}%</strong> estão em situação de pobreza,
-              seguida pela <strong>{((totalBaixaRenda / totalFamilias) * 100).toFixed(1)}%</strong>.  
+              seguida pela <strong>{((totalBaixaRenda / totalFamilias) * 100).toFixed(1)}%</strong>.
               Apenas <strong>{((totalAcimaMeioSM / totalFamilias) * 100).toFixed(1)}%</strong> das famílias possuem renda superior a um salário mínimo e meio.
             </p>
           </div>
 
           <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
-            🙍 Pessoas 
+            🙍 Pessoas
           </h3>
 
 
@@ -652,7 +593,7 @@ const mediaIDH = usedData.length > 0
             </thead>
             <tbody className="text-gray-800 text-lg">
               <tr className="border">
-              <td className="border border-gray-300 px-4 py-2">Pobreza (R$ 0,00 - R$ 218,00)</td>
+                <td className="border border-gray-300 px-4 py-2">Pobreza (R$ 0,00 - R$ 218,00)</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">{totalPobreza1.toLocaleString("pt-BR")}</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {((totalPobreza1 / totalpessoas) * 100).toFixed(1)}%
@@ -668,8 +609,8 @@ const mediaIDH = usedData.length > 0
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <strong>📄 Análise:</strong>
             <p className="mt-2">
-              O Cadastro Único registra um total de <strong>{totalpessoas.toLocaleString("pt-BR")}</strong> pessoas.  
-              Destas, <strong>{((totalPobreza1 / totalpessoas) * 100).toFixed(1)}%</strong> estão em situação de pobreza.  
+              O Cadastro Único registra um total de <strong>{totalpessoas.toLocaleString("pt-BR")}</strong> pessoas.
+              Destas, <strong>{((totalPobreza1 / totalpessoas) * 100).toFixed(1)}%</strong> estão em situação de pobreza.
             </p>
           </div>
 
@@ -688,7 +629,7 @@ const mediaIDH = usedData.length > 0
             </thead>
             <tbody className="text-gray-800 text-lg">
               <tr className="border">
-              <td className="border border-gray-300 px-4 py-2">Ensino fundamental (incompleto/completo)</td>
+                <td className="border border-gray-300 px-4 py-2">Ensino fundamental (incompleto/completo)</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">{totalPobreza1.toLocaleString("pt-BR")}</td>
                 <td className="border border-gray-300 px-4 py-2 text-center">
                   {((totalfundamnetal / totalpessoas) * 100).toFixed(1)}%
@@ -710,7 +651,7 @@ const mediaIDH = usedData.length > 0
               </tr>
               <tr className="font-bold bg-gray-100">
                 <td className="border border-gray-300 px-4 py-2">Total de Pessoas com Grau de Instrução</td>
-                <td className="border border-gray-300 px-4 py-2 text-center">{(totalmedio+totalfundamnetal+totalsuperior).toLocaleString("pt-BR")}</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{(totalmedio + totalfundamnetal + totalsuperior).toLocaleString("pt-BR")}</td>
               </tr>
             </tbody>
           </table>
@@ -718,9 +659,9 @@ const mediaIDH = usedData.length > 0
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <strong>📄 Análise:</strong>
             <p className="mt-2">
-              O Cadastro Único registra um total de <strong>{totalpessoas.toLocaleString("pt-BR")}</strong> pessoas com grau de Instrução.  
+              O Cadastro Único registra um total de <strong>{totalpessoas.toLocaleString("pt-BR")}</strong> pessoas com grau de Instrução.
               Destas, <strong>{((totalfundamnetal / totalpessoas) * 100).toFixed(1)}%</strong> estão em com Ensino Fundamental (incompleto/completo),
-              <strong>{((totalmedio / totalpessoas) * 100).toFixed(1)}%</strong> estão em com Ensino Medio (incompleto/completo) e  
+              <strong>{((totalmedio / totalpessoas) * 100).toFixed(1)}%</strong> estão em com Ensino Medio (incompleto/completo) e
               &nbsp;<strong>{((totalsuperior / totalpessoas) * 100).toFixed(1)}%</strong> com o Ensino Superior (incompleto/completo)
             </p>
           </div>
@@ -812,7 +753,7 @@ const mediaIDH = usedData.length > 0
             </tbody>
           </table>
 
-          
+
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <p className="text-lg font-semibold">📑 Análise:</p>
             O Cadastro Único registra um total de <strong>{totalTrabalho.toLocaleString("pt-BR")}</strong> pessoas.
@@ -860,7 +801,7 @@ const mediaIDH = usedData.length > 0
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <p className="text-lg font-semibold">📑 Análise:</p>
             O Cadastro Único registra um total de <strong>{totalTrabalhomenoremaior.toLocaleString("pt-BR")}</strong> pessoas que execeram e não trabalho remunerado nos últimos 12 meses.
-            Dessas <strong>{calcPercent(totaltrabalhomenor14, totalTrabalhomenoremaior)}</strong> não exerceram trabalho remunerado nos últimos 12 meses e  
+            Dessas <strong>{calcPercent(totaltrabalhomenor14, totalTrabalhomenoremaior)}</strong> não exerceram trabalho remunerado nos últimos 12 meses e
             &nbsp;<strong>{calcPercent(totaltrabanhomaior14, totalTrabalhomenoremaior)}</strong> exerceram trabalho remunerado nos últimos 12 meses.
           </div>
         </div>
@@ -869,7 +810,7 @@ const mediaIDH = usedData.length > 0
           <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
             💰 Bolsa Família
           </h3>
-          
+
           <h4 className="text-md font-medium mb-1 flex items-center text-gray-600">
             👨‍👩‍👧 Famílias
           </h4>
@@ -913,8 +854,8 @@ const mediaIDH = usedData.length > 0
 
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <p className="text-lg font-semibold">📑 Análise: Famílias no Programa Bolsa Família</p>
-            O Cadastro Único registra um total de <strong>{totalFamiliasPBF.toLocaleString("pt-BR")}</strong> famílias atendidas pelo Programa Bolsa Família. 
-            Dessas, <strong>{calcPercent(totalFamiliasBaixaRendaPBF, totalFamiliasPBF)}</strong> possuem renda per capita de até R$218,00 e 
+            O Cadastro Único registra um total de <strong>{totalFamiliasPBF.toLocaleString("pt-BR")}</strong> famílias atendidas pelo Programa Bolsa Família.
+            Dessas, <strong>{calcPercent(totalFamiliasBaixaRendaPBF, totalFamiliasPBF)}</strong> possuem renda per capita de até R$218,00 e
             &nbsp;<strong>{calcPercent(totalFamiliasPobrezaPBF, totalFamiliasPBF)}</strong> são classificadas como baixa renda.
           </div>
 
@@ -955,90 +896,89 @@ const mediaIDH = usedData.length > 0
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <p className="text-lg font-semibold">📑 Análise: Pessoas no Programa Bolsa Família</p>
             No total, <strong>{totalPessoasPBF.toLocaleString("pt-BR")}</strong> pessoas são beneficiadas pelo Programa Bolsa Família.
-            Entre elas, <strong>{calcPercent(totalPessoasBaixaRendaPBF, totalPessoasPBF)}</strong> possuem renda per capita de até R$218,00 e 
+            Entre elas, <strong>{calcPercent(totalPessoasBaixaRendaPBF, totalPessoasPBF)}</strong> possuem renda per capita de até R$218,00 e
             &nbsp;<strong>{calcPercent(totalPessoasPobrezaPBF, totalPessoasPBF)}</strong> são classificadas como baixa renda.
           </div>
-
         </div>
 
         {/* 🔹 Proteção Social Básica - Renderiza somente se houver dados */}
-          {filteredServices.length > 0 && (
-            <div id="Protecão Básica" className="mt-4">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                🛡️ Proteção Social Básica
-              </h2>
+        {filteredServices.length > 0 && (
+          <div id="Protecão Básica" className="mt-4">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center">
+              🛡️ Proteção Social Básica
+            </h2>
 
-              {/* 🔹 Tabela de Serviços */}
-              <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-                <thead>
-                  <tr className="bg-gray-200 text-black text-lg">
-                    <th className="border border-gray-300 px-4 py-2 text-left">Serviço</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+            {/* 🔹 Tabela de Serviços */}
+            <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
+              <thead>
+                <tr className="bg-gray-200 text-black text-lg">
+                  <th className="border border-gray-300 px-4 py-2 text-left">Serviço</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-800 text-lg">
+                {filteredServices.map((service, index) => (
+                  <tr key={index} className="border">
+                    <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">{service.name}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{service.value.toLocaleString("pt-BR")}</td>
                   </tr>
-                </thead>
-                <tbody className="text-gray-800 text-lg">
-                  {filteredServices.map((service, index) => (
-                    <tr key={index} className="border">
-                      <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">{service.name}</td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">{service.value.toLocaleString("pt-BR")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
 
-              {/* 🔹 Análise da Proteção Social Básica */}
-              <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-                <p className="text-lg font-semibold">📑 Análise: Proteção Social Básica</p>
-                No total, <strong>{totalCras.toLocaleString("pt-BR")}</strong> unidades de CRAS estão em funcionamento. 
-                O Programa Primeira Infância no SUAS conta com <strong>{totalPrimeiraInfancia.toLocaleString("pt-BR")}</strong> registros de atendimento.  
-                O Programa Paraíba que Acolhe assiste <strong>{totalOrfaos.toLocaleString("pt-BR")}</strong> crianças órfãs, enquanto o Acessuas Trabalho realizou <strong>{totalAcessuas.toLocaleString("pt-BR")}</strong> atendimentos.  
-                Os Residenciais Cidade Madura possuem <strong>{totalCidadeMadura.toLocaleString("pt-BR")}</strong> unidades em atividade. Já os Centros Sociais Urbanos (CSUs) contabilizam <strong>{totalCSU.toLocaleString("pt-BR")}</strong> unidades operacionais.  
-                Por fim, os Centros de Convivência somam <strong>{totalCentrosConvivencia.toLocaleString("pt-BR")}</strong> espaços destinados ao atendimento social e cultural.  
-              </div>
+            {/* 🔹 Análise da Proteção Social Básica */}
+            <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+              <p className="text-lg font-semibold">📑 Análise: Proteção Social Básica</p>
+              No total, <strong>{totalCras.toLocaleString("pt-BR")}</strong> unidades de CRAS estão em funcionamento.
+              O Programa Primeira Infância no SUAS conta com <strong>{totalPrimeiraInfancia.toLocaleString("pt-BR")}</strong> registros de atendimento.
+              O Programa Paraíba que Acolhe assiste <strong>{totalOrfaos.toLocaleString("pt-BR")}</strong> crianças órfãs, enquanto o Acessuas Trabalho realizou <strong>{totalAcessuas.toLocaleString("pt-BR")}</strong> atendimentos.
+              Os Residenciais Cidade Madura possuem <strong>{totalCidadeMadura.toLocaleString("pt-BR")}</strong> unidades em atividade. Já os Centros Sociais Urbanos (CSUs) contabilizam <strong>{totalCSU.toLocaleString("pt-BR")}</strong> unidades operacionais.
+              Por fim, os Centros de Convivência somam <strong>{totalCentrosConvivencia.toLocaleString("pt-BR")}</strong> espaços destinados ao atendimento social e cultural.
             </div>
-          )}
+          </div>
+        )}
 
-          {/* 🔹 Proteção Social Especial - Renderiza somente se houver dados */}
-          {filteredServicesEspecial.length > 0 && (
-            <div id="Protecão Especial" className="mt-4">
-              <h2 className="text-2xl font-semibold mb-6 flex items-center">
-                ❤️ Proteção Social Especial
-              </h2>
+        {/* 🔹 Proteção Social Especial - Renderiza somente se houver dados */}
+        {filteredServicesEspecial.length > 0 && (
+          <div id="Protecão Especial" className="mt-4">
+            <h2 className="text-2xl font-semibold mb-6 flex items-center">
+              ❤️ Proteção Social Especial
+            </h2>
 
-              {/* 🔹 Tabela de Serviços */}
-              <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-                <thead>
-                  <tr className="bg-gray-200 text-black text-lg">
-                    <th className="border border-gray-300 px-4 py-2 text-left">Serviço</th>
-                    <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+            {/* 🔹 Tabela de Serviços */}
+            <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
+              <thead>
+                <tr className="bg-gray-200 text-black text-lg">
+                  <th className="border border-gray-300 px-4 py-2 text-left">Serviço</th>
+                  <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+                </tr>
+              </thead>
+              <tbody className="text-gray-800 text-lg">
+                {filteredServicesEspecial.map((service, index) => (
+                  <tr key={index} className="border">
+                    <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">{service.name}</td>
+                    <td className="border border-gray-300 px-4 py-2 text-center">{service.value.toLocaleString("pt-BR")}</td>
                   </tr>
-                </thead>
-                <tbody className="text-gray-800 text-lg">
-                  {filteredServicesEspecial.map((service, index) => (
-                    <tr key={index} className="border">
-                      <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">{service.name}</td>
-                      <td className="border border-gray-300 px-4 py-2 text-center">{service.value.toLocaleString("pt-BR")}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+                ))}
+              </tbody>
+            </table>
 
-              {/* 🔹 Análise da Proteção Social Especial */}
-              <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-                <p className="text-lg font-semibold">🛡️ Análise: Proteção Social Especial</p>
-                No total, <strong>{totalCREAS.toLocaleString("pt-BR")}</strong> unidades de CREAS estão em funcionamento.  
-                O Centro Pop possui <strong>{totalCentroPop.toLocaleString("pt-BR")}</strong> unidades ativas, enquanto o Centro Dia conta com <strong>{totalCentroDia.toLocaleString("pt-BR")}</strong> espaços em atividade.  
-                As Unidades de Acolhimento (Estaduais) somam <strong>{totalAcolhimentoEstadual.toLocaleString("pt-BR")}</strong>, e as Unidades de Acolhimento (Municipais) totalizam <strong>{totalAcolhimentoMunicipal.toLocaleString("pt-BR")}</strong>.  
-                O Serviço de Família Acolhedora está presente em <strong>{totalFamiliaAcolhedora.toLocaleString("pt-BR")}</strong> municípios.  
-                Além disso, o Projeto Acolher está ativo em <strong>{totalProjetoAcolher.toLocaleString("pt-BR")}</strong> municípios.  
-              </div>
+            {/* 🔹 Análise da Proteção Social Especial */}
+            <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+              <p className="text-lg font-semibold">🛡️ Análise: Proteção Social Especial</p>
+              No total, <strong>{totalCREAS.toLocaleString("pt-BR")}</strong> unidades de CREAS estão em funcionamento.
+              O Centro Pop possui <strong>{totalCentroPop.toLocaleString("pt-BR")}</strong> unidades ativas, enquanto o Centro Dia conta com <strong>{totalCentroDia.toLocaleString("pt-BR")}</strong> espaços em atividade.
+              As Unidades de Acolhimento (Estaduais) somam <strong>{totalAcolhimentoEstadual.toLocaleString("pt-BR")}</strong>, e as Unidades de Acolhimento (Municipais) totalizam <strong>{totalAcolhimentoMunicipal.toLocaleString("pt-BR")}</strong>.
+              O Serviço de Família Acolhedora está presente em <strong>{totalFamiliaAcolhedora.toLocaleString("pt-BR")}</strong> municípios.
+              Além disso, o Projeto Acolher está ativo em <strong>{totalProjetoAcolher.toLocaleString("pt-BR")}</strong> municípios.
             </div>
-          )}
+          </div>
+        )}
 
 
-          {(filteredServicesTaNaMesa.length > 0 ||
-            filteredServicesCartaoAlimentacao.length > 0 ||
-            filteredServicesOutrosProgramas.length > 0) && (
+        {(filteredServicesTaNaMesa.length > 0 ||
+          filteredServicesCartaoAlimentacao.length > 0 ||
+          filteredServicesOutrosProgramas.length > 0) && (
             <div id="Segurança Alimentar" className="mt-4">
               <h2 className="text-2xl font-semibold mb-6 flex items-center">
                 🍽️ Segurança Alimentar
@@ -1067,18 +1007,18 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-                 
+
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Programa "Tá na Mesa"</p>
-                    O Programa "Tá na Mesa" atende <strong>{totalTaNaMesaMunicipios.toLocaleString("pt-BR")}</strong> municípios,  
-                    oferecendo <strong>{totalTaNaMesaRefeicoesDia.toLocaleString("pt-BR")}</strong> refeições diárias e  
-                    <strong>{totalTaNaMesaRefeicoesMes.toLocaleString("pt-BR")}</strong> refeições mensais.  
-                    O valor investido por município é de R$ <strong>{totalTaNaMesaValorMunicipal.toLocaleString("pt-BR")}</strong>.  
+                    O Programa "Tá na Mesa" atende <strong>{totalTaNaMesaMunicipios.toLocaleString("pt-BR")}</strong> municípios,
+                    oferecendo <strong>{totalTaNaMesaRefeicoesDia.toLocaleString("pt-BR")}</strong> refeições diárias e
+                    <strong>{totalTaNaMesaRefeicoesMes.toLocaleString("pt-BR")}</strong> refeições mensais.
+                    O valor investido por município é de R$ <strong>{totalTaNaMesaValorMunicipal.toLocaleString("pt-BR")}</strong>.
                   </div>
                 </>
               )}
 
-          
+
               {filteredServicesCartaoAlimentacao.length > 0 && (
                 <>
                   <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
@@ -1101,17 +1041,17 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-               
+
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Cartão Alimentação</p>
-                    O Cartão Alimentação atende <strong>{totalCartaoAlimentacaoMunicipios.toLocaleString("pt-BR")}</strong> municípios,  
-                    beneficiando <strong>{totalCartaoAlimentacaoBeneficiarios.toLocaleString("pt-BR")}</strong> pessoas.  
-                    O investimento por município é de R$ <strong>{totalCartaoAlimentacaoValorMunicipal.toLocaleString("pt-BR")}</strong>.  
+                    O Cartão Alimentação atende <strong>{totalCartaoAlimentacaoMunicipios.toLocaleString("pt-BR")}</strong> municípios,
+                    beneficiando <strong>{totalCartaoAlimentacaoBeneficiarios.toLocaleString("pt-BR")}</strong> pessoas.
+                    O investimento por município é de R$ <strong>{totalCartaoAlimentacaoValorMunicipal.toLocaleString("pt-BR")}</strong>.
                   </div>
                 </>
               )}
 
-             
+
               {filteredServicesOutrosProgramas.length > 0 && (
                 <>
                   <h3 className="text-lg font-semibold mb-2 flex items-center text-gray-700">
@@ -1134,11 +1074,11 @@ const mediaIDH = usedData.length > 0
                     </tbody>
                   </table>
 
-                
+
                   <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
                     <p className="text-lg font-semibold">📑 Análise: Segurança Alimentar - Outros Programas</p>
-                    Atualmente, os Restaurantes Populares operam em <strong>{totalRestaurantePopular.toLocaleString("pt-BR")}</strong> municípios.  
-                    O Programa PAA LEITE atende <strong>{totalPaaLeite.toLocaleString("pt-BR")}</strong> municípios, enquanto o Programa PAA CDS está presente em  
+                    Atualmente, os Restaurantes Populares operam em <strong>{totalRestaurantePopular.toLocaleString("pt-BR")}</strong> municípios.
+                    O Programa PAA LEITE atende <strong>{totalPaaLeite.toLocaleString("pt-BR")}</strong> municípios, enquanto o Programa PAA CDS está presente em
                     <strong>{totalPaaCds.toLocaleString("pt-BR")}</strong> municípios.
                   </div>
                 </>
@@ -1147,8 +1087,7 @@ const mediaIDH = usedData.length > 0
           )}
 
 
-
-          {filteredServicesCasaCidadania.length > 0 && (
+        {filteredServicesCasaCidadania.length > 0 && (
           <div id="Casas da Cidadanias" className="mt-4">
             <h2 className="text-2xl font-semibold mb-6 flex items-center">
               📇 Casa da Cidadania
@@ -1175,12 +1114,11 @@ const mediaIDH = usedData.length > 0
             {/* 🔹 Análise Casa da Cidadania */}
             <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
               <p className="text-lg font-semibold">📑 Análise: Casa da Cidadania</p>
-              Atualmente, as Casas da Cidadania operam em <strong>{totalcasacidadania.toLocaleString("pt-BR")}</strong> municípios.  
+              Atualmente, as Casas da Cidadania operam em <strong>{totalcasacidadania.toLocaleString("pt-BR")}</strong> municípios.
             </div>
           </div>
         )}
 
- 
 
 
 
@@ -1189,29 +1127,29 @@ const mediaIDH = usedData.length > 0
             🎄 Abono Natalino
           </h2>
           <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-              <thead>
-                <tr className="bg-gray-200 text-black text-lg">
-                  <th className="border border-gray-300 px-4 py-2 text-left">Abono Natalito</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-800 text-lg">
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Famílias Atendidas (DEZ/2023)</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{totalabonofamilia.toLocaleString("pt-BR")}</td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Previsão de Valores (2024)</td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">{totalabononatalinovalor.toLocaleString("pt-BR")}</td>
-                </tr>
-              </tbody>
-            </table>
+            <thead>
+              <tr className="bg-gray-200 text-black text-lg">
+                <th className="border border-gray-300 px-4 py-2 text-left">Abono Natalito</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800 text-lg">
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Famílias Atendidas (DEZ/2023)</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{totalabonofamilia.toLocaleString("pt-BR")}</td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">Previsão de Valores (2024)</td>
+                <td className="border border-gray-300 px-4 py-2 text-center">{totalabononatalinovalor.toLocaleString("pt-BR")}</td>
+              </tr>
+            </tbody>
+          </table>
 
-            <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-              <p className="text-lg font-semibold">📑 Análise: Abono Natalino</p>
-              Atualmente, o Abono Natalino contempla <strong>{totalabononatalinovalor.toLocaleString("pt-BR")}</strong> Pessoas.  
-              O Valor estimado de Abono Natalino em 2024 foi de <strong>{totalabononatalinovalor.toLocaleString("pt-BR")}</strong> 
-            </div>
+          <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+            <p className="text-lg font-semibold">📑 Análise: Abono Natalino</p>
+            Atualmente, o Abono Natalino contempla <strong>{totalabononatalinovalor.toLocaleString("pt-BR")}</strong> Pessoas.
+            O Valor estimado de Abono Natalino em 2024 foi de <strong>{totalabononatalinovalor.toLocaleString("pt-BR")}</strong>
+          </div>
         </div>
 
         <div id="Saúde" className="mt-4">
@@ -1273,73 +1211,73 @@ const mediaIDH = usedData.length > 0
           {/* Análise da Saúde */}
           <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
             <p className="text-lg font-semibold">📑 Análise: Saúde Pública</p>
-            Em 2022, foram aplicadas <strong>{totalsaudevacinas.toLocaleString("pt-BR")}</strong> doses de vacinas,  
-            garantindo uma cobertura vacinal de <strong>{totalVacinasPercent.toLocaleString("pt-BR")}%</strong>,  
-            Em termos de infraestrutura, o sistema de saúde conta com <strong>{totalHospitalGeral.toLocaleString("pt-BR")}</strong> hospitais gerais,  
-            <strong>{totalCentroSaude.toLocaleString("pt-BR")}</strong> centros de saúde e UBS, e  
+            Em 2022, foram aplicadas <strong>{totalsaudevacinas.toLocaleString("pt-BR")}</strong> doses de vacinas,
+            garantindo uma cobertura vacinal de <strong>{totalVacinasPercent.toLocaleString("pt-BR")}%</strong>,
+            Em termos de infraestrutura, o sistema de saúde conta com <strong>{totalHospitalGeral.toLocaleString("pt-BR")}</strong> hospitais gerais,
+            <strong>{totalCentroSaude.toLocaleString("pt-BR")}</strong> centros de saúde e UBS, e
             <strong>{totalPostoSaude.toLocaleString("pt-BR")}</strong> postos de saúde distribuídos pelo território.
           </div>
         </div>
 
 
         <div id="Educacão" className="mt-4">
-            <h2 className="text-2xl font-semibold mb-6 flex items-center">
-              🎓 Educação
-            </h2>
-            <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
-              <thead>
-                <tr className="bg-gray-200 text-black text-lg">
-                  <th className="border border-gray-300 px-4 py-2 text-left">Indicador</th>
-                  <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
-                </tr>
-              </thead>
-              <tbody className="text-gray-800 text-lg">
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    Crianças Escolarizadas (6 a 14 anos) - 2010
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {totalEscolarizados2010.toLocaleString("pt-BR")}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    Representatividade da População Escolarizada (%)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaEscolarizacaoPercent.toFixed(2)} %
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    Pessoas Alfabetizadas (15 anos ou mais) - 2022
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {totalAlfabetizados2022.toLocaleString("pt-BR")}
-                  </td>
-                </tr>
-                <tr className="border">
-                  <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
-                    Representatividade da População Alfabetizada (%)
-                  </td>
-                  <td className="border border-gray-300 px-4 py-2 text-center">
-                    {mediaAlfabetizacaoPercent.toFixed(2)} %
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          <h2 className="text-2xl font-semibold mb-6 flex items-center">
+            🎓 Educação
+          </h2>
+          <table className="w-full border-collapse rounded-lg shadow-sm mt-6">
+            <thead>
+              <tr className="bg-gray-200 text-black text-lg">
+                <th className="border border-gray-300 px-4 py-2 text-left">Indicador</th>
+                <th className="border border-gray-300 px-4 py-2 text-center">Total</th>
+              </tr>
+            </thead>
+            <tbody className="text-gray-800 text-lg">
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  Crianças Escolarizadas (6 a 14 anos) - 2010
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {totalEscolarizados2010.toLocaleString("pt-BR")}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  Representatividade da População Escolarizada (%)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaEscolarizacaoPercent.toFixed(2)} %
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  Pessoas Alfabetizadas (15 anos ou mais) - 2022
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {totalAlfabetizados2022.toLocaleString("pt-BR")}
+                </td>
+              </tr>
+              <tr className="border">
+                <td className="border border-gray-300 px-4 py-2 font-semibold bg-gray-100">
+                  Representatividade da População Alfabetizada (%)
+                </td>
+                <td className="border border-gray-300 px-4 py-2 text-center">
+                  {mediaAlfabetizacaoPercent.toFixed(2)} %
+                </td>
+              </tr>
+            </tbody>
+          </table>
 
-            <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
-              <p className="text-lg font-semibold">📑 Análise: Educação</p>
-              Em 2010, <strong>{totalEscolarizados2010.toLocaleString("pt-BR")}</strong> crianças entre 6 e 14 anos estavam escolarizadas,  
-              representando <strong>{mediaEscolarizacaoPercent.toFixed(2)}%</strong> da população dessa faixa etária.
-              Em 2022, <strong>{totalAlfabetizados2022.toLocaleString("pt-BR")}</strong> pessoas com 15 anos ou mais eram alfabetizadas,  
-              representando <strong>{mediaAlfabetizacaoPercent.toFixed(2)}%</strong> da população dessa faixa etária.
-            </div>
+          <div className="mt-4 mb-6 p-4 border rounded-lg bg-gray-50">
+            <p className="text-lg font-semibold">📑 Análise: Educação</p>
+            Em 2010, <strong>{totalEscolarizados2010.toLocaleString("pt-BR")}</strong> crianças entre 6 e 14 anos estavam escolarizadas,
+            representando <strong>{mediaEscolarizacaoPercent.toFixed(2)}%</strong> da população dessa faixa etária.
+            Em 2022, <strong>{totalAlfabetizados2022.toLocaleString("pt-BR")}</strong> pessoas com 15 anos ou mais eram alfabetizadas,
+            representando <strong>{mediaAlfabetizacaoPercent.toFixed(2)}%</strong> da população dessa faixa etária.
           </div>
+        </div>
 
       </div>
-    
+    </>
   );
 };
 
