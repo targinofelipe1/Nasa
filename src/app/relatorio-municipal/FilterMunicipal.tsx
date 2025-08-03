@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import MunicipalFilter from "@/components/ui/MunicipalFilter";
 
 interface FiltersProps {
-  data: { Município: string; RGA: string }[];
+  data: { Município: string; RGA: string }[]; // ✅ RGA é obrigatória aqui
   onMunicipalChange: (selectedMunicipals: string[]) => void;
 }
 
@@ -17,12 +17,11 @@ const FiltersMunicipal: React.FC<FiltersProps> = ({ data, onMunicipalChange }) =
     setSelectedMunicipals(municipals);
     onMunicipalChange(municipals);
 
-    // Encontra as RGAs únicas e os municípios selecionados
     if (municipals.length > 0) {
-      const uniqueRegionais = [...new Set(data
-        .filter(row => municipals.includes(row.Município))
-        .map(row => row.RGA)
-        .filter(Boolean)
+      const uniqueRegionais = [...new Set(
+        data
+          .filter((row) => municipals.includes(row.Município))
+          .map((row) => row.RGA)
       )];
       setRegionaisAssociadas(uniqueRegionais.sort());
       setMunicipiosFiltrados(municipals.sort());
@@ -34,14 +33,18 @@ const FiltersMunicipal: React.FC<FiltersProps> = ({ data, onMunicipalChange }) =
 
   return (
     <div className="p-4 bg-white shadow-lg rounded-lg mb-12">
-      <MunicipalFilter data={data} onFilterChange={handleMunicipalChange} selectedMunicipals={selectedMunicipals} />
+      <MunicipalFilter
+        data={data}
+        onFilterChange={handleMunicipalChange}
+        selectedMunicipals={selectedMunicipals}
+      />
 
       {selectedMunicipals.length > 0 && (
         <div className="mt-4 p-3 border rounded-lg bg-gray-50">
           <h3 className="text-lg font-semibold">Municípios Selecionados:</h3>
           <ul className="mt-2 text-sm text-gray-700">
             {municipiosFiltrados.map((municipio, index) => {
-              const rga = data.find(row => row.Município === municipio)?.RGA;
+              const rga = data.find((row) => row.Município === municipio)?.RGA;
 
               return (
                 <li key={index} className="border-b py-1">
