@@ -186,11 +186,11 @@ const Sidebar = () => {
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
                   <FaFileAlt className="mr-2" size={16} />
-                  <Link href="votacao/relatorios/eleicao">Relatório de Votação</Link>
+                  <Link href="/votacao/relatorioeleicao">Relatório de Votação</Link>
                 </li>
                 <li className="flex items-center py-1 hover:text-blue-500">
                   < FaFileInvoice className="mr-2" size={16} />
-                  <Link href="votacao/relatorios/eleitorado">Relatório de Eleitorado</Link>
+                  <Link href="/votacao/relatorioeleitorado">Relatório de Eleitorado</Link>
                 </li>
               </ul>
             )}
