@@ -1,11 +1,10 @@
-// src/components/ui/Filters.tsx
 import MunicipalFilter from "@/components/ui/MunicipalFilter";
 import { FC } from "react";
 
 interface FiltersProps {
-  data: { Município: string }[];
+  data: { Município: string; RGA?: string }[];
   onFilterChange: (selectedMunicipals: string[]) => void;
-  selectedMunicipalities: string[]; // ➡️ Adiciona a nova prop
+  selectedMunicipalities: string[];
 }
 
 const Filters: FC<FiltersProps> = ({ data, onFilterChange, selectedMunicipalities }) => {
@@ -14,7 +13,7 @@ const Filters: FC<FiltersProps> = ({ data, onFilterChange, selectedMunicipalitie
       <MunicipalFilter
         data={data}
         onFilterChange={onFilterChange}
-        selectedMunicipalities={selectedMunicipalities} // ➡️ Passa a prop para o componente filho
+        selectedMunicipals={selectedMunicipalities} // ✅ corrigido aqui
       />
     </div>
   );
