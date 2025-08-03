@@ -1,36 +1,35 @@
-import { useState, useEffect, useCallback } from 'react';
+// src/components/ui/RegionalFilter.tsx
+import { FC } from 'react';
 import Select, { MultiValue } from 'react-select';
 
 interface RegionalFilterProps {
   data: { RGA: string }[];
   onFilterChange: (selectedRegionals: string[]) => void;
+  selectedRegionals: string[]; // ➡️ Adiciona a nova prop
 }
 
-const RegionalFilter: React.FC<RegionalFilterProps> = ({ data, onFilterChange }) => {
-  const [selectedRegionals, setSelectedRegionals] = useState<{ value: string; label: string }[]>([]);
+const RegionalFilter: FC<RegionalFilterProps> = ({ data, onFilterChange, selectedRegionals }) => {
 
-  // Extrai as regionais únicas da coluna "RGA" e ordena numericamente
   const uniqueRegionals = [...new Set(data.map((row: { RGA: string }) => row.RGA).filter(Boolean))]
     .map((regional) => ({ value: regional, label: regional }))
     .sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }));
 
-  // Memoriza a função para evitar re-renderizações desnecessárias
-  const handleFilterChange = useCallback(() => {
-    onFilterChange(selectedRegionals.map(r => r.value));
-  }, [selectedRegionals]);
+  // Formata o valor para o componente Select
+  const selectedValues = uniqueRegionals.filter(option => selectedRegionals.includes(option.value));
 
-  useEffect(() => {
-    handleFilterChange();
-  }, [handleFilterChange]);
+  const handleChange = (newValue: MultiValue<{ value: string; label: string }>) => {
+    const selectedValues = newValue ? newValue.map(item => item.value) : [];
+    onFilterChange(selectedValues);
+  };
 
   return (
-    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
+    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg w-full">
       <h2 className="text-lg font-semibold mb-2">Filtrar por Regional</h2>
       <Select
         isMulti
         options={uniqueRegionals}
-        value={selectedRegionals}
-        onChange={(newValue: MultiValue<{ value: string; label: string }>) => setSelectedRegionals(newValue as { value: string; label: string }[])}
+        value={selectedValues} // ➡️ Usa a prop para controlar o valor do Select
+        onChange={handleChange}
         placeholder="Selecione uma ou mais regionais"
         className="w-full text-sm border-gray-300 rounded-lg"
         styles={{

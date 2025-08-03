@@ -1,3 +1,4 @@
+// src/app/maps/page.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -5,10 +6,12 @@ import Sidebar from "@/components/ui/Sidebar";
 import MapaParaibaRGA from "./map-rga/map-rga";
 import RegionalIndicators from "./map-rga/indicadores";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
+import useMediaQuery from "@/hooks/useMediaQuery"; // Importe o hook
 
 export default function MapsPage() {
   const [apiData, setApiData] = useState<any[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const isMobile = useMediaQuery("(max-width: 768px)"); // Define o breakpoint
 
   // 🔹 Busca os dados da API ao carregar a página
   useEffect(() => {
@@ -50,37 +53,43 @@ export default function MapsPage() {
   return (
     <ProtectedRoute>
       <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
-          <Sidebar />
+        <Sidebar />
 
-        <div className="flex flex-col w-full h-full p-4">              
+        <div className="flex flex-col w-full h-full p-4">
           <div className="flex-1">
-              <h1 className="text-2xl font-bold mb-4 text-center">
-                Mapa Interativo das Regionais da Paraíba
-              </h1>
-              {apiData.length > 0 ? (
+            <h1 className="text-2xl font-bold mb-4 text-center">
+              Mapa Interativo das Regionais da Paraíba
+            </h1>
+            {/* ➡️ Lógica para renderizar o mapa ou uma mensagem alternativa */}
+            {isMobile ? (
+              <p className="text-center text-gray-500 text-lg p-8 rounded-lg border border-gray-300">
+                O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+              </p>
+            ) : (
+              apiData.length > 0 ? (
                 <MapaParaibaRGA apiData={apiData} />
               ) : (
                 <p className="text-center text-gray-500">
                   Carregando dados do mapa...
                 </p>
-              )}
-            </div>
+              )
+            )}
+          </div>
 
-            <div className="mt-6">
-              {apiData.length > 0 ? (
-                <RegionalIndicators
-                  data={apiData}
-                  setIsModalOpen={setIsModalOpen}
-                />
-              ) : (
-                <p className="text-center text-gray-500">
-                  Carregando indicadores regionais...
-                </p>
-              )}
-            </div>
+          <div className="mt-6">
+            {apiData.length > 0 ? (
+              <RegionalIndicators
+                data={apiData}
+                setIsModalOpen={setIsModalOpen}
+              />
+            ) : (
+              <p className="text-center text-gray-500">
+                Carregando indicadores regionais...
+              </p>
+            )}
           </div>
         </div>
-
+      </div>
     </ProtectedRoute>
   );
 }

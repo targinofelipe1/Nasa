@@ -1,37 +1,37 @@
-import { useState, useEffect, useCallback } from 'react';
+"use client";
+
+import { FC } from 'react';
 import Select, { MultiValue } from 'react-select';
 
 interface MunicipalFilterProps {
-  data: { Município: string }[];
-  onFilterChange: (selectedMucicipals: string[]) => void;
+  data: { Município: string; RGA: string }[];
+  onFilterChange: (selectedMunicipals: string[]) => void;
+  selectedMunicipals: string[];
 }
 
-const MunicipalFilter: React.FC<MunicipalFilterProps> = ({ data, onFilterChange }) => {
-  const [selectedMunicipals, setSelectedMuncipls] = useState<{ value: string; label: string }[]>([]);
+const MunicipalFilter: FC<MunicipalFilterProps> = ({ data, onFilterChange, selectedMunicipals }) => {
 
-  // Extrai as regionais únicas da coluna "RGA" e ordena numericamente
   const uniqueMunicipals = [...new Set(data.map((row: { Município: string }) => row.Município).filter(Boolean))]
-    .map((regional) => ({ value: regional, label: regional }))
-    .sort((a, b) => a.value.localeCompare(b.value, undefined, { numeric: true }));
+    .map((municipio) => ({ value: municipio, label: municipio }))
+    .sort((a, b) => a.value.localeCompare(b.value));
 
-  // Memoriza a função para evitar re-renderizações desnecessárias
-  const handleFilterChange = useCallback(() => {
-    onFilterChange(selectedMunicipals.map(r => r.value));
-  }, [selectedMunicipals]);
+  // Filtra as opções para corresponder aos municípios selecionados
+  const selectedValues = uniqueMunicipals.filter(option => selectedMunicipals.includes(option.value));
 
-  useEffect(() => {
-    handleFilterChange();
-  }, [handleFilterChange]);
+  const handleChange = (newValue: MultiValue<{ value: string; label: string }>) => {
+    const selectedValues = newValue ? newValue.map(item => item.value) : [];
+    onFilterChange(selectedValues);
+  };
 
   return (
-    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
-         <h2 className="text-lg font-semibold mb-2">Filtrar por Município</h2>
+    <div className="mb-6 p-4 bg-white shadow-lg rounded-lg w-full">
+      <h2 className="text-lg font-semibold mb-2">Filtrar por Município</h2>
       <Select
-        isMulti
+        isMulti={true} // ➡️ AQUI: Habilita a seleção múltipla
         options={uniqueMunicipals}
-        value={selectedMunicipals}
-        onChange={(newValue: MultiValue<{ value: string; label: string }>) => setSelectedMuncipls(newValue as { value: string; label: string }[])}
-        placeholder="Selecione uma ou mais regionais"
+        value={selectedValues}
+        onChange={handleChange}
+        placeholder="Selecione um ou mais municípios"
         className="w-full text-sm border-gray-300 rounded-lg"
         styles={{
           control: (provided) => ({
