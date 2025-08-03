@@ -1,3 +1,4 @@
+// src/app/dashboard/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -10,6 +11,7 @@ import Charts from "./Charts";
 import Ranking from "./Ranking";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import MapaParaibaRGA from "../map-rga/map-rga";
+import useMediaQuery from "@/hooks/useMediaQuery";
 
 const rgaColors: Record<string, string> = {
   "RGA 1": "#fff205",
@@ -31,16 +33,18 @@ const rgaColors: Record<string, string> = {
 export default function Dashboard() {
   const [data, setData] = useState<any[]>([]);
   const [filteredData, setFilteredData] = useState<any[]>([]);
-  const [filteredMunicipalities, setFilteredMunicipalities] = useState<string[]>([]);
   const [selectedRegionals, setSelectedRegionals] = useState<string[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true); // ➡️ Adiciona estado de carregamento
+  const [error, setError] = useState<string | null>(null); // ➡️ Adiciona estado de erro
+  const isMobile = useMediaQuery("(max-width: 768px)");
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const response = await fetch("/api/sheets");
         const result = await response.json();
-        if (result.success) {
+        if (result.success && result.data.length > 1) { // ➡️ Verifica se há dados
           const headers = result.data[0];
           const formattedData = result.data.slice(1).map((row: any[]) =>
             headers.reduce((acc: any, key: string, index: number) => {
@@ -50,9 +54,15 @@ export default function Dashboard() {
           );
           setData(formattedData);
           setFilteredData(formattedData);
+        } else {
+          setError("Erro ao buscar dados ou dados vazios."); // ➡️ Define mensagem de erro
+          console.error("Erro ao buscar dados ou dados vazios:", result.message);
         }
       } catch (error) {
-        console.error("Erro ao buscar dados:", error);
+        setError("Erro de conexão com a API."); // ➡️ Define mensagem de erro
+        console.error("Erro ao buscar dados da API:", error);
+      } finally {
+        setLoading(false); // ➡️ Finaliza o carregamento
       }
     };
     fetchData();
@@ -63,57 +73,65 @@ export default function Dashboard() {
 
     if (selected.length === 0) {
       setFilteredData(data);
-      setFilteredMunicipalities([]);
     } else {
       const filtered = data.filter(row => selected.includes(row.RGA));
       setFilteredData(filtered);
-      const municipalities = filtered.map(item => item.Município).filter(Boolean);
-      setFilteredMunicipalities(municipalities);
     }
   };
 
   return (
     <ProtectedRoute>
       <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
-
         <Sidebar />
         <main className="flex-1 p-6 overflow-x-hidden">
           <Navbar />
           <DashboardHeader />
 
-          {data.length > 0 && (
-            <div className="flex flex-row justify-between gap-6 mb-6 min-h-[360px] relative">
-              <div className="flex items-center justify-center w-1/3">
-                <div className="w-full max-w-md">
-                  <Filters data={data} onFilterChange={handleFilterChange} />
+          {/* ➡️ Exibe mensagem de carregamento ou erro */}
+          {loading ? (
+            <p className="text-center text-gray-500 text-lg p-8">Carregando dados...</p>
+          ) : error ? (
+            <p className="text-center text-red-500 text-lg p-8">{error}</p>
+          ) : (
+            <>
+              <div className="flex flex-col lg:flex-row justify-between gap-6 mb-6 min-h-[360px] relative">
+                <div className="flex items-center justify-center w-full lg:w-1/3">
+                  <div className="w-full max-w-md">
+                    {/* ➡️ Passa selectedRegionals e data para o filtro */}
+                    <Filters 
+                      data={data} 
+                      onFilterChange={handleFilterChange} 
+                      selectedRegionals={selectedRegionals}
+                    />
+                  </div>
                 </div>
-              </div>
-
-              <div className="w-3/3 -ml-10 relative">
-                {selectedRegionals.length >= 2 && (
-                  <div className="absolute top-2 right-4 bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-200 z-50">
-                    <h3 className="text-sm font-bold mb-2">Regionais</h3>
-                    <ul className="space-y-1">
-                      {selectedRegionals.map((rga) => {
-                        const cor = rgaColors[`RGA ${rga.replace("ª", "").trim()}`] || "#ccc";
-                        return (
-                          <li key={rga} className="flex items-center space-x-2">
-                            <span className="w-4 h-4 rounded inline-block" style={{ backgroundColor: cor }}></span>
-                            <span className="text-xs">{rga} Regional</span>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                {!isMobile && (
+                  <div className="w-full lg:w-2/3 -ml-10 relative">
+                    {selectedRegionals.length >= 2 && (
+                      <div className="absolute top-2 right-4 bg-white px-4 py-3 rounded-lg shadow-lg border border-gray-200 z-50">
+                        <h3 className="text-sm font-bold mb-2">Regionais</h3>
+                        <ul className="space-y-1">
+                          {selectedRegionals.map((rga) => {
+                            const cor = rgaColors[`RGA ${rga.replace("ª", "").trim()}`] || "#ccc";
+                            return (
+                              <li key={rga} className="flex items-center space-x-2">
+                                <span className="w-4 h-4 rounded inline-block" style={{ backgroundColor: cor }}></span>
+                                <span className="text-xs">{rga} Regional</span>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+                    )}
+                    <MapaParaibaRGA apiData={filteredData} exibirLegenda={false} />
                   </div>
                 )}
-                <MapaParaibaRGA apiData={filteredData} exibirLegenda={false} />
               </div>
-            </div>
+              <Indicators data={filteredData} setIsModalOpen={setIsModalOpen} />
+              <Charts data={filteredData} />
+              <Ranking data={filteredData} />
+            </>
           )}
-
-          <Indicators data={filteredData} setIsModalOpen={setIsModalOpen} />
-          <Charts data={filteredData} />
-          <Ranking data={filteredData} />
         </main>
       </div>
     </ProtectedRoute>
