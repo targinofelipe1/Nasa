@@ -45,6 +45,9 @@ const PLANILHAS: Record<string, string> = {
   feminino_separado_judicialmente: "1BaAqEJcUO0XXGIbV_JJtLrNn88x61UjVO_e4fT4zp5A",
   feminino_solteiro: "1GnLhjyUGnFAQ7ITZ5NwRoqQvu97Vi8e4Fat1Ac5x6kQ",
   feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
+  apoio: "1TFoi2rayoovXQ3QIpUXLu4u8AA2y9NWYW8d6fAZ20fE",
+  pestadual: "1FwH5ivDa2OlNkr23J0raB63n65uczSSY6EWBaHj5koU",
+  psenado: "1vOLZfN1KM3W3vBTopQORf2Zom1IVb3Fk2bi10tlFH9s",
 };
 
 export async function GET(
@@ -65,11 +68,13 @@ export async function GET(
     const data = await getOrSetCache(id, async () => {
       let rangeToUse: string;
       if (id.startsWith('masculino') || id.startsWith('feminino')) {
-        rangeToUse = 'Sheet1!A:Q'; // Eleitorado (17 colunas)
+        rangeToUse = 'Sheet1!A:Q'; 
       } else if (id === 'locais') {
-        rangeToUse = 'Sheet1!A:G'; // Locais (7 colunas)
+        rangeToUse = 'Sheet1!A:G'; 
+      } else if (id === 'apoio') { 
+        rangeToUse = 'Sheet1!A:D'; 
       } else {
-        rangeToUse = 'Sheet1!A:N'; // Votação (14 colunas, default para outros cargos)
+        rangeToUse = 'Sheet1!A:N'; 
       }
       return await getSheetData(spreadsheetId, rangeToUse);
     });
