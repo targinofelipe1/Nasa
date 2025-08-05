@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { FaBalanceScale, FaChartBar, FaFileAlt, FaFileInvoice } from "react-icons/fa";
+import { FaBalanceScale, FaChartBar, FaChartLine, FaFileAlt, FaFileInvoice } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -191,6 +191,10 @@ const Sidebar = () => {
                   <li className="flex items-center py-1 hover:text-blue-500">
                     <FaFileInvoice className="mr-2" size={16} />
                     <Link href="/votacao/relatorioeleitorado">Relatório de Eleitorado</Link>
+                  </li>
+                   <li className="flex items-center py-1 hover:text-blue-500">
+                    <FaChartLine className="mr-2" size={16} />
+                    <Link href="/votacao/projecao2025">Projeção 2025</Link>
                   </li>
                 </ul>
               )}
