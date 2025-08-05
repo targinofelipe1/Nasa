@@ -6,14 +6,17 @@ import Sidebar from '@/components/ui/Sidebar';
 import NoScroll from '@/components/ui/NoScroll';
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 
-// Importando os ícones
 import { MapPinIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import TermometroVotos from '@/components/ui/TermometroVotos';
-import RankingApoioCidade from '@/components/ui/RankingApoioCidade';
-import DetalheMunicipioVotacao from '@/components/ui/DetalheMunicipioVotacao';
-import MapaApoioHeatmap from '@/components/ui/MapaApoioHeatmap';
 import RankingVotosCidades from '@/components/ui/RankingVotosCidades';
-
+const MapaApoioHeatmap = dynamic(() => import('@/components/ui/MapaApoioHeatmap'), {
+  ssr: false,
+  loading: () => <p className="text-center p-4">Carregando heatmap...</p>,
+});
+const DetalheMunicipioVotacao = dynamic(() => import('@/components/ui/DetalheMunicipioVotacao'), {
+  ssr: false,
+  loading: () => <p className="text-center text-gray-500">Carregando detalhes do município...</p>,
+});
 const MapaParaibaApoio = dynamic(() => import('@/components/ui/MapaParaibaApoio'), {
   ssr: false,
   loading: () => <p className="text-center p-6">Carregando mapa...</p>,
@@ -90,40 +93,43 @@ export default function PainelApoio() {
     };
   }, [dadosApoio, totalVotosEsperadosDaPlanilha]);
 
-  const cardData = [
-    {
-      label: 'Total de Municípios',
-      value: dadosGerais.totalMunicipios,
-      icon: MapPinIcon,
-      bgColorClass: 'bg-indigo-100',
-      iconColorClass: 'text-indigo-600',
-      valueColorClass: 'text-indigo-600'
-    },
-    {
-      label: 'Municípios com Apoio',
-      value: dadosGerais.municipiosComApoio,
-      icon: CheckCircleIcon,
-      bgColorClass: 'bg-green-100',
-      iconColorClass: 'text-green-600',
-      valueColorClass: 'text-green-600'
-    },
-    {
-      label: 'Municípios sem Apoio',
-      value: dadosGerais.municipiosSemApoio,
-      icon: XCircleIcon,
-      bgColorClass: 'bg-red-100',
-      iconColorClass: 'text-red-600',
-      valueColorClass: 'text-red-600'
-    },
-    {
-      label: 'Total de Votos Esperados',
-      value: dadosGerais.totalVotosEsperados.toLocaleString('pt-BR'),
-      icon: EnvelopeIcon,
-      bgColorClass: 'bg-yellow-100',
-      iconColorClass: 'text-yellow-600',
-      valueColorClass: 'text-yellow-600',
-    },
-  ];
+  const formatarNumero = (valor: number) =>
+  typeof window !== 'undefined' ? valor.toLocaleString('pt-BR') : `${valor}`;
+
+const cardData = [
+  {
+    label: 'Total de Municípios',
+    value: dadosGerais.totalMunicipios,
+    icon: MapPinIcon,
+    bgColorClass: 'bg-indigo-100',
+    iconColorClass: 'text-indigo-600',
+    valueColorClass: 'text-indigo-600'
+  },
+  {
+    label: 'Municípios com Apoio',
+    value: dadosGerais.municipiosComApoio,
+    icon: CheckCircleIcon,
+    bgColorClass: 'bg-green-100',
+    iconColorClass: 'text-green-600',
+    valueColorClass: 'text-green-600'
+  },
+  {
+    label: 'Municípios sem Apoio',
+    value: dadosGerais.municipiosSemApoio,
+    icon: XCircleIcon,
+    bgColorClass: 'bg-red-100',
+    iconColorClass: 'text-red-600',
+    valueColorClass: 'text-red-600'
+  },
+  {
+    label: 'Total de Votos Esperados',
+    value: formatarNumero(dadosGerais.totalVotosEsperados),
+    icon: EnvelopeIcon,
+    bgColorClass: 'bg-yellow-100',
+    iconColorClass: 'text-yellow-600',
+    valueColorClass: 'text-yellow-600',
+  },
+];
 
   const metaDeVotosFixa = 150000;
   
@@ -199,6 +205,7 @@ export default function PainelApoio() {
                 <DetalheMunicipioVotacao />
 
                 <MapaApoioHeatmap apiData={dadosApoio}/>
+
               </>
             )}
           </div>

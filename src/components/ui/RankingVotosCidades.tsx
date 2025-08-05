@@ -257,7 +257,10 @@ const RankingVotosCidades: React.FC = () => {
                       {item.municipio}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {item.totalVotosEsperados.toLocaleString('pt-BR')}
+                      {typeof window !== 'undefined'
+                        ? item.totalVotosEsperados.toLocaleString('pt-BR')
+                        : item.totalVotosEsperados}
+
                     </td>
                   </tr>
                 );

@@ -3,15 +3,11 @@
 import { FaRegSquare, FaCheckSquare } from 'react-icons/fa';
 
 interface TermometroVotosProps {
-  votosAtuais: number; // O total de votos que temos (os esperados da planilha)
-  metaDeVotos: number; // A meta que a barra tenta alcançar (valor fixo)
+  votosAtuais: number;
+  metaDeVotos: number;
 }
 
-export default function TermometroVotos({ 
-  votosAtuais, 
-  metaDeVotos, 
-}: TermometroVotosProps) {
-  
+export default function TermometroVotos({ votosAtuais, metaDeVotos }: TermometroVotosProps) {
   const porcentagem = metaDeVotos > 0 ? (votosAtuais / metaDeVotos) * 100 : 0;
   const porcentagemFormatada = Math.min(porcentagem, 100).toFixed(0);
 
@@ -37,39 +33,36 @@ export default function TermometroVotos({
     statusTexto = 'Nível crítico. Reforçar o apoio.';
   }
 
+  const formatarNumero = (valor: number) =>
+    typeof window !== 'undefined' ? valor.toLocaleString('pt-BR') : `${valor}`;
+
   return (
     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center">
       <h3 className="text-xl font-bold mb-4 text-gray-800">Progresso de Votos</h3>
-      
-      {/* Container do "Termômetro" */}
+
       <div className="w-full bg-gray-200 rounded-full h-4 mb-4 relative">
-        <div 
+        <div
           className="h-full rounded-full transition-all duration-500 ease-in-out"
           style={{ width: `${porcentagem}%`, backgroundColor: corBarra }}
         ></div>
       </div>
 
-      {/* Valores */}
       <div className="flex justify-between w-full text-sm font-medium text-gray-600 mb-2">
-        <span>{votosAtuais.toLocaleString('pt-BR')} Votos Esperados</span>
-        <span>{metaDeVotos.toLocaleString('pt-BR')} Meta</span>
+        <span>{formatarNumero(votosAtuais)} Votos Esperados</span>
+        <span>{formatarNumero(metaDeVotos)} Meta</span>
       </div>
-      
-      {/* Porcentagem */}
+
       <div className="text-3xl font-extrabold" style={{ color: corBarra }}>
         {porcentagemFormatada}%
       </div>
-      
-      {/* Indicador de Status */}
+
       <div className="mt-4 flex items-center space-x-2">
         {porcentagem >= 100 ? (
           <FaCheckSquare className={`h-6 w-6 ${corIcone}`} />
         ) : (
           <FaRegSquare className={`h-6 w-6 ${corIcone}`} />
         )}
-        <p className="text-sm text-gray-600">
-          {statusTexto}
-        </p>
+        <p className="text-sm text-gray-600">{statusTexto}</p>
       </div>
     </div>
   );
