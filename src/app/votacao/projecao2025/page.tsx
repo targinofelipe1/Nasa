@@ -9,6 +9,8 @@ import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 import { MapPinIcon, CheckCircleIcon, XCircleIcon, EnvelopeIcon } from '@heroicons/react/24/solid';
 import TermometroVotos from '@/components/ui/TermometroVotos';
 import RankingVotosCidades from '@/components/ui/RankingVotosCidades';
+import PainelApoiadores from '@/components/ui/PainelApoiadores';
+import PainelTaNaMesa from '@/components/ui/PainelTaNaMesa';
 const MapaApoioHeatmap = dynamic(() => import('@/components/ui/MapaApoioHeatmap'), {
   ssr: false,
   loading: () => <p className="text-center p-4">Carregando heatmap...</p>,
@@ -22,6 +24,8 @@ const MapaParaibaApoio = dynamic(() => import('@/components/ui/MapaParaibaApoio'
   loading: () => <p className="text-center p-6">Carregando mapa...</p>,
 });
 
+
+
 interface DadoApoio {
   'Município': string;
   'Apoio': 'Sim' | 'Não' | string;
@@ -33,6 +37,9 @@ export default function PainelApoio() {
   const [dadosApoio, setDadosApoio] = useState<DadoApoio[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState<string | null>(null);
+
+  // NOVO: Estado para controlar a aba ativa
+  const [abaAtiva, setAbaAtiva] = useState('geral'); // 'geral' ou 'apoiadores'
 
   const [totalVotosEsperadosDaPlanilha, setTotalVotosEsperadosDaPlanilha] = useState(0);
   const [municipiosDisponiveis, setMunicipiosDisponiveis] = useState<string[]>([]);
@@ -144,69 +151,79 @@ const cardData = [
           <div className="w-full pt-6 pb-2 bg-white shadow-sm border-b border-gray-200 px-6">
             <p className="text-sm text-gray-500 mb-1">
               <span className="text-black font-medium">Painel</span> /
-              <span className="text-gray-400"> Apoio Político</span>
+              <span className="text-gray-400"> {abaAtiva === 'geral' ? 'Apoio Político' : 'Apoiadores'}</span>
             </p>
             <h1 className="text-2xl font-bold text-black">Painel de Apoio Político</h1>
             <div className="flex space-x-10 mt-5 border-b border-gray-300">
               <button
-                className="pb-2 text-base font-medium border-b-2 border-blue-900 text-blue-900"
+                onClick={() => setAbaAtiva('geral')}
+                className={`pb-2 text-base font-medium ${abaAtiva === 'geral' ? 'border-b-2 border-blue-900 text-blue-900' : 'text-gray-500'}`}
               >
                 Visão Geral
               </button>
-              
+              <button
+                onClick={() => setAbaAtiva('apoiadores')}
+                className={`pb-2 text-base font-medium ${abaAtiva === 'apoiadores' ? 'border-b-2 border-blue-900 text-blue-900' : 'text-gray-500'}`}
+              >
+                Tá na Mesa
+              </button>
             </div>
           </div>
 
           <div className="p-6 space-y-10">
-            {carregando ? (
-              <p className="text-center text-gray-500">Carregando dados...</p>
-            ) : erro ? (
-              <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 w-full">
-                {erro}
-              </div>
-            ) : (
-              <>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {cardData.map((card, index) => {
-                    const IconComponent = card.icon;
-                    return (
-                      <div
-                        key={index}
-                        className={`
-                          ${card.bgColorClass} p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center 
-                          transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg
-                        `}
-                      >
-                        <div className={`p-2 rounded-full mb-2 ${card.iconColorClass} bg-opacity-20`}>
-                          <IconComponent className="h-6 w-6" aria-hidden="true" />
+            {abaAtiva === 'geral' ? (
+              // Conteúdo da Aba Visão Geral
+              carregando ? (
+                <p className="text-center text-gray-500">Carregando dados...</p>
+              ) : erro ? (
+                <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-lg text-sm text-red-800 w-full">
+                  {erro}
+                </div>
+              ) : (
+                <>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {cardData.map((card, index) => {
+                      const IconComponent = card.icon;
+                      return (
+                        <div
+                          key={index}
+                          className={`
+                            ${card.bgColorClass} p-4 rounded-xl shadow-sm border border-gray-200 flex flex-col items-center justify-center 
+                            transition-all duration-300 ease-in-out transform hover:-translate-y-1 hover:shadow-lg
+                          `}
+                        >
+                          <div className={`p-2 rounded-full mb-2 ${card.iconColorClass} bg-opacity-20`}>
+                            <IconComponent className="h-6 w-6" aria-hidden="true" />
+                          </div>
+                          <p className="text-xs font-medium text-gray-500 mt-1">{card.label}</p>
+                          <p className={`mt-1 text-2xl font-bold ${card.valueColorClass}`}>{card.value}</p>
                         </div>
-                        <p className="text-xs font-medium text-gray-500 mt-1">{card.label}</p>
-                        <p className={`mt-1 text-2xl font-bold ${card.valueColorClass}`}>{card.value}</p>
-                      </div>
-                    );
-                  })}
-                </div>
-                
-                <div className="hidden md:block">
-                  <MapaParaibaApoio apiData={dadosApoio} />
-                </div>
-                <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
-                  <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
-                    <p className="text-base text-gray-500">
-                      O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
-                    </p>
+                      );
+                    })}
                   </div>
-                </div>
+                  
+                  <div className="hidden md:block">
+                    <MapaParaibaApoio apiData={dadosApoio} />
+                  </div>
+                  <div className="md:hidden mt-6 p-4 rounded-lg text-sm text-yellow-800">
+                    <div className="w-full bg-white p-4 rounded-xl shadow-sm text-center">
+                      <p className="text-base text-gray-500">
+                        O mapa interativo não está disponível na visualização móvel. Por favor, acesse em uma tela maior para visualizar o conteúdo.
+                      </p>
+                    </div>
+                  </div>
 
-                <TermometroVotos votosAtuais={dadosGerais.totalVotosEsperados} metaDeVotos={metaDeVotosFixa} />
+                  <TermometroVotos votosAtuais={dadosGerais.totalVotosEsperados} metaDeVotos={metaDeVotosFixa} />
 
-                <RankingVotosCidades />
+                  <RankingVotosCidades />
 
-                <DetalheMunicipioVotacao />
+                  <DetalheMunicipioVotacao />
 
-                <MapaApoioHeatmap apiData={dadosApoio}/>
-
-              </>
+                  <MapaApoioHeatmap apiData={dadosApoio}/>
+                </>
+              )
+            ) : (
+              <PainelTaNaMesa />
             )}
           </div>
         </div>

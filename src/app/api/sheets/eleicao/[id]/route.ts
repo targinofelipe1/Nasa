@@ -46,6 +46,8 @@ const PLANILHAS: Record<string, string> = {
   feminino_solteiro: "1GnLhjyUGnFAQ7ITZ5NwRoqQvu97Vi8e4Fat1Ac5x6kQ",
   feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
   apoio: "1TFoi2rayoovXQ3QIpUXLu4u8AA2y9NWYW8d6fAZ20fE",
+  apoio_lideranca: "1Td1BwjFaZtvUU1WQtf7wMDo-gE44HtZ2QsQV-6AAyk4",
+  apoio_tanamesa: "1XMr659EXdh8z4CNqDCI0vSMvgCd_MpGG3bqMPFqwmrE",
   pestadual: "1FwH5ivDa2OlNkr23J0raB63n65uczSSY6EWBaHj5koU",
   psenado: "1vOLZfN1KM3W3vBTopQORf2Zom1IVb3Fk2bi10tlFH9s",
 };
@@ -71,11 +73,13 @@ export async function GET(
         rangeToUse = 'Sheet1!A:Q'; 
       } else if (id === 'locais') {
         rangeToUse = 'Sheet1!A:G'; 
-      } else if (id === 'apoio') { 
+      } else if (id === 'apoio' || id === 'apoio_liderenca') { 
         rangeToUse = 'Sheet1!A:D'; 
+      } else if (id === 'apoio_tanamesa') {
+        rangeToUse = 'Sheet1!A:E'; 
       } else {
         rangeToUse = 'Sheet1!A:N'; 
-      }
+      } 
       return await getSheetData(spreadsheetId, rangeToUse);
     });
 
