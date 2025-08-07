@@ -5,6 +5,8 @@ import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 import Sidebar from '@/components/ui/Sidebar';
 import NoScroll from '@/components/ui/NoScroll';
 import { UserGroupIcon, MapPinIcon, ChartBarIcon } from '@heroicons/react/24/solid';
+import MapaApoioTaNaMesa from './MapaApoioTaNaMesa';
+
 
 interface DadoTaNaMesa {
     'MUNICÍPIO': string;
@@ -20,9 +22,9 @@ export default function PainelTaNaMesa() {
     const [erro, setErro] = useState<string | null>(null);
 
     // ESTADOS PARA FILTRO E PAGINAÇÃO
-    // Removido o estado municipioSelecionado
-    const [termoPesquisaMunicipio, setTermoPesquisaMunicipio] = useState(''); // NOVO: Estado para a pesquisa por município
+    const [termoPesquisaMunicipio, setTermoPesquisaMunicipio] = useState('');
     const [termoPesquisaIndicacao, setTermoPesquisaIndicacao] = useState('');
+    const [termoPesquisaNome, setTermoPesquisaNome] = useState(''); // NOVO: Estado para a pesquisa por nome
     const [paginaAtual, setPaginaAtual] = useState(1);
     const [itensPorPagina, setItensPorPagina] = useState(10);
     const [ordenacaoColuna, setOrdenacaoColuna] = useState<'NOME' | 'MUNICÍPIO'>('NOME');
@@ -64,10 +66,18 @@ export default function PainelTaNaMesa() {
       const totalRegistros = dados.length;
       const totalMunicipios = new Set(dados.map(d => d.MUNICÍPIO)).size;
       const totalCargos = new Set(dados.map(d => d.CARGO)).size;
+
+      // Conta apenas os nomes preenchidos
+      const totalPessoas = dados.filter(d => d.NOME.toLowerCase() !== 'ainda não informado').length;
+      // Conta os nomes não preenchidos
+      const totalSemNome = dados.filter(d => d.NOME.toLowerCase() === 'ainda não informado').length;
+
       return {
           totalRegistros,
           totalMunicipios,
           totalCargos,
+          totalPessoas,
+          totalSemNome
       };
     }, [dados]);
 
@@ -81,8 +91,8 @@ export default function PainelTaNaMesa() {
             valueColorClass: 'text-blue-600'
         },
         {
-            label: 'Municípios com Pessoas',
-            value: dadosResumo.totalMunicipios,
+            label: 'Total de Pessoas',
+            value: dadosResumo.totalPessoas,
             icon: MapPinIcon,
             bgColorClass: 'bg-purple-100',
             iconColorClass: 'text-purple-600',
@@ -95,19 +105,30 @@ export default function PainelTaNaMesa() {
             bgColorClass: 'bg-pink-100',
             iconColorClass: 'text-pink-600',
             valueColorClass: 'text-pink-600'
+        },
+        {
+            label: 'Cargos sem Definição',
+            value: dadosResumo.totalSemNome,
+            icon: UserGroupIcon, // Pode ser outro ícone se preferir
+            bgColorClass: 'bg-yellow-100', // Nova cor para o card
+            iconColorClass: 'text-yellow-600',
+            valueColorClass: 'text-yellow-600'
         }
     ];
     
     const dadosFiltradosOrdenados = useMemo(() => {
         let dadosFiltrados = [...dados];
     
-        // NOVO: Filtragem pela barra de pesquisa de município
+        if (termoPesquisaNome) {
+            const termo = termoPesquisaNome.toLowerCase();
+            dadosFiltrados = dadosFiltrados.filter(dado => dado.NOME.toLowerCase().includes(termo));
+        }
+
         if (termoPesquisaMunicipio) {
             const termo = termoPesquisaMunicipio.toLowerCase();
             dadosFiltrados = dadosFiltrados.filter(dado => dado.MUNICÍPIO.toLowerCase().includes(termo));
         }
 
-        // Manter a filtragem pela barra de pesquisa de indicação
         if (termoPesquisaIndicacao) {
             const termo = termoPesquisaIndicacao.toLowerCase();
             dadosFiltrados = dadosFiltrados.filter(dado => dado.INDICAÇÃO.toLowerCase().includes(termo));
@@ -122,7 +143,7 @@ export default function PainelTaNaMesa() {
             }
             return 0;
         });
-    }, [dados, termoPesquisaMunicipio, termoPesquisaIndicacao, ordenacaoColuna, ordenacaoDirecao]);
+    }, [dados, termoPesquisaMunicipio, termoPesquisaIndicacao, termoPesquisaNome, ordenacaoColuna, ordenacaoDirecao]);
     
     const totalPaginas = Math.ceil(dadosFiltradosOrdenados.length / itensPorPagina);
     const indiceUltimoItem = paginaAtual * itensPorPagina;
@@ -195,7 +216,7 @@ export default function PainelTaNaMesa() {
                 </div>
             ) : (
                 <>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         {cardData.map((card, index) => {
                             const IconComponent = card.icon;
                             return (
@@ -215,10 +236,38 @@ export default function PainelTaNaMesa() {
                             );
                         })}
                     </div>
+                    
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                        <MapaApoioTaNaMesa apiData={dados} />
+                    </div>
 
                     <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
                         <div className="flex flex-col md:flex-row gap-4 mb-6">
-                            {/* NOVO: Barra de pesquisa para Município */}
+                            {/* NOVO: Barra de pesquisa para Nome */}
+                            <div className="flex-1">
+                                <label htmlFor="search-nome-input" className="block text-sm font-medium text-gray-700 mb-1">
+                                    Pesquisar por Nome:
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        id="search-nome-input"
+                                        className={carregando ? disabledInputClasses : inputClasses}
+                                        placeholder="Digite o nome..."
+                                        value={termoPesquisaNome}
+                                        onChange={(e) => {
+                                            setTermoPesquisaNome(e.target.value);
+                                            setPaginaAtual(1);
+                                        }}
+                                        disabled={carregando}
+                                    />
+                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.148l.278.279.133.133a.5.5 0 01.708.708l3.182 3.182a.5.5 0 01-.708.708l-3.182-3.182a.5.5 0 01-.708-.708l-.133-.133-.279-.278A7 7 0 012 9z" clipRule="evenodd" /></svg>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {/* Barra de pesquisa para Município */}
                             <div className="flex-1">
                                 <label htmlFor="search-municipio-input" className="block text-sm font-medium text-gray-700 mb-1">
                                     Pesquisar por Município:
