@@ -1,9 +1,10 @@
 // app/api/sheets/eleicao/[id]/route.ts
+import { getSheetDataByRange } from '@/app/api/cache/votacao/[id]/route';
+import { cacheDb } from '@/lib/cacheDb';
+import { jobs } from '@/lib/jobsClient';
 import { NextRequest, NextResponse } from 'next/server';
-import { getSheetData } from '@/services/sheetService';
-import { getOrSetCache } from '@/lib/serverCache';
 
-const PLANILHAS: Record<string, string> = {
+export const PLANILHAS: Record<string, string> = {
   presidente: '1jzmPqJxQDb3HFDCLnipwv9IjdabcArKufoAOl3CwsxI',
   presidente_2: '1JTfd8aGPzbpTgWuZqDqqP4jTL1qntanPCtaFVCFlKoo',
   senador: '1HZeWTnIwjA_spCwShs1nzywtP-VKhLlyvua81IpDvBA',
@@ -52,6 +53,14 @@ const PLANILHAS: Record<string, string> = {
   psenado: "1vOLZfN1KM3W3vBTopQORf2Zom1IVb3Fk2bi10tlFH9s",
 };
 
+function getBaseUrl(req: NextRequest) {
+  const host = req.headers.get('host');
+  const protocol = req.headers.get("x-forwarded-proto") || "http";
+  const baseUrl = `${protocol}://${host}`;
+
+  return baseUrl
+}
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -67,23 +76,28 @@ export async function GET(
   }
 
   try {
-    const data = await getOrSetCache(id, async () => {
-      let rangeToUse: string;
-      if (id.startsWith('masculino') || id.startsWith('feminino')) {
-        rangeToUse = 'Sheet1!A:Q'; 
-      } else if (id === 'locais') {
-        rangeToUse = 'Sheet1!A:G'; 
-      } else if (id === 'apoio' || id === 'apoio_liderenca') { 
-        rangeToUse = 'Sheet1!A:D'; 
-      } else if (id === 'apoio_tanamesa') {
-        rangeToUse = 'Sheet1!A:E'; 
-      } else {
-        rangeToUse = 'Sheet1!A:N'; 
-      } 
-      return await getSheetData(spreadsheetId, rangeToUse);
-    });
+    const cache = await cacheDb.get(id)
+    const ttl = await cacheDb.ttl(id)
+    const baseUrl = getBaseUrl(req)
 
-    return NextResponse.json({ success: true, data });
+    if (!cache) {
+      const data = await getSheetDataByRange(spreadsheetId, id)
+
+      await jobs.publish({
+        url: new URL(`/cache/votacao/${id}`, baseUrl).toString(),
+        body: JSON.stringify(data)
+      })
+
+      return NextResponse.json({ success: true, data });
+    }
+
+    if (ttl <= (60 * 60 * 24)) {
+      await jobs.publish({
+        url: new URL(`/cache/votacao/${id}`, baseUrl).toString()
+      }) 
+    }
+
+    return NextResponse.json({ success: true, data: cache });
   } catch (error: any) {
     console.error(`Erro ao buscar dados para ID ${id}:`, error);
     return NextResponse.json(
