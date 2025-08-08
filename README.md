@@ -111,4 +111,4 @@ GitHub Actions - Automatização de deploy
 
 ##### npm run dev
 
-##### Acesse a aplicação em http://localhost:3000
+##### Acesse a aplicação em http://localhost:3000/
