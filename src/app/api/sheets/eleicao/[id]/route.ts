@@ -28,10 +28,12 @@ export async function GET(
     if (!cache) {
       const data = await getSheetDataByRange(spreadsheetId, id)
 
-      await jobs.publish({
-        url: new URL(`/cache/votacao/${id}`, baseUrl).toString(),
-        body: JSON.stringify(data)
-      })
+      await cacheDb.set(id, JSON.stringify(data), { ex: 60 * 60 * 24 * 30 })
+      
+      // await jobs.publish({
+      //   url: new URL(`/cache/votacao/${id}`, baseUrl).toString(),
+      //   body: JSON.stringify(data)
+      // })
 
       return NextResponse.json({ success: true, data })
     }
