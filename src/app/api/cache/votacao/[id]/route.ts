@@ -1,33 +1,39 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PLANILHAS } from '@/app/api/sheets/eleicao/[id]/route'
+import { PLANILHAS, getSheetDataByRange } from '@/services/sheetService'
 import { cacheDb } from '@/lib/cacheDb'
-import { getSheetData } from '@/services/sheetService';
-import { verifySignatureAppRouter } from '@upstash/qstash/nextjs'
+import { Receiver } from '@upstash/qstash'
+import { headers } from 'next/headers'
 
-export async function getSheetDataByRange (spreadsheetId: string, id: string) {
-  let rangeToUse: string;
-  if (id.startsWith('masculino') || id.startsWith('feminino')) {
-    rangeToUse = 'Sheet1!A:Q'; 
-  } else if (id === 'locais') {
-    rangeToUse = 'Sheet1!A:G'; 
-  } else if (id === 'apoio' || id === 'apoio_liderenca') { 
-    rangeToUse = 'Sheet1!A:D'; 
-  } else if (id === 'apoio_tanamesa') {
-    rangeToUse = 'Sheet1!A:E'; 
-  } else {
-    rangeToUse = 'Sheet1!A:N'; 
-  } 
-  return await getSheetData(spreadsheetId, rangeToUse);
-}
-
-async function POST(
+export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const receiver = new Receiver({
+    currentSigningKey: process.env.QSTASH_CURRENT_SIGNING_KEY!,
+    nextSigningKey: process.env.QSTASH_NEXT_SIGNING_KEY!,
+  })
+  const signature = (await headers()).get('Upstash-Signature')
   const { id } = await params
   const spreadsheetId = PLANILHAS[id]
+  const body = await req.text()
 
-  if (!spreadsheetId) {
+  if (!signature)
+    return NextResponse.json(
+      { success: false, message: 'Pedido de atualização de cache inválido.' },
+      { status: 500 }
+    )
+
+  if (!(await receiver.verify({
+    body,
+    signature
+  }))) {
+    return NextResponse.json(
+      { success: false, message: 'Pedido de atualização de cache inválido.' },
+      { status: 500 }
+    )
+  }
+
+  if (!spreadsheetId && body) {
     return NextResponse.json(
       {
         success: false,
@@ -38,9 +44,9 @@ async function POST(
   }
 
   try {
-    const data = await getSheetDataByRange(spreadsheetId, id)
+    const data = body ?? (await getSheetDataByRange(spreadsheetId, id))
 
-    await cacheDb.set(id, JSON.stringify(data), {ex: (((60 * 60) * 24) * 30)})
+    await cacheDb.set(id, JSON.stringify(data), { ex: 60 * 60 * 24 * 30 })
 
     return NextResponse.json({ success: true })
   } catch (e) {
@@ -54,5 +60,3 @@ async function POST(
     await cacheDb.del(`lock:${id}`)
   }
 }
-
-export default verifySignatureAppRouter(POST)
