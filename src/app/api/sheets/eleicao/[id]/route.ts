@@ -34,6 +34,8 @@ export async function GET(
 
       let chunks = []
 
+      console.info('Escrevendo: ', id)
+
       for (let i = 0; i < buffer.length; i += MAX_BYTES) {
         const chunk = buffer.subarray(i, i + MAX_BYTES)
         chunks.push(chunk.toString('utf-8'))
@@ -44,9 +46,10 @@ export async function GET(
         }
       }
 
-      await cacheDb.rpush(id, ...chunks)
-      await cacheDb.expire(id, ((60*60)*24)*30)
-
+      if (chunks.length > 0) await cacheDb.rpush(id, ...chunks)
+      await cacheDb.expire(id, ((60 * 60) * 24) * 30)
+      
+      console.info('Escreveu: ', id)
 
       return NextResponse.json({ success: true, data })
     }
@@ -57,6 +60,8 @@ export async function GET(
       })
     }
 
+    console.info('Lendo: ', id)
+
     const listLen = await cacheDb.llen(id)
     let jsonString = ''
     for (let i = 0; i < listLen; i += BATCH_SIZE) {
@@ -64,6 +69,8 @@ export async function GET(
     }
 
     const cache = JSON.parse(jsonString)
+
+    console.info('Leu: ', id)
 
     return NextResponse.json({ success: true, data: cache })
   } catch (error: any) {

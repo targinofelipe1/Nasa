@@ -449,6 +449,10 @@ export default function PainelVotacao() {
         if (typeof window !== 'undefined') {
           localStorage.setItem(`votacaoCompletos-${abaAtiva}`, JSON.stringify(todosOsDadosBrutos));
         }
+
+        if (typeof window == 'undefined') {
+          console.warn('Cache excedido na verdade é undefined')
+        }
       } catch {
         console.warn('Cache excedido para:', abaAtiva);
       }
