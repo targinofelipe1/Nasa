@@ -46,7 +46,7 @@ GitHub Actions - Automatização de deploy
 
 #### Mapa interativo da Paraíba com divisão por regionais administrativas (RGA). Permite:
 
-###### Identificar Regionais.
+###### Identificar regionais.
 
 ###### Selecionar municípios.
 
