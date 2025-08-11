@@ -96,7 +96,7 @@ GitHub Actions - Automatização de deploy
 
 #### Relatórios consolidados a nível estadual, permitindo análise macro dos dados coletados.
 
-## 📥 Como Executar o Projeto
+## 📥 Como Executar o Projeto 
 
 #### Clone o repositório:
 
