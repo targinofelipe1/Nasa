@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { FaBalanceScale, FaChartBar, FaChartLine, FaFileAlt, FaFileInvoice } from "react-icons/fa";
+import { FaBalanceScale, FaBalanceScaleLeft, FaChartBar, FaChartLine, FaFileAlt, FaFileContract, FaFileInvoice, FaRegAddressBook, FaRegFileAlt, FaVoteYea } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -16,9 +16,13 @@ import {
   AiOutlineFolder,
   AiOutlineUsergroupAdd,
   AiOutlineAreaChart,
+  AiOutlineFileSearch,
+  AiOutlineSwap,
+  AiOutlineInsertRowBelow,
+  AiOutlineLineChart,
 } from "react-icons/ai";
-import { MdEmojiObjects, MdOutlineMap } from "react-icons/md";
-import { BsBoxArrowInDown } from "react-icons/bs";
+import { MdEmojiObjects, MdHowToVote, MdOutlineHowToVote, MdOutlineMap, MdOutlineShowChart } from "react-icons/md";
+import { BsArrowLeftRight, BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
 
@@ -144,7 +148,7 @@ const Sidebar = () => {
                 className="flex items-center justify-between text-gray-700 hover:text-blue-600 px-4 py-2 w-full"
               >
                 <div className="flex items-center">
-                  <AiOutlineFileText className="mr-3" size={20} />
+                  <MdOutlineHowToVote className="mr-3" size={20} />
                   {isOpen && "Eleições"}
                 </div>
                 {isOpen && (
@@ -161,7 +165,7 @@ const Sidebar = () => {
                     <Link href="/votacao/eleitorado">Eleitorado</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineAreaChart className="mr-2" size={16} />
+                    <AiOutlineLineChart className="mr-2" size={16} />
                     <Link href="/votacao/2018">Eleições 2018</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
@@ -169,7 +173,7 @@ const Sidebar = () => {
                     <Link href="/votacao/2020">Eleições 2020</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineAreaChart className="mr-2" size={16} />
+                    <AiOutlineLineChart className="mr-2" size={16} />
                     <Link href="/votacao/2022">Eleições 2022</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
@@ -177,23 +181,27 @@ const Sidebar = () => {
                     <Link href="/votacao/2024">Eleições 2024</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaBalanceScale className="mr-2" size={16} />
+                    <BsArrowLeftRight className="mr-2" size={16} />
                     <Link href="/votacao/comparativogeral(2018-2022)">Comparativo 2018 - 2022</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaBalanceScale className="mr-2" size={16} />
+                    <BsArrowLeftRight className="mr-2" size={16} />
                     <Link href="/votacao/comparativogeral(2020-2024)">Comparativo 2020 - 2024</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaFileAlt className="mr-2" size={16} />
+                    <FaRegFileAlt className="mr-2" size={16} />
                     <Link href="/votacao/relatorioeleicao">Relatório de Votação</Link>
                   </li>
                   <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaFileInvoice className="mr-2" size={16} />
+                    <FaRegAddressBook className="mr-2" size={16} />
                     <Link href="/votacao/relatorioeleitorado">Relatório de Eleitorado</Link>
                   </li>
+                  <li className="flex items-center py-1 hover:text-blue-500">
+                    <AiOutlineFileSearch className="mr-2" size={16} />
+                    <Link href="/votacao/relatorioanalise">Ánalise Eleitoral</Link>
+                  </li>
                    <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaChartLine className="mr-2" size={16} />
+                    <AiOutlineFund className="mr-2" size={16} />
                     <Link href="/votacao/projecao2025">Projeção 2025</Link>
                   </li>
                 </ul>

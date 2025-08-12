@@ -782,7 +782,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose }) => {
 
             // Salva o PDF
             const pdfBytes = await pdfDoc.save();
-            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const blob = new Blob([pdfBytes as BlobPart], { type: 'application/pdf' });
             const link = document.createElement('a');
             link.href = URL.createObjectURL(blob);
             link.download = `relatorio_${selectedReportCandidate.replace(/ /g, '_')}_${selectedReportCargo.replace(/ /g, '_')}_${selectedReportElectionYear}.pdf`;
