@@ -200,7 +200,7 @@ const Sidebar = () => {
                     <AiOutlineFileSearch className="mr-2" size={16} />
                     <Link href="/votacao/relatorioanalise">Ánalise Eleitoral</Link>
                   </li>
-                   <li className="flex items-center py-1 hover:text-blue-500">
+                  <li className="flex items-center py-1 hover:text-blue-500">
                     <AiOutlineFund className="mr-2" size={16} />
                     <Link href="/votacao/projecao2025">Projeção 2025</Link>
                   </li>

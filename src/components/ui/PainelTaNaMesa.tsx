@@ -290,30 +290,7 @@ export default function PainelTaNaMesa() {
                                     </div>
                                 </div>
                             </div>
-                            
-                            {/* Barra de pesquisa para Indicação */}
-                            <div className="flex-1">
-                                <label htmlFor="search-indicacao-input" className="block text-sm font-medium text-gray-700 mb-1">
-                                    Pesquisar por Indicação:
-                                </label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        id="search-indicacao-input"
-                                        className={carregando ? disabledInputClasses : inputClasses}
-                                        placeholder="Digite para pesquisar..."
-                                        value={termoPesquisaIndicacao}
-                                        onChange={(e) => {
-                                            setTermoPesquisaIndicacao(e.target.value);
-                                            setPaginaAtual(1);
-                                        }}
-                                        disabled={carregando}
-                                    />
-                                    <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-gray-400">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.148l.278.279.133.133a.5.5 0 01.708.708l3.182 3.182a.5.5 0 01-.708.708l-3.182-3.182a.5.5 0 01-.708-.708l-.133-.133-.279-.278A7 7 0 012 9z" clipRule="evenodd" /></svg>
-                                    </div>
-                                </div>
-                            </div>
+                                                    
                             
                             <div className="flex-shrink-0 flex items-end">
                                 <button
@@ -353,9 +330,6 @@ export default function PainelTaNaMesa() {
                                             Cargo
                                         </th>
                                         <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Indicação
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Observação
                                         </th>
                                     </tr>
@@ -366,7 +340,6 @@ export default function PainelTaNaMesa() {
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{dado.NOME}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{dado.MUNICÍPIO}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{dado.CARGO}</td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{dado.INDICAÇÃO}</td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{dado.OBS}</td>
                                         </tr>
                                     ))}
