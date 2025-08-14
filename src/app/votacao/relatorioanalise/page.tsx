@@ -4,7 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import Sidebar from '@/components/ui/Sidebar';
 import NoScroll from '@/components/ui/NoScroll';
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
-import AnalysisModal from '@/components/ui/AnalysisModal';
+
+import DynamicAnalysisModal from '@/components/ui/DynamicAnalysisModal';
 
 interface LocalVotacaoDetalhado {
     'Município': string;
@@ -117,7 +118,7 @@ export default function AnalisePage() {
                         )}
                     </div>
                 </div>
-                <AnalysisModal
+                <DynamicAnalysisModal
                     isOpen={isAnalysisModalOpen}
                     onClose={() => setIsAnalysisModalOpen(false)}
                 />

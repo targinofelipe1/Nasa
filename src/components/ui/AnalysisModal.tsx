@@ -127,7 +127,7 @@ const MyDocument = ({ data }: { data: AnalysisResults | null }) => {
                         <Text style={styles.cardValue}>{`${totalPorcentagem.toFixed(2)}%`}</Text>
                     </View>
                 </View>
-                
+
                 <View style={styles.gridContainer}>
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>{totalEntitiesLabel}</Text>
@@ -142,7 +142,7 @@ const MyDocument = ({ data }: { data: AnalysisResults | null }) => {
                         <Text style={styles.cardValue}>{totalSecoesComVotos}</Text>
                     </View>
                 </View>
-                
+
                 <View style={styles.gridContainer}>
                     <View style={styles.card}>
                         <Text style={styles.cardTitle}>Média de Votos por Local</Text>
@@ -160,7 +160,7 @@ const MyDocument = ({ data }: { data: AnalysisResults | null }) => {
                     )}
                 </View>
             </Page>
-            
+
             <Page size="A4" orientation="landscape" style={styles.page}>
                  <View style={{ marginTop: 20 }}>
                     <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', marginBottom: 10 }}>
@@ -635,7 +635,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                 const porcentagem = totalVotosValidos > 0 ? (votos / totalVotosValidos) * 100 : 0;
                 return { nome, votos, porcentagem, ranking: index + 1 };
             });
-            totalCidadesComVotos = new Set(filteredData.map(item => item['Município'])).size;
+            totalCidadesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => item['Município'])).size;
             totalLocaisComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Local de Votação']}`)).size;
             totalSecoesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`)).size;
         }
