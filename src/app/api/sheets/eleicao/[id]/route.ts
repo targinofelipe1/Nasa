@@ -1,94 +1,64 @@
 // app/api/sheets/eleicao/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { getSheetData } from '@/services/sheetService';
-import { getOrSetCache } from '@/lib/serverCache';
-
-const PLANILHAS: Record<string, string> = {
-  presidente: '1jzmPqJxQDb3HFDCLnipwv9IjdabcArKufoAOl3CwsxI',
-  presidente_2: '1JTfd8aGPzbpTgWuZqDqqP4jTL1qntanPCtaFVCFlKoo',
-  senador: '1HZeWTnIwjA_spCwShs1nzywtP-VKhLlyvua81IpDvBA',
-  governador: '1IVSLlwf4KhylgmtZI0Ww1X8KWKO3Xf-N6iAHbYhPtEY',
-  governador_2: '1nCt2gfe3EwwZ8gtNZlZvWwty14bXbPOAXwSEyTlD8XM',
-  grupo_federal1: '1nwbckdXt4bINJlBDztIL-cEC1l1IKWLF1JN_9lt5mMM',
-  grupo_federal2: '1owUCd9_2KDAjku4glW7vKKzqUaHNGjOjj-28c53hu7M',
-  grupo_federal3: '1drzj84mgeXeb54aOW7maPoInpPFaNIyGPKRNLF6mzlI',
-  deputado_federaljp: '1Lr5tOdc5hjv8N9NDZEj7wio_9RSpiN_sYSlL0mwGzDw',
-  grupo_estadual1: '103MpUrplYDAJf8E6uzQhiiZdPIubmR4IGzMZ4AJ0zNU',
-  grupo_estadual2: '1OealcLe59-_89qHYhbQBtRboZ2uu5NXIjXA1L8r9exA',
-  grupo_estadual3: '1A4jEJD50oo0OKMJPqu6gQWeFgu-cSDkm-hk0iz-TdZc',
-  deputado_estadualjp: '17XG_K7IfGaK8EvwQkSIF1VEecyZcpDtMsZ71gFYDtog',
-  presidente_2018: '1gkilbyJBpQHL35X649Cqz3GNh1W-uPHkrdXjwFeqa-c',
-  presidente_2018_2: '1t4_xNihGoUl6rcsS5JGXXWpdxXkMA63U6QPt0Jmfgiw',
-  senador_2018: '1TSm80-jdQ80sph12JJQXGuSrflcPaCcpUqpIYR39rDo',
-  governador_2018: '16f0fpk8Qxb_onji7xtc96L7CJY4Ig8ycDZZTl7Jvk7s',
-  grupo_estadual1_2018: '11ac2lLvoBX8-hDptLI7AHjwmt9vJIypE3dtZVp76xTk',
-  grupo_estadual2_2018: '1ipa4P8cs9b2s-lm2xWRGchLnHaJx-5UbBInCqIO_Vqk',
-  grupo_estadual3_2018: '19LTnYMoVECDrf9z-8JZP-YWYHi_xExboW9wCaH4zdg8',
-  deputado_estadualjp_2018: '1y6aRB0u2C69L-PNiG2kWT2_J8iGBJ9NXWkXbc6UFw5s',
-  grupo_federal1_2018: '1-3HxYCLvS8sAUTUI0lyL1vca31WJxVNndDBB16MuxFw',
-  grupo_federal2_2018: '1epzg6LYi4dI_o4X2HVtDfcFgYGvbenOXetwCGiWfi4s',
-  grupo_federal3_2018: '1hc5q5O0p2rBIZMurDsaIEfH1k6iRIDlt3NbomI8OdK8',
-  deputado_federaljp_2018: '1NRiwqHPpAAZPWrHJFS6uObvChj7liKJh9IiT_635Ytw',
-  locais: '1mzTzCzT92KKID5L1Ye7lCZq1zuxYt2c3_w3ztdQjNSg',
-  vereador_2024:'1OAliRhLbT3BxDBTz78Q3RKvTHa7QzCO0OLGPFv00f-s',
-  prefeito_2024:'1Lf2NFiId1C7qoguXIfUSi8Ulmx1zkeeDSANa4sLgGcM',
-  vereador_2020: '1_OMGnsBRs0UUKevWCim60KU8CQ-XqrT5ajq1k07nHHY',
-  prefeito_2020: '1DeoBU-XA7N5qF33vGtDstlOBL8ocCIvVC0smI0BNNco',
-  masculino_divorciado: "1wPNC4RfoQosxZxFHaTQu350_y8hiNDgGvy3muCsBb20",
-  masculino_casado: "1rz8spDVxv3ecetj0vkjmDp7FiiVhYzSJr8J6av9iXaI",
-  masculino_solteiro: "13NJgfeAzHMYjhpMtlJ4jIagqs3WceoiEaookes5YEus",
-  masculino_separado_judicialmente: "1OPOwYAMpYiWJwy8gok2LjV0XUFdJxYmJ3kc316x9pLM",
-  masculino_nao_informado: "1hIExWZ-93coSvjafZBLHnadCRGOpyiaLaADmvDUKH7E",
-  masculino_viuvo: "1aK-Idjhri-RLiE2gvnPCTH5iikULYi5kGWxSFv6z3pQ",
-  feminino_divorciado: "1wV-xn8HAxZO1XDQ95SRHoBslvjxUMXJWg3SQDkHbUg8",
-  feminino_casado: "11a-ye4K7GRXUfiAa800F6Id0xuhM79QZHxX5RJjTL0I",
-  feminino_separado_judicialmente: "1BaAqEJcUO0XXGIbV_JJtLrNn88x61UjVO_e4fT4zp5A",
-  feminino_solteiro: "1GnLhjyUGnFAQ7ITZ5NwRoqQvu97Vi8e4Fat1Ac5x6kQ",
-  feminino_viuvo: "1CLeqwa8JVz5lSng2qWTv4siOFoGWrp_ATds_Zibwmls",
-  apoio: "1TFoi2rayoovXQ3QIpUXLu4u8AA2y9NWYW8d6fAZ20fE",
-  apoio_lideranca: "1Td1BwjFaZtvUU1WQtf7wMDo-gE44HtZ2QsQV-6AAyk4",
-  apoio_tanamesa: "1XMr659EXdh8z4CNqDCI0vSMvgCd_MpGG3bqMPFqwmrE",
-  pestadual: "1FwH5ivDa2OlNkr23J0raB63n65uczSSY6EWBaHj5koU",
-  psenado: "1vOLZfN1KM3W3vBTopQORf2Zom1IVb3Fk2bi10tlFH9s",
-};
+import { getSheetDataByRange } from '@/services/sheetService'
+import { cacheDb } from '@/lib/cacheDb'
+import { NextRequest, NextResponse } from 'next/server'
+import { PLANILHAS } from '@/services/sheetService'
 
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
-  const spreadsheetId = PLANILHAS[id];
+  const { id } = await params
+  const spreadsheetId = PLANILHAS[id]
+  const MAX_BYTES = 950_000
+  const BATCH_SIZE = 10
 
   if (!spreadsheetId) {
     return NextResponse.json(
       { success: false, message: 'Planilha não encontrada.' },
       { status: 404 }
-    );
+    )
   }
 
   try {
-    const data = await getOrSetCache(id, async () => {
-      let rangeToUse: string;
-      if (id.startsWith('masculino') || id.startsWith('feminino')) {
-        rangeToUse = 'Sheet1!A:Q'; 
-      } else if (id === 'locais') {
-        rangeToUse = 'Sheet1!A:G'; 
-      } else if (id === 'apoio' || id === 'apoio_liderenca') { 
-        rangeToUse = 'Sheet1!A:D'; 
-      } else if (id === 'apoio_tanamesa') {
-        rangeToUse = 'Sheet1!A:E'; 
-      } else {
-        rangeToUse = 'Sheet1!A:N'; 
-      } 
-      return await getSheetData(spreadsheetId, rangeToUse);
-    });
+    const ttl = await cacheDb.ttl(id)
 
-    return NextResponse.json({ success: true, data });
+    if (ttl == -2) {
+      const data = await getSheetDataByRange(spreadsheetId, id)
+      const json = JSON.stringify(data)
+      const buffer = Buffer.from(json, 'utf-8')
+
+      let chunks = []
+
+      for (let i = 0; i < buffer.length; i += MAX_BYTES) {
+        const chunk = buffer.subarray(i, i + MAX_BYTES)
+        chunks.push(chunk.toString('utf-8'))
+
+        if (chunks.length >= BATCH_SIZE) {
+          await cacheDb.rpush(id, ...chunks)
+          chunks = []
+        }
+      }
+
+      if (chunks.length > 0) await cacheDb.rpush(id, ...chunks)
+      
+      return NextResponse.json({ success: true, data })
+    }
+
+    const listLen = await cacheDb.llen(id)
+    let jsonString = ''
+    for (let i = 0; i < listLen; i += BATCH_SIZE) {
+      jsonString += (await cacheDb.lrange(id, i, i + (BATCH_SIZE - 1))).join('')
+    }
+
+    const cache = JSON.parse(jsonString)
+
+    return NextResponse.json({ success: true, data: cache })
   } catch (error: any) {
-    console.error(`Erro ao buscar dados para ID ${id}:`, error);
+    console.error(`Erro ao buscar dados para ID ${id}:`, error)
     return NextResponse.json(
       { success: false, message: error.message },
       { status: 500 }
-    );
+    )
   }
 }
