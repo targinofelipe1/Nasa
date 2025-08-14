@@ -1,4 +1,4 @@
-# SEDH - Sistema de Monitoramento e Indicadores Sociais
+# SEDH - Sistema de Monitoramento e Indicadores Sociais 
 
 Este projeto tem como objetivo fornecer uma plataforma para monitoramento e análise de indicadores sociais da Secretaria de Estado do Desenvolvimento Humano (SEDH). A aplicação permite visualizar dados estatísticos de municípios, regionais e programas sociais, além de apresentar mapas interativos e filtros para facilitar a análise.
 
@@ -46,7 +46,7 @@ GitHub Actions - Automatização de deploy
 
 #### Mapa interativo da Paraíba com divisão por regionais administrativas (RGA). Permite:
 
-###### Indetificar Regionais.
+###### Identificar regionais.
 
 ###### Selecionar municípios.
 
@@ -96,7 +96,7 @@ GitHub Actions - Automatização de deploy
 
 #### Relatórios consolidados a nível estadual, permitindo análise macro dos dados coletados.
 
-## 📥 Como Executar o Projeto
+## 📥 Como Executar o Projeto 
 
 #### Clone o repositório:
 
@@ -111,4 +111,4 @@ GitHub Actions - Automatização de deploy
 
 ##### npm run dev
 
-##### Acesse a aplicação em http://localhost:3000
+##### Acesse a aplicação em http://localhost:3000/
