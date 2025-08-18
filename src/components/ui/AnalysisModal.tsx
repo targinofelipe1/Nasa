@@ -180,19 +180,16 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
                 </Text>
                 <View style={styles.table}>
                     <View style={[styles.tableRow, styles.tableHeader]}>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[0] }]}>{tableHeaders[0]}</Text>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[1] }]}>{tableHeaders[1]}</Text>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[2] }]}>{tableHeaders[2]}</Text>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[3] }]}>{tableHeaders[3]}</Text>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[4] }]}>{tableHeaders[4]}</Text>
-                        <Text style={[styles.tableHeaderCell, { width: headerWidths[5] }]}>{tableHeaders[5]}</Text>
-                        {!isEstado && <Text style={[styles.tableHeaderCell, { width: headerWidths[6] }]}>{tableHeaders[6]}</Text>}
+                        {tableHeaders.map((header, index) => (
+                            <Text key={index} style={[styles.tableHeaderCell, { width: headerWidths[index] }]}>{header}</Text>
+                        ))}
                     </View>
                     {relatorioDetalhado.map((item, index) => (
                         <View key={index} style={styles.tableRow}>
                             <Text style={[styles.tableCell, { width: headerWidths[0] }]}>{item.nome}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.eleitoresAptos?.toLocaleString('pt-BR') || '0'}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[2] }]}>{isEstado ? item.comparecimento?.toLocaleString('pt-BR') || '0' : item.bairro}</Text>
+                            {isEstado && <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.eleitoresAptos?.toLocaleString('pt-BR') || '0'}</Text>}
+                            {!isEstado && <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.bairro}</Text>}
+                            <Text style={[styles.tableCell, { width: headerWidths[2] }]}>{isEstado ? item.comparecimento?.toLocaleString('pt-BR') || '0' : item.eleitoresAptos?.toLocaleString('pt-BR') || '0'}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[3] }]}>{isEstado ? item.votos.toLocaleString('pt-BR') : item.comparecimento?.toLocaleString('pt-BR') || '0'}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[4] }]}>{isEstado ? `${item.porcentagem.toFixed(2)}%` : item.votos.toLocaleString('pt-BR')}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[5] }]}>{isEstado ? `${item.ranking}º` : `${item.porcentagem.toFixed(2)}%`}</Text>
