@@ -113,7 +113,7 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
         : `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia} (${infoCandidato.cidade})`;
 
     const tableHeaders = isEstado
-        ? ['Município', 'Eleitores', 'Votos Válidos', '% de Válidos', 'Ranking']
+        ? ['Município', 'Eleitores Aptos', 'Votos Válidos', '% de Válidos', 'Ranking']
         : ['Local de Votação', 'Eleitores Aptos', 'Bairro', 'Votos Válidos', '% de Válidos', 'Ranking'];
 
     const headerWidths = isEstado
@@ -564,59 +564,62 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         let totalCidadesComVotos = 0;
         let rankingPorBairro: VotacaoPorBairro[] = [];
         
-        const entityVotes = new Map<string, { totalVotos: number; totalVotosValidos: number; }>;
-        const totalVotesPerEntity = new Map<string, number>();
-        const totalValidVotesPerEntity = new Map<string, number>();
-        const totalVotesPerSection = new Map<string, number>();
-        const totalVotesPerBairro = new Map<string, number>();
         const totalElectorsPerEntity = new Map<string, { eleitoresAptos: number, comparecimento: number}>();
         const totalElectorsPerBairro = new Map<string, { eleitoresAptos: number, comparecimento: number}>();
 
-        if (scope === 'Município' && city) {
-            filteredData.forEach(item => {
-                const entityKey = `${item['Município']}-${item['Local de Votação']}`;
-                const sectionKey = `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`;
-                const bairroKey = item['Bairro do Local'] || 'Não Identificado';
-                
-                if (!entityVotes.has(entityKey)) {
-                    entityVotes.set(entityKey, { totalVotos: 0, totalVotosValidos: 0 });
-                }
-                if (item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName) {
-                    entityVotes.get(entityKey)!.totalVotos += item['Quantidade de Votos'];
-                    totalVotesPerEntity.set(entityKey, (totalVotesPerEntity.get(entityKey) || 0) + item['Quantidade de Votos']);
-                    totalVotesPerSection.set(sectionKey, (totalVotesPerSection.get(sectionKey) || 0) + item['Quantidade de Votos']);
-                    totalVotesPerBairro.set(bairroKey, (totalVotesPerBairro.get(bairroKey) || 0) + item['Quantidade de Votos']);
-                }
-                const isBrancoOuNulo = item['Nome do Candidato/Voto']?.trim().toUpperCase() === 'BRANCO' || item['Nome do Candidato/Voto']?.trim().toUpperCase() === 'NULO' || (item['Sigla do Partido']?.toLowerCase() === '#nulo#' && item['Nome do Candidato/Voto']?.trim().toUpperCase() !== candidateName);
-                if (!isBrancoOuNulo) {
-                    entityVotes.get(entityKey)!.totalVotosValidos += item['Quantidade de Votos'];
-                    totalValidVotesPerEntity.set(entityKey, (totalValidVotesPerEntity.get(entityKey) || 0) + item['Quantidade de Votos']);
-                }
-                
+        const uniqueLocations = new Set<string>();
+        filteredData.forEach(item => {
+            const locationKey = `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`;
+            if (!uniqueLocations.has(locationKey)) {
+                uniqueLocations.add(locationKey);
                 const eleitoresAptos = safeParseVotes(item['Eleitores Aptos']);
                 const comparecimento = safeParseVotes(item['Comparecimento']);
+                const entityKey = scope === 'Estado' ? item['Município'] : `${item['Município']}-${item['Local de Votação']}`;
+                const bairroKey = item['Bairro do Local'] || 'Não Identificado';
 
-                if (item['Nome do Candidato/Voto']?.trim().toUpperCase() === '#NULO#') { // Adiciona eleitores apenas para a primeira linha de uma seção/local
-                    totalElectorsPerEntity.set(entityKey, {
-                        eleitoresAptos: (totalElectorsPerEntity.get(entityKey)?.eleitoresAptos || 0) + eleitoresAptos,
-                        comparecimento: (totalElectorsPerEntity.get(entityKey)?.comparecimento || 0) + comparecimento,
-                    });
-                    totalElectorsPerBairro.set(bairroKey, {
-                        eleitoresAptos: (totalElectorsPerBairro.get(bairroKey)?.eleitoresAptos || 0) + eleitoresAptos,
-                        comparecimento: (totalElectorsPerBairro.get(bairroKey)?.comparecimento || 0) + comparecimento,
-                    });
+                totalElectorsPerEntity.set(entityKey, {
+                    eleitoresAptos: (totalElectorsPerEntity.get(entityKey)?.eleitoresAptos || 0) + eleitoresAptos,
+                    comparecimento: (totalElectorsPerEntity.get(entityKey)?.comparecimento || 0) + comparecimento,
+                });
+                totalElectorsPerBairro.set(bairroKey, {
+                    eleitoresAptos: (totalElectorsPerBairro.get(bairroKey)?.eleitoresAptos || 0) + eleitoresAptos,
+                    comparecimento: (totalElectorsPerBairro.get(bairroKey)?.comparecimento || 0) + comparecimento,
+                });
+            }
+        });
+
+        // Variável movida para o escopo correto
+        const totalVotesPerBairro = new Map<string, number>();
+
+        if (scope === 'Município' && city) {
+            const totalVotesPerLocal = new Map<string, number>();
+            const totalValidVotesPerLocal = new Map<string, number>();
+
+            filteredData.forEach(item => {
+                const localKey = `${item['Município']}-${item['Local de Votação']}`;
+                const bairroKey = item['Bairro do Local'] || 'Não Identificado';
+
+                if (item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName) {
+                    totalVotesPerLocal.set(localKey, (totalVotesPerLocal.get(localKey) || 0) + item['Quantidade de Votos']);
+                    totalVotesPerBairro.set(bairroKey, (totalVotesPerBairro.get(bairroKey) || 0) + item['Quantidade de Votos']);
+                }
+
+                const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+                const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || (item['Sigla do Partido']?.toLowerCase() === '#nulo#' && nomeCandidato !== candidateName);
+                if (!isBrancoOuNulo) {
+                    totalValidVotesPerLocal.set(localKey, (totalValidVotesPerLocal.get(localKey) || 0) + item['Quantidade de Votos']);
                 }
             });
 
-            const sortedEntities = Array.from(totalVotesPerEntity.entries()).sort((a, b) => b[1] - a[1]);
-            relatorioDetalhado = sortedEntities.map(([key, votos], index) => {
+            const sortedLocals = Array.from(totalVotesPerLocal.entries()).sort((a, b) => b[1] - a[1]);
+            relatorioDetalhado = sortedLocals.map(([key, votos], index) => {
                 const [municipio, local] = key.split('-');
                 const localInfo = locaisData.find(l => 
                     l['Município'] === municipio && l['Local de Votação'] === local
                 );
                 const nome = localInfo?.['Nome do Local'] || `Local ${local}`;
                 const bairro = localInfo?.['Bairro do Local'] || 'N/A';
-                const totalVotosValidos = totalValidVotesPerEntity.get(key) || 0;
+                const totalVotosValidos = totalValidVotesPerLocal.get(key) || 0;
                 const porcentagem = totalVotosValidos > 0 ? (votos / totalVotosValidos) * 100 : 0;
                 const eleitoresAptos = totalElectorsPerEntity.get(key)?.eleitoresAptos || 0;
                 const comparecimento = totalElectorsPerEntity.get(key)?.comparecimento || 0;
@@ -629,40 +632,37 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                 const comparecimento = totalElectorsPerBairro.get(nome)?.comparecimento || 0;
                 return { nome, votos, ranking: index + 1, eleitoresAptos, comparecimento };
             });
-
+            
             totalLocaisComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Local de Votação']}`)).size;
             totalSecoesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`)).size;
-            totalCidadesComVotos = new Set(filteredData.map(item => item['Município'])).size;
+            totalCidadesComVotos = 1;
 
         } else { // 'Estado'
+            const totalVotesPerCity = new Map<string, number>();
+            const totalValidVotesPerCity = new Map<string, number>();
+
             filteredData.forEach(item => {
-                const entityKey = item['Município'];
-                const localKey = `${item['Município']}-${item['Local de Votação']}`;
-                const sectionKey = `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`;
-                if (!entityVotes.has(entityKey)) {
-                    entityVotes.set(entityKey, { totalVotos: 0, totalVotosValidos: 0 });
-                }
+                const cityKey = item['Município'];
                 if (item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName) {
-                    entityVotes.get(entityKey)!.totalVotos += item['Quantidade de Votos'];
-                    totalVotesPerEntity.set(entityKey, (totalVotesPerEntity.get(entityKey) || 0) + item['Quantidade de Votos']);
-                    totalVotesPerSection.set(sectionKey, (totalVotesPerSection.get(sectionKey) || 0) + item['Quantidade de Votos']);
+                    totalVotesPerCity.set(cityKey, (totalVotesPerCity.get(cityKey) || 0) + item['Quantidade de Votos']);
                 }
-                const isBrancoOuNulo = item['Nome do Candidato/Voto']?.trim().toUpperCase() === 'BRANCO' || item['Nome do Candidato/Voto']?.trim().toUpperCase() === 'NULO' || (item['Sigla do Partido']?.toLowerCase() === '#nulo#' && item['Nome do Candidato/Voto']?.trim().toUpperCase() !== candidateName);
+                const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
+                const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || (item['Sigla do Partido']?.toLowerCase() === '#nulo#' && nomeCandidato !== candidateName);
                 if (!isBrancoOuNulo) {
-                    entityVotes.get(entityKey)!.totalVotosValidos += item['Quantidade de Votos'];
-                    totalValidVotesPerEntity.set(entityKey, (totalValidVotesPerEntity.get(entityKey) || 0) + item['Quantidade de Votos']);
+                    totalValidVotesPerCity.set(cityKey, (totalValidVotesPerCity.get(cityKey) || 0) + item['Quantidade de Votos']);
                 }
             });
 
-            const sortedEntities = Array.from(totalVotesPerEntity.entries()).sort((a, b) => b[1] - a[1]);
-            relatorioDetalhado = sortedEntities.map(([nome, votos], index) => {
-                const totalVotosValidos = totalValidVotesPerEntity.get(nome) || 0;
+            const sortedCities = Array.from(totalVotesPerCity.entries()).sort((a, b) => b[1] - a[1]);
+            relatorioDetalhado = sortedCities.map(([nome, votos], index) => {
+                const totalVotosValidos = totalValidVotesPerCity.get(nome) || 0;
                 const porcentagem = totalVotosValidos > 0 ? (votos / totalVotosValidos) * 100 : 0;
                 const eleitoresAptos = totalElectorsPerEntity.get(nome)?.eleitoresAptos || 0;
-                return { nome, votos, porcentagem, ranking: index + 1, eleitoresAptos };
+                const comparecimento = totalElectorsPerEntity.get(nome)?.comparecimento || 0;
+                return { nome, votos, porcentagem, ranking: index + 1, eleitoresAptos, comparecimento };
             });
-            totalCidadesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => item['Município'])).size;
-            totalLocaisComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Local de Votação']}`)).size;
+            totalCidadesComVotos = totalVotesPerCity.size;
+            totalLocaisComVotos = allLocations.size;
             totalSecoesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`)).size;
         }
         
