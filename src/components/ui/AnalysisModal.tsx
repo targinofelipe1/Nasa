@@ -222,7 +222,7 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
 
             <View style={{ position: 'absolute', bottom: 30, right: 40, textAlign: 'right' }}>
                 <Text style={{ fontSize: 8, color: '#999' }}>
-                    {`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Fonte: Dados Eleitorais Agregados`}
+                    {`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Fonte: TSE`}
                 </Text>
             </View>
         </Page>
