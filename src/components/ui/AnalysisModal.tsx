@@ -99,7 +99,7 @@ const CoverPage = ({ data }: { data: FullAnalysisReport }) => (
 );
 
 const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
-    const { totalVotos, totalPorcentagem, rankingGeral, totalSecoesComVotos, totalLocaisComVotos, totalCidadesComVotos, mediaVotosPorLocal, mediaVotosPorSecao, mediaVotosPorBairro, locaisZeroVoto, relatorioDetalhado, rankingPorBairro, infoCandidato, totalEleitores } = data;
+    const { totalVotos, totalPorcentagem, rankingGeral, totalSecoesComVotos, totalLocaisComVotos, totalCidadesComVotos, mediaVotosPorLocal, mediaVotosPorSecao, mediaVotosPorBairro, locaisZeroVoto, relatorioDetalhado, rankingPorBairro, infoCandidato } = data;
     const isEstado = infoCandidato.abrangencia === 'Estado';
     const isMunicipio = infoCandidato.abrangencia === 'Município' && infoCandidato.cidade;
     const totalEntities = isEstado ? totalCidadesComVotos : totalLocaisComVotos;
@@ -186,7 +186,7 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
                     {relatorioDetalhado.map((item, index) => (
                         <View key={index} style={styles.tableRow}>
                             <Text style={[styles.tableCell, { width: headerWidths[0] }]}>{item.nome}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.eleitores?.toLocaleString('pt-BR') || 'N/A'}</Text>
+                            <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.eleitores?.toLocaleString('pt-BR') || '0'}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[2] }]}>{isEstado ? item.votos.toLocaleString('pt-BR') : item.bairro}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[3] }]}>{isEstado ? `${item.porcentagem.toFixed(2)}%` : item.votos.toLocaleString('pt-BR')}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[4] }]}>{isEstado ? `${item.ranking}º` : `${item.porcentagem.toFixed(2)}%`}</Text>
@@ -211,7 +211,7 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
                         {rankingPorBairro.map((b, index) => (
                             <View key={index} style={styles.tableRow}>
                                 <Text style={[styles.tableCell, { width: '40%' }]}>{b.nome}</Text>
-                                <Text style={[styles.tableCell, { width: '20%' }]}>{b.eleitores?.toLocaleString('pt-BR') || 'N/A'}</Text>
+                                <Text style={[styles.tableCell, { width: '20%' }]}>{b.eleitores?.toLocaleString('pt-BR') || '0'}</Text>
                                 <Text style={[styles.tableCell, { width: '25%' }]}>{b.votos.toLocaleString('pt-BR')}</Text>
                                 <Text style={[styles.tableCell, { width: '15%' }]}>{`${b.ranking}º`}</Text>
                             </View>
@@ -361,6 +361,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                         'Numero do Candidato': linha[11]?.trim() || '',
                         'Nome do Candidato/Voto': (linha[12] || '').trim().toUpperCase(),
                         'Quantidade de Votos': safeParseVotes(linha[13]),
+                        'Eleitores': safeParseVotes(linha[14]), // <<-- CORREÇÃO AQUI
                         'Sigla do Partido': (linha[6] || '').trim(),
                         Cargo: cargoDoRegistro,
                         Ano: year,
@@ -531,8 +532,8 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         let totalValidVotes = 0;
         const allVotesForScope = new Map<string, number>();
         const allLocations = new Set<string>();
-        const allElectors = new Map<string, number>();
-
+        const totalElectorsByCityOrLocal = new Map<string, number>();
+        
         filteredData.forEach(item => {
             const nomeCandidato = item['Nome do Candidato/Voto']?.trim().toUpperCase();
             const isBrancoOuNulo = nomeCandidato === 'BRANCO' || nomeCandidato === 'NULO' || (item['Sigla do Partido']?.toLowerCase() === '#nulo#' && nomeCandidato !== candidateName);
@@ -547,6 +548,13 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
             if (nomeCandidato && nomeCandidato !== 'BRANCO' && nomeCandidato !== 'NULO' && (item['Sigla do Partido']?.toLowerCase() !== '#nulo#' || nomeCandidato === item['Sigla do Partido']?.toUpperCase())) {
                 const key = `${item.Cargo}-${nomeCandidato}`;
                 allVotesForScope.set(key, (allVotesForScope.get(key) || 0) + item['Quantidade de Votos']);
+            }
+
+            // Agregação de eleitores por cidade ou local, dependendo do escopo
+            const electorKey = scope === 'Estado' ? item['Município'] : locationKey;
+            const eleitores = safeParseVotes(item['Eleitores']);
+            if (eleitores > 0) {
+                totalElectorsByCityOrLocal.set(electorKey, (totalElectorsByCityOrLocal.get(electorKey) || 0) + eleitores);
             }
         });
         
@@ -588,7 +596,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                     totalValidVotesPerEntity.set(entityKey, (totalValidVotesPerEntity.get(entityKey) || 0) + item['Quantidade de Votos']);
                 }
                 
-                const eleitores = safeParseVotes(item['Eleitores'] || '0');
+                const eleitores = safeParseVotes(item['Eleitores']);
                 totalElectorsPerEntity.set(entityKey, (totalElectorsPerEntity.get(entityKey) || 0) + eleitores);
                 totalElectorsPerBairro.set(bairroKey, (totalElectorsPerBairro.get(bairroKey) || 0) + eleitores);
             });
@@ -641,7 +649,8 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
             relatorioDetalhado = sortedEntities.map(([nome, votos], index) => {
                 const totalVotosValidos = totalValidVotesPerEntity.get(nome) || 0;
                 const porcentagem = totalVotosValidos > 0 ? (votos / totalVotosValidos) * 100 : 0;
-                return { nome, votos, porcentagem, ranking: index + 1 };
+                const eleitores = totalElectorsByCityOrLocal.get(nome) || 0;
+                return { nome, votos, porcentagem, ranking: index + 1, eleitores };
             });
             totalCidadesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => item['Município'])).size;
             totalLocaisComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Local de Votação']}`)).size;
@@ -701,7 +710,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
             mainAnalysis = createAnalysisReport(rawDataForReport, 'Estado', undefined, candidateName, candidateInfo);
             const citiesWithData = Array.from(new Set(rawDataForReport.map(item => item['Município']))).sort();
             
-            // Filtra as cidades com votos antes de gerar o relatório detalhado
             cityAnalyses = citiesWithData
                 .map(city => createAnalysisReport(rawDataForReport, 'Município', city, candidateName, candidateInfo))
                 .filter(analysis => analysis.totalVotos > 0);
