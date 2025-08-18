@@ -113,12 +113,12 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
         : `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia} (${infoCandidato.cidade})`;
 
     const tableHeaders = isEstado
-        ? ['Município', 'Eleitores Aptos', 'Votos Válidos', '% de Válidos', 'Ranking']
-        : ['Local de Votação', 'Eleitores Aptos', 'Bairro', 'Votos Válidos', '% de Válidos', 'Ranking'];
+        ? ['Município', 'Eleitores Aptos', 'Comparecimento', 'Votos Válidos', '% de Válidos', 'Ranking']
+        : ['Local de Votação', 'Eleitores Aptos', 'Comparecimento', 'Bairro', 'Votos Válidos', '% de Válidos', 'Ranking'];
 
     const headerWidths = isEstado
-        ? ['30%', '20%', '15%', '15%', '20%']
-        : ['20%', '15%', '20%', '15%', '15%', '15%'];
+        ? ['25%', '15%', '15%', '15%', '15%', '15%']
+        : ['18%', '12%', '12%', '18%', '15%', '15%', '10%'];
 
     return (
         <Page size="A4" orientation="landscape" style={styles.page}>
@@ -191,9 +191,9 @@ const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
                         <View key={index} style={styles.tableRow}>
                             <Text style={[styles.tableCell, { width: headerWidths[0] }]}>{item.nome}</Text>
                             <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.eleitoresAptos?.toLocaleString('pt-BR') || '0'}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[2] }]}>{isEstado ? item.votos.toLocaleString('pt-BR') : item.bairro}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[3] }]}>{isEstado ? `${item.porcentagem.toFixed(2)}%` : item.votos.toLocaleString('pt-BR')}</Text>
-                            <Text style={[styles.tableCell, { width: headerWidths[4] }]}>{isEstado ? `${item.ranking}º` : `${item.porcentagem.toFixed(2)}%`}</Text>
+                            <Text style={[styles.tableCell, { width: headerWidths[2] }]}>{isEstado ? item.comparecimento?.toLocaleString('pt-BR') || '0' : item.bairro}</Text>
+                            <Text style={[styles.tableCell, { width: headerWidths[3] }]}>{isEstado ? item.votos.toLocaleString('pt-BR') : item.votos.toLocaleString('pt-BR')}</Text>
+                            <Text style={[styles.tableCell, { width: headerWidths[4] }]}>{isEstado ? `${item.porcentagem.toFixed(2)}%` : `${item.porcentagem.toFixed(2)}%`}</Text>
                             {!isEstado && <Text style={[styles.tableCell, { width: headerWidths[5] }]}>{`${item.ranking}º`}</Text>}
                         </View>
                     ))}
@@ -365,11 +365,11 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                         'Numero do Candidato': linha[11]?.trim() || '',
                         'Nome do Candidato/Voto': (linha[12] || '').trim().toUpperCase(),
                         'Quantidade de Votos': safeParseVotes(linha[13]),
-                        'Eleitores Aptos': safeParseVotes(linha[7]),
-                        'Comparecimento': safeParseVotes(linha[8]),
+                        'Eleitores Aptos': safeParseVotes(linha[8]), 
+                        'Comparecimento': safeParseVotes(linha[9]),
                         'Sigla do Partido': (linha[6] || '').trim(),
-                        Cargo: cargoDoRegistro,
-                        Ano: year,
+                        'Cargo': cargoDoRegistro,
+                        'Ano': year,
                     });
                 }
                 loadedSheets++;
