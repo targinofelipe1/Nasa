@@ -4,7 +4,6 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import { format } from 'date-fns';
 import { Document, Page, Text, View, StyleSheet, PDFDownloadLink } from '@react-pdf/renderer';
 
-// Definições de interface e funções de utilidade
 interface CandidatoDropdownOption {
     nome: string;
     siglaPartido: string;
@@ -57,6 +56,11 @@ interface AnalysisResults {
     infoCandidato: { nome: string; partido: string; ano: string; cargo: string; abrangencia: string; cidade?: string; };
 }
 
+interface FullAnalysisReport {
+    mainAnalysis: AnalysisResults;
+    cityAnalyses: AnalysisResults[];
+}
+
 const safeParseVotes = (value: any): number => {
     if (typeof value === 'number') return value;
     if (typeof value === 'string') {
@@ -66,7 +70,6 @@ const safeParseVotes = (value: any): number => {
     return 0;
 };
 
-// Estilos para o PDF com react-pdf/renderer
 const styles = StyleSheet.create({
     page: { flexDirection: 'column', backgroundColor: '#F5F5F5', padding: 30, fontFamily: 'Helvetica' },
     header: { fontSize: 24, marginBottom: 20, textAlign: 'center', color: '#2c3e50', fontFamily: 'Helvetica-Bold' },
@@ -82,19 +85,26 @@ const styles = StyleSheet.create({
     tableCell: { margin: 'auto', marginTop: 5, padding: 5, fontSize: 8, borderStyle: 'solid', borderWidth: 1, borderColor: '#bfbfbf', borderLeftWidth: 0, borderTopWidth: 0 },
 });
 
-// Componente do documento PDF
-const MyDocument = ({ data }: { data: AnalysisResults | null }) => {
-    if (!data) return null;
+// Nova página de capa
+const CoverPage = ({ data }: { data: FullAnalysisReport }) => (
+    <Page size="A4" style={{ justifyContent: 'center', alignItems: 'center', ...styles.page }}>
+        <Text style={{ fontSize: 40, fontFamily: 'Helvetica-Bold', marginBottom: 20 }}>Relatório de Votação</Text>
+        <Text style={{ fontSize: 20 }}>{`Eleição: ${data.mainAnalysis.infoCandidato.ano}`}</Text>
+        <Text style={{ fontSize: 20 }}>{`Cargo: ${data.mainAnalysis.infoCandidato.cargo}`}</Text>
+        <Text style={{ fontSize: 20 }}>{`Candidato: ${data.mainAnalysis.infoCandidato.nome} (${data.mainAnalysis.infoCandidato.partido})`}</Text>
+        <Text style={{ fontSize: 12, marginTop: 50 }}>Gerado por: Analisador Eleitoral</Text>
+    </Page>
+);
 
+// Componente para a página de análise (cards e tabela)
+const AnalysisPage = ({ data }: { data: AnalysisResults }) => {
     const { totalVotos, totalPorcentagem, rankingGeral, totalSecoesComVotos, totalLocaisComVotos, totalCidadesComVotos, mediaVotosPorLocal, mediaVotosPorSecao, mediaVotosPorBairro, locaisZeroVoto, relatorioDetalhado, rankingPorBairro, infoCandidato } = data;
-    const formattedDate = format(new Date(), 'dd/MM/yyyy HH:mm');
-    const subtitleText = infoCandidato.abrangencia === 'Estado'
-        ? `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia}`
-        : `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia} (${infoCandidato.cidade})`;
-
     const isEstado = infoCandidato.abrangencia === 'Estado';
     const totalEntities = isEstado ? totalCidadesComVotos : totalLocaisComVotos;
     const totalEntitiesLabel = isEstado ? 'Cidades com Votos' : 'Locais com Votos';
+    const subtitleText = isEstado
+        ? `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia}`
+        : `Candidato: ${infoCandidato.nome} (${infoCandidato.partido}) - Cargo: ${infoCandidato.cargo} - Abrangência: ${infoCandidato.abrangencia} (${infoCandidato.cidade})`;
 
     const tableHeaders = isEstado
         ? ['Município', 'Votos Válidos', '% de Válidos', 'Ranking']
@@ -105,120 +115,132 @@ const MyDocument = ({ data }: { data: AnalysisResults | null }) => {
         : ['30%', '20%', '15%', '15%', '10%'];
 
     return (
-        <Document>
-            <Page size="A4" orientation="landscape" style={styles.page}>
-                <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.header}>{`Análise de Votação - ${infoCandidato.ano}`}</Text>
-                    <Text style={styles.subheader}>{subtitleText}</Text>
-                </View>
+        <Page size="A4" orientation="landscape" style={styles.page}>
+            <View style={{ marginBottom: 20 }}>
+                <Text style={styles.header}>{`Análise de Votação - ${infoCandidato.ano}`}</Text>
+                <Text style={styles.subheader}>{subtitleText}</Text>
+            </View>
 
-                {/* Cards de resumo */}
-                <View style={styles.gridContainer}>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Total de Votos</Text>
-                        <Text style={styles.cardValue}>{totalVotos.toLocaleString('pt-BR')}</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Ranking Geral</Text>
-                        <Text style={styles.cardValue}>{rankingGeral === 0 ? 'N/A' : `${rankingGeral}º`}</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>% de Votos Válidos</Text>
-                        <Text style={styles.cardValue}>{`${totalPorcentagem.toFixed(2)}%`}</Text>
-                    </View>
+            <View style={styles.gridContainer}>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Total de Votos</Text>
+                    <Text style={styles.cardValue}>{totalVotos.toLocaleString('pt-BR')}</Text>
                 </View>
-
-                <View style={styles.gridContainer}>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>{totalEntitiesLabel}</Text>
-                        <Text style={styles.cardValue}>{totalEntities}</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Locais com Zero Votos</Text>
-                        <Text style={styles.cardValue}>{locaisZeroVoto}</Text>
-                    </View>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Seções com Votos</Text>
-                        <Text style={styles.cardValue}>{totalSecoesComVotos}</Text>
-                    </View>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Ranking Geral</Text>
+                    <Text style={styles.cardValue}>{rankingGeral === 0 ? 'N/A' : `${rankingGeral}º`}</Text>
                 </View>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>% de Votos Válidos</Text>
+                    <Text style={styles.cardValue}>{`${totalPorcentagem.toFixed(2)}%`}</Text>
+                </View>
+            </View>
 
-                <View style={styles.gridContainer}>
+            <View style={styles.gridContainer}>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>{totalEntitiesLabel}</Text>
+                    <Text style={styles.cardValue}>{totalEntities}</Text>
+                </View>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Locais com Zero Votos</Text>
+                    <Text style={styles.cardValue}>{locaisZeroVoto}</Text>
+                </View>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Seções com Votos</Text>
+                    <Text style={styles.cardValue}>{totalSecoesComVotos}</Text>
+                </View>
+            </View>
+
+            <View style={styles.gridContainer}>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Média de Votos por Local</Text>
+                    <Text style={styles.cardValue}>{mediaVotosPorLocal.toFixed(2)}</Text>
+                </View>
+                <View style={styles.card}>
+                    <Text style={styles.cardTitle}>Média de Votos por Seção</Text>
+                    <Text style={styles.cardValue}>{mediaVotosPorSecao.toFixed(2)}</Text>
+                </View>
+                {/* A média de votos por bairro só é relevante para uma única cidade, então só a exibimos no relatório detalhado por cidade */}
+                {!isEstado && (
                     <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Média de Votos por Local</Text>
-                        <Text style={styles.cardValue}>{mediaVotosPorLocal.toFixed(2)}</Text>
+                        <Text style={styles.cardTitle}>Média de Votos por Bairro</Text>
+                        <Text style={styles.cardValue}>{mediaVotosPorBairro.toFixed(2)}</Text>
                     </View>
-                    <View style={styles.card}>
-                        <Text style={styles.cardTitle}>Média de Votos por Seção</Text>
-                        <Text style={styles.cardValue}>{mediaVotosPorSecao.toFixed(2)}</Text>
+                )}
+            </View>
+
+            <View style={{ marginTop: 20 }}>
+                <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', marginBottom: 10 }}>
+                    Detalhe da Votação por {isEstado ? 'Município' : 'Local'}
+                </Text>
+                <View style={styles.table}>
+                    <View style={[styles.tableRow, styles.tableHeader]}>
+                        <Text style={[styles.tableHeaderCell, { width: headerWidths[0] }]}>{tableHeaders[0]}</Text>
+                        {!isEstado && <Text style={[styles.tableHeaderCell, { width: headerWidths[1] }]}>{tableHeaders[1]}</Text>}
+                        <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[2] : headerWidths[1] }]}>{tableHeaders[2]}</Text>
+                        <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[3] : headerWidths[2] }]}>{tableHeaders[3]}</Text>
+                        <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[4] : headerWidths[3] }]}>{tableHeaders[4]}</Text>
                     </View>
-                    {infoCandidato.abrangencia === 'Município' && (
-                        <View style={styles.card}>
-                            <Text style={styles.cardTitle}>Média de Votos por Bairro</Text>
-                            <Text style={styles.cardValue}>{mediaVotosPorBairro.toFixed(2)}</Text>
+                    {relatorioDetalhado.map((item, index) => (
+                        <View key={index} style={styles.tableRow}>
+                            <Text style={[styles.tableCell, { width: headerWidths[0] }]}>{item.nome}</Text>
+                            {!isEstado && <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.bairro}</Text>}
+                            <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[2] : headerWidths[1] }]}>{item.votos.toLocaleString('pt-BR')}</Text>
+                            <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[3] : headerWidths[2] }]}>{`${item.porcentagem.toFixed(2)}%`}</Text>
+                            <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[4] : headerWidths[3] }]}>{`${item.ranking}º`}</Text>
                         </View>
-                    )}
+                    ))}
                 </View>
-            </Page>
+            </View>
 
-            <Page size="A4" orientation="landscape" style={styles.page}>
-                 <View style={{ marginTop: 20 }}>
+            {/* Apenas para análise por município */}
+            {!isEstado && rankingPorBairro.length > 0 && (
+                <View style={{ marginTop: 30 }}>
                     <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', marginBottom: 10 }}>
-                        Detalhe da Votação por {isEstado ? 'Município' : 'Local'}
+                        Análise de Votação por Bairro
                     </Text>
                     <View style={styles.table}>
                         <View style={[styles.tableRow, styles.tableHeader]}>
-                            <Text style={[styles.tableHeaderCell, { width: headerWidths[0] }]}>{tableHeaders[0]}</Text>
-                            {!isEstado && <Text style={[styles.tableHeaderCell, { width: headerWidths[1] }]}>{tableHeaders[1]}</Text>}
-                            <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[2] : headerWidths[1] }]}>{tableHeaders[2]}</Text>
-                            <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[3] : headerWidths[2] }]}>{tableHeaders[3]}</Text>
-                            <Text style={[styles.tableHeaderCell, { width: !isEstado ? headerWidths[4] : headerWidths[3] }]}>{tableHeaders[4]}</Text>
+                            <Text style={[styles.tableHeaderCell, { width: '60%' }]}>Bairro</Text>
+                            <Text style={[styles.tableHeaderCell, { width: '25%' }]}>Total de Votos</Text>
+                            <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Ranking</Text>
                         </View>
-                        {relatorioDetalhado.map((item, index) => (
+                        {rankingPorBairro.map((b, index) => (
                             <View key={index} style={styles.tableRow}>
-                                <Text style={[styles.tableCell, { width: headerWidths[0] }]}>{item.nome}</Text>
-                                {!isEstado && <Text style={[styles.tableCell, { width: headerWidths[1] }]}>{item.bairro}</Text>}
-                                <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[2] : headerWidths[1] }]}>{item.votos.toLocaleString('pt-BR')}</Text>
-                                <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[3] : headerWidths[2] }]}>{`${item.porcentagem.toFixed(2)}%`}</Text>
-                                <Text style={[styles.tableCell, { width: !isEstado ? headerWidths[4] : headerWidths[3] }]}>{`${item.ranking}º`}</Text>
+                                <Text style={[styles.tableCell, { width: '60%' }]}>{b.nome}</Text>
+                                <Text style={[styles.tableCell, { width: '25%' }]}>{b.votos.toLocaleString('pt-BR')}</Text>
+                                <Text style={[styles.tableCell, { width: '15%' }]}>{`${b.ranking}º`}</Text>
                             </View>
                         ))}
                     </View>
                 </View>
+            )}
 
-                {infoCandidato.abrangencia === 'Município' && rankingPorBairro.length > 0 && (
-                    <View style={{ marginTop: 30 }}>
-                        <Text style={{ fontSize: 14, fontFamily: 'Helvetica-Bold', marginBottom: 10 }}>
-                            Análise de Votação por Bairro
-                        </Text>
-                        <View style={styles.table}>
-                            <View style={[styles.tableRow, styles.tableHeader]}>
-                                <Text style={[styles.tableHeaderCell, { width: '60%' }]}>Bairro</Text>
-                                <Text style={[styles.tableHeaderCell, { width: '25%' }]}>Total de Votos</Text>
-                                <Text style={[styles.tableHeaderCell, { width: '15%' }]}>Ranking</Text>
-                            </View>
-                            {rankingPorBairro.map((b, index) => (
-                                <View key={index} style={styles.tableRow}>
-                                    <Text style={[styles.tableCell, { width: '60%' }]}>{b.nome}</Text>
-                                    <Text style={[styles.tableCell, { width: '25%' }]}>{b.votos.toLocaleString('pt-BR')}</Text>
-                                    <Text style={[styles.tableCell, { width: '15%' }]}>{`${b.ranking}º`}</Text>
-                                </View>
-                            ))}
-                        </View>
-                    </View>
-                )}
+            <View style={{ position: 'absolute', bottom: 30, right: 40, textAlign: 'right' }}>
+                <Text style={{ fontSize: 8, color: '#999' }}>
+                    {`Gerado em: ${format(new Date(), 'dd/MM/yyyy HH:mm')} | Fonte: Dados Eleitorais Agregados`}
+                </Text>
+            </View>
+        </Page>
+    );
+};
 
-                <View style={{ position: 'absolute', bottom: 30, right: 40, textAlign: 'right' }}>
-                    <Text style={{ fontSize: 8, color: '#999' }}>
-                        {`Gerado em: ${formattedDate} | Fonte: Dados Eleitorais Agregados`}
-                    </Text>
-                </View>
-            </Page>
+const MyDocument = ({ data }: { data: FullAnalysisReport | null }) => {
+    if (!data) return null;
+
+    return (
+        <Document>
+            <CoverPage data={data} />
+            {data.mainAnalysis.infoCandidato.abrangencia === 'Estado' && (
+                <AnalysisPage data={data.mainAnalysis} />
+            )}
+            {data.cityAnalyses.map((cityAnalysis, index) => (
+                <AnalysisPage key={index} data={cityAnalysis} />
+            ))}
         </Document>
     );
 };
 
-// Componente Modal principal (lógica inalterada)
 const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ isOpen, onClose }) => {
     const [reportStep, setReportStep] = useState(1);
     const [selectedReportCargo, setSelectedReportCargo] = useState('');
@@ -231,7 +253,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
     const [reportError, setReportError] = useState('');
     const [rawDataForReport, setRawDataForReport] = useState<any[]>([]);
     const [locaisData, setLocaisData] = useState<LocalVotacaoDetalhado[]>([]);
-    const [analysisResults, setAnalysisResults] = useState<AnalysisResults | null>(null);
+    const [analysisResults, setAnalysisResults] = useState<FullAnalysisReport | null>(null);
 
     const locaisCarregadosRef = useRef(false);
 
@@ -246,7 +268,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                 if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
                 const json = await res.json();
                 const linhas: string[][] = json.data?.slice(1) || [];
-
                 const parsedLocais: LocalVotacaoDetalhado[] = linhas.map(linha => ({
                     'Município': linha[0]?.trim() || '', 'Zona Eleitoral': linha[1]?.trim() || '', 'Seção Eleitoral': linha[2]?.trim() || '', 'Local de Votação': linha[3]?.trim() || '', 'Endereço do Local': linha[5]?.trim() || 'N/A', 'Bairro do Local': linha[6]?.trim() || 'N/A', 'Nome do Local': linha[4]?.trim() || 'N/A',
                 }));
@@ -319,14 +340,12 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                     const zona = linha[1]?.trim();
                     const secao = linha[2]?.trim();
                     const local = linha[3]?.trim();
-
                     const infoLocal = locais.find(l => 
                         l['Município'] === municipio &&
                         l['Zona Eleitoral'] === zona &&
                         l['Seção Eleitoral'] === secao &&
                         l['Local de Votação'] === local
                     );
-
                     allData.push({
                         'Município': municipio || '',
                         'Zona Eleitoral': zona || '',
@@ -436,7 +455,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         return Array.from(uniqueCandidates.values()).sort((a, b) => a.nome.localeCompare(b.nome));
     }, [rawDataForReport, selectedReportScope, selectedReportCity]);
 
-
     const resetModalState = useCallback(() => {
         setReportStep(1);
         setSelectedReportCargo('');
@@ -460,7 +478,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         setReportStep(2);
         setReportError('');
         setSelectedReportCandidate('');
-        setSelectedReportScope('');
         setAnalysisResults(null);
         if (selectedReportElectionYear === '2020' || selectedReportElectionYear === '2024' || selectedReportCargo.includes('Prefeito') || selectedReportCargo.includes('Vereador')) {
             setSelectedReportScope('Município');
@@ -499,34 +516,14 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         setReportError('');
         setAnalysisResults(null);
     }, []);
-    
-    const runAnalysisAndSetResults = useCallback(() => {
-        if (!rawDataForReport.length || !selectedReportCandidate || !selectedReportScope) {
-            setReportError('Dados insuficientes para a análise. Por favor, complete as seleções.');
-            return;
-        }
-        
-        setAnalysisResults(null);
-        let filteredData;
-        if (selectedReportScope === 'Município') {
-            if (!selectedReportCity) {
-                setReportError('Selecione um município para a análise.');
-                return;
-            }
-            filteredData = rawDataForReport.filter(item => item['Município'] === selectedReportCity);
-        } else {
-            filteredData = rawDataForReport;
-        }
 
-        const candidateName = selectedReportCandidate.toUpperCase();
-        const candidateInfo = availableReportCandidates.find(c => c.nome === candidateName);
-        if (!candidateInfo) {
-            setReportError('Candidato não encontrado.');
-            return;
+    const createAnalysisReport = useCallback((data: any[], scope: string, city: string | undefined, candidateName: string, candidateInfo: CandidatoDropdownOption): AnalysisResults => {
+        let filteredData = data;
+        if (scope === 'Município' && city) {
+            filteredData = data.filter(item => item['Município'] === city);
         }
 
         const totalVotos = filteredData.filter(item => item['Nome do Candidato/Voto'] === candidateName).reduce((acc, curr) => acc + curr['Quantidade de Votos'], 0);
-        
         let totalValidVotes = 0;
         const allVotesForScope = new Map<string, number>();
         const allLocations = new Set<string>();
@@ -562,8 +559,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
         const totalVotesPerSection = new Map<string, number>();
         const totalVotesPerBairro = new Map<string, number>();
 
-
-        if (selectedReportScope === 'Município') {
+        if (scope === 'Município' && city) {
             filteredData.forEach(item => {
                 const entityKey = `${item['Município']}-${item['Local de Votação']}`;
                 const sectionKey = `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`;
@@ -640,7 +636,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
             totalSecoesComVotos = new Set(filteredData.filter(item => item['Nome do Candidato/Voto']?.trim().toUpperCase() === candidateName).map(item => `${item['Município']}-${item['Zona Eleitoral']}-${item['Seção Eleitoral']}`)).size;
         }
         
-        // CÁLCULO DAS MÉTRICAS DOS CARDS
         const mediaVotosPorLocal = totalLocaisComVotos > 0 ? totalVotos / totalLocaisComVotos : 0;
         const mediaVotosPorSecao = totalSecoesComVotos > 0 ? totalVotos / totalSecoesComVotos : 0;
         const totalBairrosComVoto = totalVotesPerBairro.size;
@@ -648,7 +643,7 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
 
         const locaisZeroVoto = allLocations.size - totalLocaisComVotos;
 
-        const analysis: AnalysisResults = {
+        return {
             totalVotos: totalVotos,
             totalPorcentagem: totalValidVotes > 0 ? (totalVotos / totalValidVotes) * 100 : 0,
             rankingGeral: rankingGeral,
@@ -666,14 +661,51 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                 partido: candidateInfo.siglaPartido,
                 ano: selectedReportElectionYear,
                 cargo: selectedReportCargo,
-                abrangencia: selectedReportScope,
-                cidade: selectedReportCity,
+                abrangencia: scope,
+                cidade: city,
             }
         };
+    }, [locaisData, selectedReportElectionYear, selectedReportCargo]);
 
-        setAnalysisResults(analysis);
+    const runAnalysisAndSetResults = useCallback(() => {
+        if (!rawDataForReport.length || !selectedReportCandidate || !selectedReportScope) {
+            setReportError('Dados insuficientes para a análise. Por favor, complete as seleções.');
+            return;
+        }
+        
+        setAnalysisResults(null);
+        
+        const candidateName = selectedReportCandidate.toUpperCase();
+        const candidateInfo = availableReportCandidates.find(c => c.nome === candidateName);
+        if (!candidateInfo) {
+            setReportError('Candidato não encontrado.');
+            return;
+        }
+
+        let mainAnalysis: AnalysisResults;
+        let cityAnalyses: AnalysisResults[] = [];
+
+        if (selectedReportScope === 'Estado') {
+            mainAnalysis = createAnalysisReport(rawDataForReport, 'Estado', undefined, candidateName, candidateInfo);
+            const citiesWithData = Array.from(new Set(rawDataForReport.map(item => item['Município'])));
+            cityAnalyses = citiesWithData.map(city => createAnalysisReport(rawDataForReport, 'Município', city, candidateName, candidateInfo));
+        } else {
+            if (!selectedReportCity) {
+                setReportError('Selecione um município para a análise.');
+                return;
+            }
+            mainAnalysis = createAnalysisReport(rawDataForReport, 'Município', selectedReportCity, candidateName, candidateInfo);
+            cityAnalyses.push(mainAnalysis);
+        }
+
+        const fullReport: FullAnalysisReport = {
+            mainAnalysis,
+            cityAnalyses,
+        };
+
+        setAnalysisResults(fullReport);
         handleAdvanceToStep4();
-    }, [rawDataForReport, selectedReportCandidate, selectedReportCity, selectedReportScope, availableReportCandidates, selectedReportElectionYear, selectedReportCargo, locaisData, handleAdvanceToStep4]);
+    }, [rawDataForReport, selectedReportCandidate, selectedReportScope, selectedReportCity, availableReportCandidates, handleAdvanceToStep4, createAnalysisReport]);
 
     const canAdvanceToStep1 = selectedReportElectionYear !== '' && selectedReportCargo !== '' && !loadingData && rawDataForReport.length > 0;
     const canAdvanceToStep2 = selectedReportScope !== '' && (selectedReportScope === 'Estado' || selectedReportCity !== '');
@@ -731,7 +763,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                 </div>
                 <p className="text-center text-sm text-gray-600 mb-6">Etapa: {['Ano/Cargo', 'Abrangência', 'Candidato', 'Download'][reportStep - 1]}</p>
 
-                {/* Step 1: Ano e Cargo */}
                 {reportStep === 1 && (
                     <div>
                         <div className="mb-4">
@@ -761,7 +792,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                     </div>
                 )}
                 
-                {/* Step 2: Abrangência e Município (se aplicável) */}
                 {reportStep === 2 && (
                     <div>
                         <div className="mb-4">
@@ -791,7 +821,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                     </div>
                 )}
                 
-                {/* Step 3: Seleção do Candidato e Geração de Análise */}
                 {reportStep === 3 && (
                     <div>
                         <div className="mb-6">
@@ -817,7 +846,6 @@ const AnalysisModal: React.FC<{ isOpen: boolean; onClose: () => void; }> = ({ is
                     </div>
                 )}
                 
-                {/* Step 4: Download do PDF */}
                 {reportStep === 4 && (
                     <div className="flex flex-col items-center">
                         <div className="bg-blue-50 border-l-4 border-blue-400 text-blue-800 p-4 w-full text-center" role="alert">
