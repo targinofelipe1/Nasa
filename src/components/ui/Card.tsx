@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect, ReactNode, FC } from "react";
 import Modal from "@/components/ui/Modal";
 import Select from "@/components/ui/Select";
-import { ReactNode } from "react";
+import { FaExternalLinkAlt } from "react-icons/fa";
 
 interface CardProps {
   value: number;
@@ -9,22 +11,31 @@ interface CardProps {
   modalContent?: ReactNode;
   setIsModalOpen: (state: boolean) => void;
   selectOptions?: { id: string; label: string; value: number }[];
+  icon?: ReactNode;
+  iconColor?: string;
+  bgColor?: string;
 }
 
-const Card: React.FC<CardProps> = ({
+const Card: FC<CardProps> = ({
   value,
   label,
   modalContent,
   setIsModalOpen,
   selectOptions,
+  icon,
+  iconColor,
+  bgColor,
 }) => {
   const [isModalOpen, setLocalModalOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<string>("");
+  const [selectedOption, setSelectedOption] = useState<{ id: string; label: string; value: number } | undefined>(
+    selectOptions && selectOptions.length > 0 ? selectOptions[0] : undefined
+  );
 
   useEffect(() => {
-    // Definir o primeiro item da lista como o padrão se houver opções
     if (selectOptions && selectOptions.length > 0) {
-      setSelectedOption(selectOptions[0].label);
+      setSelectedOption(selectOptions[0]);
+    } else {
+      setSelectedOption(undefined);
     }
   }, [selectOptions]);
 
@@ -38,35 +49,49 @@ const Card: React.FC<CardProps> = ({
     setIsModalOpen(false);
   };
 
-  // Encontrar o valor correto baseado na seleção
-  const selectedValue =
-    selectOptions?.find((p) => p.label === selectedOption)?.value || value;
+  const handleSelectChange = (selectedLabel: string) => {
+    const option = selectOptions?.find(opt => opt.label === selectedLabel);
+    setSelectedOption(option);
+  };
+
+  const displayValue = selectOptions ? selectedOption?.value : value;
+  const displayLabel = selectOptions ? selectedOption?.label : label;
 
   return (
-    <div className="p-4 bg-white shadow-md rounded-xl text-center transition-all hover:shadow-lg hover:scale-102">
-      <h2 className="text-xl font-bold text-gray-900">{selectedValue.toLocaleString("pt-BR")}</h2>
-      <p className="text-sm text-gray-500 mt-1">{label}</p>
+    <div
+      className={`p-4 shadow-md rounded-xl text-center transition-all hover:shadow-lg flex flex-col items-center justify-between ${bgColor || 'bg-white'}`}
+    >
+      <div className="flex flex-col items-center justify-center min-h-[140px]">
+        {icon && (
+          <div className={`text-3xl mb-2 ${iconColor}`}>
+            {icon}
+          </div>
+        )}
+        <h2 className="text-xl font-bold text-gray-900">{displayValue?.toLocaleString("pt-BR") || "N/A"}</h2>
+        <p className="text-sm text-gray-500 mt-1">{displayLabel}</p>
+      </div>
 
-      {/* Se houver opções de select, exibir o select */}
-      {selectOptions && (
-        <Select
-          options={selectOptions}
-          onChange={(selectedLabel) => setSelectedOption(selectedLabel)}
-          defaultValue={selectedOption} // Define o valor inicial do select
-        />
-      )}
+      <div className="w-full mt-auto">
+        {selectOptions && (
+          <div className="mt-2">
+            <Select
+              options={selectOptions}
+              onChange={handleSelectChange}
+              defaultValue={selectedOption?.label || ""}
+            />
+          </div>
+        )}
 
-      {/* Se houver modalContent, exibir o botão "Detalhes" */}
-      {modalContent && (
-        <button
-          onClick={openModal}
-          className="mt-2 text-blue-600 hover:text-blue-700 no-underline cursor-pointer"
-        >
-          Detalhes
-        </button>
-      )}
+        {modalContent && (
+          <button
+            onClick={openModal}
+            className="mt-2 text-blue-600 hover:text-blue-700 no-underline cursor-pointer flex items-center justify-center mx-auto"
+          >
+            <FaExternalLinkAlt className="mr-1 text-sm" /> Detalhes
+          </button>
+        )}
+      </div>
 
-      {/* Modal */}
       <Modal isOpen={isModalOpen} onClose={closeModal} title={`Detalhes de ${label}`}>
         {modalContent}
       </Modal>

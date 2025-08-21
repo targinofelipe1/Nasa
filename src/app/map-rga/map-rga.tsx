@@ -24,20 +24,20 @@ const MapaParaibaRGA = ({ apiData, exibirLegenda = true }: { apiData: any[], exi
   const [mapReady, setMapReady] = useState(false);
 
 const rgaColors: Record<string, string> = {
-  "RGA 1": "#fff205",
-  "RGA 2": "#90c63d",
-  "RGA 3": "#72cef8",
-  "RGA 4": "#ffa64f",
-  "RGA 5": "#ffc901",
-  "RGA 6": "#fbc2d8",
-  "RGA 7": "#e89da4",
-  "RGA 8": "#31b74a",
-  "RGA 9": "#69c3c0",
-  "RGA 10": "#fa8145",
-  "RGA 11": "#fff4a0",
-  "RGA 12": "#b68cc4",
-  "RGA 13": "#028ad6",
-  "RGA 14": "#d3a045",
+  "RGA 1": "#F9C74F",
+  "RGA 2": "#80B918",
+  "RGA 3": "#43AA8B",
+  "RGA 4": "#F8961E",
+  "RGA 5": "#F9844A",
+  "RGA 6": "#F94144",
+  "RGA 7": "#5C4A72",
+  "RGA 8": "#90BE6D",
+  "RGA 9": "#4D908E",
+  "RGA 10": "#F3722C",
+  "RGA 11": "#F9F8F4",
+  "RGA 12": "#A999C2",
+  "RGA 13": "#277DA1",
+  "RGA 14": "#E69C00",
 };
 
 

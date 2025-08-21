@@ -13,10 +13,10 @@ export default function AuthLayout({
           <a href="/auth/sign-in" className="flex items-center gap-2 font-medium">
             <img
               src="/img/mapa-paraiba.png"
-              alt="Ícone do DataMetrics"
+              alt="Ícone do Paraíba Social"
               className="h-10 w-10 rounded-md"
             />
-            DataMetrics
+            Paraíba Social
           </a>
         </div>
 

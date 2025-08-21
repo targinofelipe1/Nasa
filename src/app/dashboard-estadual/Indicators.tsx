@@ -1,11 +1,37 @@
+"use client";
+
 import { useState, useEffect, ReactNode } from "react";
 import Card from "@/components/ui/Card";
+import { 
+  FaCity, 
+  FaChartLine, 
+  FaSun, 
+  FaHouseUser, 
+  FaUsers, 
+  FaClipboardList, 
+  FaBookOpen,
+  FaBriefcase,
+  FaHandshake,
+  FaShieldAlt,
+  FaHeartbeat,
+  FaUtensils,
+  FaGraduationCap,
+  FaFileAlt,
+  FaCoins,
+  FaDollarSign,
+  FaSchool,
+  FaUserFriends,
+  FaAmbulance
+} from "react-icons/fa";
 
 interface Indicator {
   value: number;
   label: string;
   modalContent?: ReactNode;
-  selectOptions?: { id: string; label: string; value: number }[]; 
+  selectOptions?: { id: string; label: string; value: number }[];
+  icon?: ReactNode;
+  iconColor?: string;
+  bgColor?: string;
 }
 
 
@@ -135,7 +161,7 @@ export default function Indicators({
       : 0;
 
     const totalPessoasPobreza = cadUnicoPessoasPobrezaKey
-      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoasPobrezaKey]?.toString().replace(/\s+/g, "").replace(/\./g, "")) || 0), 0)
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoasPobrezaKey]?.toString().replace(/\./g, "")) || 0), 0)
       : 0;
 
     const cadUnicoPessoasModalContent = (
@@ -273,12 +299,13 @@ export default function Indicators({
       : 0;
       
     const bolsaFamiliaPessoasModalContent = (
-       <>
-         <p><strong>Pessoas com renda até R$218,00:</strong> {totalBolsaFamiliaPessoasPobreza.toLocaleString("pt-BR")}</p>
-         <p><strong>Pessoas de Baixa Renda:</strong> {totalBolsaFamiliaPessoasBaixaRenda.toLocaleString("pt-BR")}</p>
+        <>
+          <p><strong>Pessoas com renda até R$218,00:</strong> {totalBolsaFamiliaPessoasPobreza.toLocaleString("pt-BR")}</p>
+          <p><strong>Pessoas de Baixa Renda:</strong> {totalBolsaFamiliaPessoasBaixaRenda.toLocaleString("pt-BR")}</p>
       </>
     );
 
+    // Indicadores agrupados que voltarão a ter select
     const protecaoSocialKeys = [
       { key: "Proteção Social Básica - Unidade de CRAS", label: "Unidade de CRAS" },
       { key: "Proteção Social Básica - Primeira Infância no SUAS", label: "Primeira Infância no SUAS", binary: true },
@@ -293,7 +320,7 @@ export default function Indicators({
     const protecaoSocialOptions = protecaoSocialKeys
       .map(({ key, label, binary }) => {
         const keyFound = findKey(key);
-        if (!keyFound) return null; // Se não encontrar a chave, ignora
+        if (!keyFound) return null;
     
         let value = data.reduce((sum, row) => {
           const fieldValue = row[keyFound]?.toString().trim().toLowerCase();
@@ -305,11 +332,10 @@ export default function Indicators({
           return { id: key, label, value };
         }
     
-        return null; // Remove entradas com valor 0
+        return null;
       })
-      .filter((item): item is { id: string; label: string; value: number } => item !== null); // Remove os `null` do array
+      .filter((item): item is { id: string; label: string; value: number } => item !== null);
     
-
     const protecaoSocialEspecialKeys = [
         { key: "Proteção Social Especial - Unidade de CREAS", label: "Unidade de CREAS" },
         { key: "Proteção Social Especial - Unidade de Centro Pop", label: "Unidade de Centro Pop" },
@@ -324,11 +350,11 @@ export default function Indicators({
     const protecaoSocialEspecialOptions = protecaoSocialEspecialKeys
       .map(({ key, label, binary }) => {
         const keyFound = findKey(key);
-         if (!keyFound) return null; 
+          if (!keyFound) return null; 
 
         let value = data.reduce((sum, row) => {
           const fieldValue = row[keyFound];
-           return sum + (binary ? (fieldValue?.toLowerCase() === "sim" ? 1 : 0) : parseInt(fieldValue?.toString().replace(/\./g, "")) || 0);
+            return sum + (binary ? (fieldValue?.toLowerCase() === "sim" ? 1 : 0) : parseInt(fieldValue?.toString().replace(/\./g, "")) || 0);
         }, 0);
 
         if (value > 0) {
@@ -341,7 +367,6 @@ export default function Indicators({
 
     totalProtecaoSocialEspecial = protecaoSocialEspecialOptions.reduce((sum, option) => sum + option.value, 0);
     
-
     const segurancaAlimentarKeys = [
       { key: 'Segurança Alimentar - Programa "Tá na mesa" (municípios)', label: 'Programa Tá na Mesa', binary: true },
       { key: "Segurança Alimentar - Cartão Alimentação (municípios)", label: "Cartão Alimentação", binary: true },
@@ -354,61 +379,34 @@ export default function Indicators({
     const segurancaAlimentarOptions: { id: string; label: string; value: number }[] = segurancaAlimentarKeys
       .map(({ key, label, binary }) => {
         const keyFound = findKey(key);
-        if (!keyFound) return null; // Se a coluna não existir, ignora
+        if (!keyFound) return null;
     
         let value = data.reduce((sum, row) => {
           const fieldValue = row[keyFound]?.toString().trim().toLowerCase();
           return sum + (binary ? (fieldValue === "sim" ? 1 : 0) : parseInt(fieldValue.replace(/\./g, "")) || 0);
         }, 0);
     
-        if (value > 0) { // 🔹 Só adiciona a opção se tiver dados!
+        if (value > 0) {
           totalSegurancaAlimentar += value;
           return { id: key, label, value };
         }
         
-        return null; // 🔹 Remove opções sem dados
+        return null;
       })
       .filter((item): item is { id: string; label: string; value: number } => item !== null);
     
-    // 🔹 Função para converter valores monetários corretamente
     const parseCurrency = (value: string | undefined): number => {
       if (!value) return 0;
       return parseFloat(value.replace("R$", "").trim().replace(/\./g, "").replace(",", "."));
     };
     
-    // 🔹 Renderiza o modal SOMENTE SE houver dados disponíveis
     const segurancaAlimentarModalContent = totalSegurancaAlimentar > 0 && (
       <>
-        <p>
-          <strong>Programa "Tá na Mesa" - Refeições por dia:</strong>{" "}
-          {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/dia")
-            ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/dia")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR")
-            : "N/A"}
-        </p>
-        <p>
-          <strong>Programa "Tá na Mesa" - Refeições por mês:</strong>{" "}
-          {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/mês")
-            ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/mês")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR")
-            : "N/A"}
-        </p>
-        <p>
-          <strong>Programa "Tá na Mesa" - Valor mensal:</strong>{" "}
-          {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Valor por município mensal")
-            ? data.reduce((sum, row) => sum + parseCurrency(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Valor por município mensal")]), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-            : "N/A"}
-        </p>
-        <p>
-          <strong>Cartão Alimentação - Beneficiários:</strong>{" "}
-          {findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)")
-            ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR")
-            : "N/A"}
-        </p>
-        <p>
-          <strong>Cartão Alimentação - Valor por município:</strong>{" "}
-          {findKey("Segurança Alimentar - Cartão Alimentação - valor por município")
-            ? data.reduce((sum, row) => sum + parseCurrency(row[findKey("Segurança Alimentar - Cartão Alimentação - valor por município")]), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })
-            : "N/A"}
-        </p>
+        <p><strong>Programa "Tá na Mesa" - Refeições por dia:</strong> {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/dia") ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/dia")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR") : "N/A"}</p>
+        <p><strong>Programa "Tá na Mesa" - Refeições por mês:</strong> {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/mês") ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Quant de refeição/mês")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR") : "N/A"}</p>
+        <p><strong>Programa "Tá na Mesa" - Valor mensal:</strong> {findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Valor por município mensal") ? data.reduce((sum, row) => sum + parseCurrency(row[findKey("Segurança Alimentar - Programa \"Tá na mesa\" - Valor por município mensal")]), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "N/A"}</p>
+        <p><strong>Cartão Alimentação - Beneficiários:</strong> {findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)") ? data.reduce((sum, row) => sum + (parseInt(row[findKey("Segurança Alimentar - Cartão Alimentação (beneficiários)")]?.toString().replace(/\./g, "")) || 0), 0).toLocaleString("pt-BR") : "N/A"}</p>
+        <p><strong>Cartão Alimentação - Valor por município:</strong> {findKey("Segurança Alimentar - Cartão Alimentação - valor por município") ? data.reduce((sum, row) => sum + parseCurrency(row[findKey("Segurança Alimentar - Cartão Alimentação - valor por município")]), 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "N/A"}</p>
       </>
     );
     
@@ -436,7 +434,6 @@ export default function Indicators({
         })
         .filter((item): item is { id: string; label: string; value: number } => item !== null);
       
-      // Cálculo das médias para o Índice de Gini e Mortalidade Infantil
       const giniKey = findKey("Saúde - Índice de Gini (IBGE, 2010)");
       const mortalidadeKey = findKey("Saúde - Mortalidade infantil - óbitos por mil nascidos vivos (IBGE, 2022)");
       
@@ -461,12 +458,8 @@ export default function Indicators({
       
       const saudeModalContent = (
         <>
-          <p>
-            <strong>Saúde - Mortalidade infantil (óbitos por mil nascidos vivos - IBGE 2022):</strong> {mediaMortalidade}
-          </p>
-          <p>
-            <strong>Saúde - Índice de Gini (IBGE, 2010):</strong> {mediaGini}
-          </p>
+          <p><strong>Saúde - Mortalidade infantil (óbitos por mil nascidos vivos - IBGE 2022):</strong> {mediaMortalidade}</p>
+          <p><strong>Saúde - Índice de Gini (IBGE, 2010):</strong> {mediaGini}</p>
         </>
       );
 
@@ -475,7 +468,6 @@ export default function Indicators({
         { key: "Educação - Taxa de Escolarização 6 a 14 anos - % (2010)", label: "Taxa de Escolarização 6 a 14 anos" },
       ];
       
-      // Cálculo da média das taxas
       const taxaAlfabetizacaoKey = findKey("Educação - Taxa de alfabetização das pessoas de 15 anos ou mais de idade % (IBGE, 2022)");
       const taxaEscolarizacaoKey = findKey("Educação - Taxa de Escolarização 6 a 14 anos - % (2010)");
       
@@ -498,7 +490,6 @@ export default function Indicators({
             ).toFixed(2).replace(".", ",")
           : "N/A";
       
-      // Cálculo das médias para os valores do IDEB
       const idebInicialKey = findKey("Educação - IDEB Anos iniciais do ensino fundamental (2023)");
       const idebFinalKey = findKey("Educação - IDEB Anos finais do ensino fundamental (2023)");
       const idebMedioKey = findKey("Educação - IDEB Ensino Médio (2023)");
@@ -533,15 +524,9 @@ export default function Indicators({
       
       const educacaoModalContent = (
         <>
-          <p>
-            <strong>Educação - IDEB Anos iniciais do ensino fundamental (2023):</strong> {mediaIDEBInicial}
-          </p>
-          <p>
-            <strong>Educação - IDEB Anos finais do ensino fundamental (2023):</strong> {mediaIDEBFinal}
-          </p>
-          <p>
-            <strong>Educação - IDEB Ensino Médio (2023):</strong> {mediaIDEBMedio}
-          </p>
+          <p><strong>Educação - IDEB Anos iniciais do ensino fundamental (2023):</strong> {mediaIDEBInicial}</p>
+          <p><strong>Educação - IDEB Anos finais do ensino fundamental (2023):</strong> {mediaIDEBFinal}</p>
+          <p><strong>Educação - IDEB Ensino Médio (2023):</strong> {mediaIDEBMedio}</p>
         </>
       );
 
@@ -559,7 +544,7 @@ export default function Indicators({
                 <div key={index} className="p-2 border-b">
                   <div>{item.cidade}</div>
                   {item.quantidade > 1 && (
-                    <div className="text-xs text-gray-500">  
+                    <div className="text-xs text-gray-500"> 
                       {item.quantidade} unidades
                     </div>
                   )}
@@ -573,18 +558,27 @@ export default function Indicators({
       {
         value: totalMunicipios,
         label: "Total de Municípios",
+        icon: <FaCity />,
+        iconColor: "text-blue-500",
         modalContent: renderListaMunicipiosModal(
           data
             .filter(row => row[municipioKey])
             .map(row => row[municipioKey] || "")
-            .filter(Boolean), // Remove valores vazios
+            .filter(Boolean),
           totalMunicipios
         )
       },
-      { value: parseFloat(mediaIDH.toFixed(3)), label: "Média do IDH (2010)" },
+      { 
+        value: parseFloat(mediaIDH.toFixed(3)),
+        label: "Média do IDH (2010)",
+        icon: <FaChartLine />,
+        iconColor: "text-green-500" 
+      },
       {
         value: totalMunicipiosSemiarido,
         label: "Municípios do Semiárido",
+        icon: <FaSun />,
+        iconColor: "text-yellow-500",
         modalContent: renderMunicipiosModal(
           data
             .filter(row => row[semiaridoKey]?.trim().toLowerCase() === "x")
@@ -595,6 +589,8 @@ export default function Indicators({
       {
         value: totalCasaCidadania,
         label: "Quantidade de Casa da Cidadania",
+        icon: <FaHouseUser />,
+        iconColor: "text-indigo-500",
         modalContent: renderListaCidadesModal(
           data
             .filter(row => {
@@ -611,68 +607,129 @@ export default function Indicators({
       {
         value: totalPopulacao,
         label: "População Total (CENSO 2022)",
+        icon: <FaUsers />,
+        iconColor: "text-purple-500",
         modalContent: popModalContent,
       },
       {
         value: totalFamiliasCadUnico,
         label: "Total de Famílias no Cadastro Único",
+        icon: <FaClipboardList />,
+        iconColor: "text-red-500",
         modalContent: cadUnicoModalContent,
       },
       {
         value: totalPessoasCadUnico,
         label: "Total de Pessoas no Cadastro Único",
+        icon: <FaUsers />,
+        iconColor: "text-pink-500",
         modalContent: cadUnicoPessoasModalContent,
       },
       {
         value: totalPessoasInstrucao,
         label: "Pessoas por Grau de Instrução",
+        icon: <FaBookOpen />,
+        iconColor: "text-orange-500",
         modalContent: instrucaoModalContent,
       },
       {
         value: totalTrabalho,
         label: "Pessoas por Tipo de Trabalho",
+        icon: <FaBriefcase />,
+        iconColor: "text-gray-500",
         modalContent: trabalhoModalContent,
       },
       {
         value: totalBolsaFamilia,
         label: "Famílias no Programa Bolsa Família",
+        icon: <FaHandshake />,
+        iconColor: "text-teal-500",
         modalContent: bolsaFamiliaModalContent,
       },
       {
         value: totalBolsaFamiliaPessoas,
         label: "Pessoas no Programa Bolsa Família",
+        icon: <FaUserFriends />,
+        iconColor: "text-cyan-500",
         modalContent: bolsaFamiliaPessoasModalContent,
       },
       {
         value: totalProtecaoSocial,
         label: "Proteção Social Básica",
-        selectOptions: protecaoSocialOptions,
+        icon: <FaShieldAlt />,
+        iconColor: "text-green-600",
+        modalContent: protecaoSocialOptions.length > 0 ? (
+            <>
+                {protecaoSocialOptions.map(opt => (
+                    <p key={opt.id}><strong>{opt.label}:</strong> {opt.value.toLocaleString('pt-BR')}</p>
+                ))}
+            </>
+        ) : null,
+        selectOptions: protecaoSocialOptions
       },
       {
         value: totalProtecaoSocialEspecial,
         label: "Proteção Social Especial",
-        selectOptions: protecaoSocialEspecialOptions,
+        icon: <FaAmbulance />,
+        iconColor: "text-rose-600",
+        modalContent: protecaoSocialEspecialOptions.length > 0 ? (
+            <>
+                {protecaoSocialEspecialOptions.map(opt => (
+                    <p key={opt.id}><strong>{opt.label}:</strong> {opt.value.toLocaleString('pt-BR')}</p>
+                ))}
+            </>
+        ) : null,
+        selectOptions: protecaoSocialEspecialOptions
       },
       {
         value: totalSegurancaAlimentar,
         label: "Segurança Alimentar",
-        selectOptions: segurancaAlimentarOptions,
+        icon: <FaUtensils />,
+        iconColor: "text-yellow-600",
         modalContent: segurancaAlimentarModalContent,
+        selectOptions: segurancaAlimentarOptions
       },
       {
         value: totalSaude,
         label: "Saúde",
-        selectOptions: saudeOptions,
+        icon: <FaHeartbeat />,
+        iconColor: "text-red-600",
         modalContent: saudeModalContent,
+        selectOptions: saudeOptions
       },
       {
-        value: 0, // Não exibe um valor único, pois são médias
+        value: 0,
         label: "Educação",
-        selectOptions: [
-          { id: "taxa_alfabetizacao", label: "Taxa de Alfabetização", value: parseFloat(mediaTaxaAlfabetizacao.replace(",", ".")) || 0 },
-          { id: "taxa_escolarizacao", label: "Taxa de Escolarização 6 a 14 anos", value: parseFloat(mediaTaxaEscolarizacao.replace(",", ".")) || 0 },
-        ],
+        icon: <FaGraduationCap />,
+        iconColor: "text-lime-600",
         modalContent: educacaoModalContent,
+        selectOptions: [
+          {
+            id: 'taxa-alfabetizacao',
+            label: 'Taxa de Alfabetização',
+            value: parseFloat(mediaTaxaAlfabetizacao.replace(",", ".")) || 0,
+          },
+          {
+            id: 'taxa-escolarizacao',
+            label: 'Taxa de Escolarização',
+            value: parseFloat(mediaTaxaEscolarizacao.replace(",", ".")) || 0,
+          },
+          {
+            id: 'ideb-iniciais',
+            label: 'IDEB Anos Iniciais',
+            value: parseFloat(mediaIDEBInicial.replace(",", ".")) || 0,
+          },
+          {
+            id: 'ideb-finais',
+            label: 'IDEB Anos Finais',
+            value: parseFloat(mediaIDEBFinal.replace(",", ".")) || 0,
+          },
+          {
+            id: 'ideb-medio',
+            label: 'IDEB Ensino Médio',
+            value: parseFloat(mediaIDEBMedio.replace(",", ".")) || 0,
+          },
+        ]
       },
     ]);
   }, [data]);
@@ -680,9 +737,7 @@ export default function Indicators({
   return (
     <div className="mt-6 space-y-4">
       <h2 className="text-xl font-bold">Indicadores</h2>
-      <p>Visualização detalhada dos principais indicadores.</p>
-      <p></p>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 grid-flow-row-dense">
         {indicators.map((item, index) => (
           <Card
             key={index}
@@ -691,10 +746,12 @@ export default function Indicators({
             modalContent={item.modalContent}
             selectOptions={item.selectOptions} 
             setIsModalOpen={setIsModalOpen}
+            icon={item.icon} 
+            iconColor={item.iconColor} 
+            bgColor={item.bgColor}
           />
         ))}
       </div>
-      <p></p>
     </div>
   );
 }

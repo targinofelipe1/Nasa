@@ -5,18 +5,13 @@ import { usePathname } from "next/navigation";
 export default function Navbar() {
   const pathname = usePathname();
 
-  // Definir o título baseado na rota
-  let title = "Dashboard";
-
-  if (pathname === "/dashboard-estadual") {
-    title = "Dashboard Estadual";
-  } else if (pathname === "/dashboard-municipal") {
-    title = "Dashboard Municipal";
-  }
+  const title = "Dashboard";
 
   return (
-    <nav className="w-full bg-gray-100 p-4 shadow-md">
-      <h1 className="text-lg font-bold text-gray-800">{title}</h1>
+    <nav className="w-full bg-gray-100 p-4 shadow-sm border-b border-gray-200">
+      <div className="container mx-auto flex justify-center items-center">
+        <h1 className="text-xl font-bold text-gray-800 tracking-wide">{title}</h1>
+      </div>
     </nav>
   );
 }

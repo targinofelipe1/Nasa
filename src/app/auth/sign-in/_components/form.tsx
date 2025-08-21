@@ -213,7 +213,7 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-             <Button
+              <Button
                 type="submit"
                 className="w-full"
                 disabled={loading}
@@ -225,8 +225,12 @@ export default function LoginPage() {
 
               <div className="text-center text-sm">
                 <span className="mr-1">Ainda não possui uma conta?</span>
-                <Link href="/auth/sign-up" className="underline font-medium text-primary">
-                  Cadastrar-se
+                <Link 
+                  href="https://servidor.pbdoc-forms.gedes.rke.codatahml.pb.gov.br/servico/1318" 
+                  className="underline font-medium text-primary"
+                  target="_blank"
+                >
+                  Solicitar cadastro
                 </Link>
               </div>
             </>

@@ -52,7 +52,7 @@ const LogoHeader = ({
       }}
     >
       <h1 style={{ fontSize: "32px", fontWeight: "bold" }}>{titulo}</h1>
-      <h2 style={{ fontSize: "24px", marginTop: "10px" }}>DataMetrics</h2>
+      <h2 style={{ fontSize: "24px", marginTop: "10px" }}>Paraíba Social</h2>
 
       {titulo === "Relatório Estadual" && selectedRegionals.length > 0 && (
         <>

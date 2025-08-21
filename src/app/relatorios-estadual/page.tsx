@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import Reports from "./Reports";
-import FiltersEstadual from "./FiltersEstadual";
+import CombinedFilters from "@/components/ui/CombinedFilters"; // Importe o filtro combinado
 import NoScroll from "@/components/ui/NoScroll";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import BotaoImpressao from "@/components/ui/BotaoImpressao";
@@ -11,15 +11,27 @@ import BotaoImpressao from "@/components/ui/BotaoImpressao";
 export default function ReportsPageEstadual() {
   const [apiData, setApiData] = useState<any[]>([]);
   const [selectedRegionals, setSelectedRegionals] = useState<string[]>([]);
+  const [selectedMunicipalities, setSelectedMunicipalities] = useState<string[]>([]); // Adicione o estado para municípios
   const [showButton, setShowButton] = useState(false);
+  
+  // Dados filtrados com base na seleção de regionais e municípios
+  const filteredData = apiData.filter(item => {
+    const isRegionalMatch = selectedRegionals.length === 0 || selectedRegionals.includes(item.RGA);
+    const isMunicipalMatch = selectedMunicipalities.length === 0 || selectedMunicipalities.includes(item["Município"]);
+    return isRegionalMatch && isMunicipalMatch;
+  });
 
   useEffect(() => {
-    if (selectedRegionals.length > 0) {
-      sessionStorage.setItem("selectedRegionals", JSON.stringify(selectedRegionals));
+    // A lógica de sessionStorage agora precisa lidar com ambos os filtros, ou apenas a regional se for a prioridade
+    if (selectedRegionals.length > 0 || selectedMunicipalities.length > 0) {
+      sessionStorage.setItem("selectedFilters", JSON.stringify({
+        regionals: selectedRegionals,
+        municipalities: selectedMunicipalities
+      }));
     } else {
-      sessionStorage.removeItem("selectedRegionals");
+      sessionStorage.removeItem("selectedFilters");
     }
-  }, [selectedRegionals]);
+  }, [selectedRegionals, selectedMunicipalities]);
 
   useEffect(() => {
     async function fetchData() {
@@ -36,9 +48,15 @@ export default function ReportsPageEstadual() {
               return acc;
             }, {})
           );
-
-          console.log("✅ Dados da API carregados:", formattedData);
           setApiData(formattedData);
+
+          // Restaure o estado de filtro do sessionStorage ao carregar a página
+          const storedFilters = sessionStorage.getItem("selectedFilters");
+          if (storedFilters) {
+            const { regionals, municipalities } = JSON.parse(storedFilters);
+            setSelectedRegionals(regionals);
+            setSelectedMunicipalities(municipalities);
+          }
         } else {
           console.error("❌ Erro ao buscar dados:", result.message);
         }
@@ -51,13 +69,16 @@ export default function ReportsPageEstadual() {
   }, []);
 
   useEffect(() => {
-    if (apiData.length > 0) {
-      setShowButton(true);
-    } else {
-      setShowButton(false);
-    }
+    setShowButton(apiData.length > 0);
     console.log("📌 Regionais Selecionadas:", selectedRegionals);
-  }, [selectedRegionals, apiData]);
+    console.log("📌 Municípios Selecionados:", selectedMunicipalities);
+  }, [selectedRegionals, selectedMunicipalities, apiData]);
+
+  // Função para lidar com a mudança dos filtros combinados
+  const handleCombinedFilterChange = (regionals: string[], municipalities: string[]) => {
+    setSelectedRegionals(regionals);
+    setSelectedMunicipalities(municipalities);
+  };
 
   return (
     <ProtectedRoute>
@@ -72,21 +93,23 @@ export default function ReportsPageEstadual() {
           <Sidebar />
 
           <div className="no-print flex flex-col md:flex-row w-full h-full p-4">
-            {/* Contêiner de filtros - Agora também com ml-16 */}
             <div className="w-full md:w-1/4 pr-4 overflow-y-auto ml-16">
               <div className="flex flex-col items-center">
-                <FiltersEstadual data={apiData} onRegionalChange={setSelectedRegionals} />
+                {/* Use o CombinedFilters aqui */}
+                <CombinedFilters
+                  data={apiData}
+                  onFilterChange={handleCombinedFilterChange}
+                />
               </div>
             </div>
 
-            {/* Contêiner de relatórios - visível em todas as telas */}
             <div className="block w-full md:w-3/4 pl-6 pr-8 h-screen overflow-auto ml-16">
-              {/* Botão de impressão alinhado à direita em telas grandes */}
               <div className="md:flex md:justify-end md:mb-4 hidden">
-                {showButton && <BotaoImpressao apiData={apiData} />}
+                {showButton && <BotaoImpressao apiData={filteredData} />}
               </div>
               
-              <Reports data={apiData} selectedRegionals={selectedRegionals} />
+              {/* Passe os dados já filtrados para o componente Reports */}
+              <Reports data={filteredData} selectedRegionals={selectedRegionals} />
             </div>
           </div>
         </div>

@@ -87,18 +87,7 @@ const Sidebar = () => {
                 {isOpen && "Página Inicial"}
               </Link>
             </li>
-            <li>
-              <Link href="/dashboard-estadual" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
-                <AiOutlineBarChart className="mr-3" size={20} />
-                {isOpen && "Dashboard Estadual"}
-              </Link>
-            </li>
-            <li>
-              <Link href="/dashboard-municipal" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
-                <AiOutlineFund className="mr-3" size={20} />
-                {isOpen && "Dashboard Municipal"}
-              </Link>
-            </li>
+
             <li>
               <Link href="/maps" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <MdOutlineMap className="mr-3" size={20} />
@@ -108,104 +97,8 @@ const Sidebar = () => {
             <li>
               <Link href="/relatorios-estadual" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <AiOutlineFileText className="mr-3" size={20} />
-                {isOpen && "Relatórios Estaduais"}
+                {isOpen && "Gerar Relatórios"}
               </Link>
-            </li>
-            <li>
-              <Link href="/relatorio-municipal" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
-                <AiOutlineFile className="mr-3" size={20} />
-                {isOpen && "Relatórios Municipais"}
-              </Link>
-            </li>
-            <li className="flex flex-col">
-              <button
-                onClick={() => setShowPrograms(!showPrograms)}
-                className="flex items-center justify-between text-gray-700 hover:text-blue-600 px-4 py-2 w-full"
-              >
-                <div className="flex items-center">
-                  <AiOutlineFolder className="mr-3" size={20} />
-                  {isOpen && "Programas"}
-                </div>
-                {isOpen && (
-                  <span className="ml-auto">
-                    {showPrograms ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
-                  </span>
-                )}
-              </button>
-
-              {showPrograms && isOpen && (
-                <ul className="ml-10 text-gray-600">
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <BsBoxArrowInDown className="mr-2" size={16} />
-                    <Link href="/programas/paa-cds">PAA - CDS</Link>
-                  </li>
-                </ul>
-              )}
-            </li>
-            <li className="flex flex-col">
-              <button
-                onClick={() => setShowElections(!showElections)}
-                className="flex items-center justify-between text-gray-700 hover:text-blue-600 px-4 py-2 w-full"
-              >
-                <div className="flex items-center">
-                  <MdOutlineHowToVote className="mr-3" size={20} />
-                  {isOpen && "Eleições"}
-                </div>
-                {isOpen && (
-                  <span className="ml-auto">
-                    {showElections ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
-                  </span>
-                )}
-              </button>
-
-              {showElections && isOpen && (
-                <ul className="ml-10 text-gray-600">
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineUsergroupAdd className="mr-2" size={16} />
-                    <Link href="/votacao/eleitorado">Eleitorado</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineLineChart className="mr-2" size={16} />
-                    <Link href="/votacao/2018">Eleições 2018</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineBarChart className="mr-2" size={16} />
-                    <Link href="/votacao/2020">Eleições 2020</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineLineChart className="mr-2" size={16} />
-                    <Link href="/votacao/2022">Eleições 2022</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineBarChart className="mr-2" size={16} />
-                    <Link href="/votacao/2024">Eleições 2024</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <BsArrowLeftRight className="mr-2" size={16} />
-                    <Link href="/votacao/comparativogeral(2018-2022)">Comparativo 2018 - 2022</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <BsArrowLeftRight className="mr-2" size={16} />
-                    <Link href="/votacao/comparativogeral(2020-2024)">Comparativo 2020 - 2024</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaRegFileAlt className="mr-2" size={16} />
-                    <Link href="/votacao/relatorioeleicao">Relatório de Votação</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <FaRegAddressBook className="mr-2" size={16} />
-                    <Link href="/votacao/relatorioeleitorado">Relatório de Eleitorado</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineFileSearch className="mr-2" size={16} />
-                    <Link href="/votacao/relatorioanalise">Ánalise Eleitoral</Link>
-                  </li>
-                  <li className="flex items-center py-1 hover:text-blue-500">
-                    <AiOutlineFund className="mr-2" size={16} />
-                    <Link href="/votacao/projecao2025">Projeção 2025</Link>
-                  </li>
-                </ul>
-              )}
             </li>
           </ul>
         </nav>

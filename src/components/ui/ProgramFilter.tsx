@@ -1,3 +1,4 @@
+// src/components/ui/ProgramFilter.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -5,14 +6,23 @@ import Select, { MultiValue } from "react-select";
 
 interface ProgramFilterProps {
   data: any[];
-  onFilterChange: (selectedMunicipalities: string[]) => void;
+  onFilterChange: (selectedData: { selectedPrograms: { value: string; label: string }[], municipalities: string[] }) => void;
 }
 
 const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) => {
   const [selectedPrograms, setSelectedPrograms] = useState<{ value: string; label: string }[]>([]);
   const [totalMunicipalities, setTotalMunicipalities] = useState<number>(0);
 
-  // 🔹 Opções combinadas de Programas e Proteção Social
+  // ℹ️ Função auxiliar para encontrar a chave exata nos dados da API,
+  // ℹ️ ignorando espaços e case-sensitive.
+  const findKey = (columnName: string) => {
+    if (!data || data.length === 0 || !data[0]) return "";
+    return Object.keys(data[0]).find(
+      (key) => key.replace(/\s+/g, " ").trim().toLowerCase() === columnName.replace(/\s+/g, " ").trim().toLowerCase()
+    ) || "";
+  };
+  
+  // Mantenha a lista de programas com as chaves "limpas" para serem usadas no findKey
   const programOptions = [
     { value: "Proteção Social Básica - Unidade de CRAS", label: "CRAS" },
     { value: "Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe", label: "Órfãos do Programa" },
@@ -36,52 +46,60 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
     { value: "Quantidade de Casa da Cidadania", label: "Casa da Cidadania" }
   ];
 
-  // Função para encontrar a chave correta na planilha
-  const findKey = (columnName: string) => {
-    if (!data || data.length === 0) return "";
-    return Object.keys(data[0]).find(
-      key => key.replace(/\s+/g, " ").trim().toLowerCase() === columnName.trim().toLowerCase()
-    ) || "";
-  };
-
-  // Converte valores numéricos para "Sim" ou "Não"
   const normalizeValue = (value: any) => {
     if (typeof value === "string") {
       const trimmedValue = value.trim().toLowerCase();
       if (trimmedValue === "sim" || trimmedValue === "não") {
-        return trimmedValue.charAt(0).toUpperCase() + trimmedValue.slice(1); // Mantém "Sim" e "Não"
+        return trimmedValue.charAt(0).toUpperCase() + trimmedValue.slice(1);
       }
     }
-  
     const num = Number(value);
-    return num > 0 ? "Sim" : "Não"; // Converte valores numéricos
+    return num > 0 ? "Sim" : "Não";
+  };
+  
+  // ℹ️ Função auxiliar para converter o valor para um número de forma segura
+  const parseNumber = (value: any): number => {
+    const num = Number(value);
+    return isNaN(num) ? 0 : num;
   };
 
   useEffect(() => {
     if (selectedPrograms.length === 0) {
-      onFilterChange([]);
+      onFilterChange({ selectedPrograms: [], municipalities: [] });
       setTotalMunicipalities(0);
       return;
     }
 
-    const filteredMunicipalities = data
-      .filter(row =>
+    const filteredMunicipalities = Array.from(new Set(
+      data.filter(row =>
         selectedPrograms.some(program => {
-          const key = findKey(program.value);
-          return key && normalizeValue(row[key]) === "Sim";
-        })
-      )
-      .map(row => row["Município"])
-      .filter(Boolean);
+          const key = findKey(program.value); // 🆕 Use findKey para obter a chave correta
+          if (!key) return false; // Se a chave não for encontrada, pule para o próximo programa
 
-    console.log("🔹 Municípios filtrados:", filteredMunicipalities);
+          const value = row[key];
+
+          // Lógica ajustada para o programa "Casa da Cidadania"
+          if (key.toLowerCase().includes("casa da cidadania")) {
+            return parseNumber(value) > 0;
+          }
+
+          // Lógica padrão para todos os outros programas
+          return normalizeValue(value) === "Sim";
+        })
+      ).map(row => row["Município"])
+    ));
+
     setTotalMunicipalities(filteredMunicipalities.length);
-    onFilterChange(filteredMunicipalities);
-  }, [selectedPrograms, data]);
+
+    onFilterChange({
+      selectedPrograms,
+      municipalities: filteredMunicipalities,
+    });
+
+  }, [selectedPrograms, data, onFilterChange]);
 
   return (
     <div>
-      {/* 🔹 Filtro de Programas */}
       <div className="mb-6 p-4 bg-white shadow-lg rounded-lg">
         <h2 className="text-lg font-semibold mb-2">Filtrar por Programa</h2>
         <Select
@@ -89,7 +107,6 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
           options={programOptions}
           value={selectedPrograms}
           onChange={(newValue: MultiValue<{ value: string; label: string }>) => {
-            console.log("🔹 Programas selecionados:", newValue);
             setSelectedPrograms(newValue as any);
           }}
           placeholder="Selecione um ou mais programas"
@@ -97,9 +114,7 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
         />
       </div>
 
-      {/* 🔹 Indicador: Total de Municípios Destacados */}
       <div className="p-4 bg-white shadow-lg rounded-lg text-center flex flex-col items-center">
-        <h2 className="text-lg font-semibold mb-2">Indicadores</h2>
         <p className="text-xl font-bold text-blue-600">{totalMunicipalities}</p>
         <span className="text-sm text-gray-600">Municípios destacados no mapa</span>
       </div>
