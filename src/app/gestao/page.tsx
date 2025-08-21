@@ -1,3 +1,4 @@
+// app/dashboard/gestao/page.tsx
 "use client";
 
 import { useState, useEffect } from "react";
@@ -34,15 +35,16 @@ export default function GestaoPage() {
   const [usersLoading, setUsersLoading] = useState(true);
   const [totalUsers, setTotalUsers] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
+  const [isDialogOpen, setIsDialogOpen] = useState(false); // Estado para controlar o modal
   const usersPerPage = 4;
 
-  const fetchUsers = async (page: number) => {
+  const fetchUsers = async () => {
     setUsersLoading(true);
     try {
-      const response = await fetch(`/api/users?page=${page}&limit=${usersPerPage}`);
+      const response = await fetch('/api/users');
       if (!response.ok) throw new Error('Erro ao buscar usuários.');
       const { data, totalCount } = await response.json();
-      
+
       setUsers(data || []);
       setTotalUsers(totalCount || 0);
     } catch (error) {
@@ -54,40 +56,34 @@ export default function GestaoPage() {
   };
 
   useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage]);
+    fetchUsers();
+  }, []);
 
   const totalPages = Math.ceil(totalUsers / usersPerPage);
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
 
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
+  
+  const handleUserCreated = () => {
+    fetchUsers();
+    setIsDialogOpen(false); // Fecha o modal após a criação do usuário
   };
 
   return (
     <ProtectedRoute allowedRoles={['admin']}>
-      <div className="bg-white min-h-screen w-full">
-        {/* Sidebar fixa em todas as telas */}
-        <div className="h-screen overflow-auto fixed left-0 top-0">
+      <div className="flex bg-white min-h-screen w-full">
+        <div style={{ zoom: '80%' }} className="h-screen overflow-auto">
           <Sidebar />
         </div>
-        
-        {/* Conteúdo principal com margem para a Sidebar */}
-        <main className="p-4 md:p-8 ml-[80px]">
+        <main className="flex-1 p-8">
           <div className="max-w-7xl mx-auto">
-            {/* Título e botão "Adicionar" */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
-              <h1 className="text-2xl md:text-3xl font-bold mb-4 md:mb-0">Listagem Geral de Usuários</h1>
-              <Dialog>
+            <div className="flex justify-between items-center mb-6">
+              <h1 className="text-3xl font-bold">Listagem Geral de Usuários</h1>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                 <DialogTrigger asChild>
-                  <Button className="w-auto">
+                  <Button>
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Novo Usuário
                   </Button>
                 </DialogTrigger>
@@ -95,45 +91,46 @@ export default function GestaoPage() {
                   <DialogHeader>
                     <DialogTitle>Adicionar Novo Usuário</DialogTitle>
                   </DialogHeader>
-                  <CreateUserForm onUserCreated={() => fetchUsers(currentPage)} />
+                  <CreateUserForm 
+                    onUserCreated={handleUserCreated} 
+                    onClose={() => setIsDialogOpen(false)} 
+                  />
                 </DialogContent>
               </Dialog>
             </div>
-            
+
             <div className="bg-white p-6 rounded-lg shadow-md">
-              {/* Informação de total e paginação */}
-              <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
-                <p className="text-sm font-semibold mb-2 sm:mb-0">Total: {totalUsers} usuários</p>
+              <div className="flex justify-between items-center mb-4">
+                <p className="text-sm font-semibold">Total: {totalUsers} usuários</p>
                 {usersLoading ? null : (
                   <div className="flex items-center space-x-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handlePreviousPage}
+                      onClick={() => paginate(currentPage - 1)}
                       disabled={currentPage === 1}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
-                    <span className="text-sm">Página {currentPage} de {totalPages}</span>
+                    <span>Página {currentPage} de {totalPages}</span>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleNextPage}
-                      disabled={currentPage >= totalPages}
+                      onClick={() => paginate(currentPage + 1)}
+                      disabled={currentPage === totalPages}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 )}
               </div>
-              
-              {/* Tabela de usuários */}
+
               {usersLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
-                <div className="overflow-x-auto w-full">
+                <div className="overflow-x-auto">
                   <DataTable>
                     <DataTableHeader>
                       <DataTableRow>
@@ -144,18 +141,18 @@ export default function GestaoPage() {
                       </DataTableRow>
                     </DataTableHeader>
                     <DataTableBody>
-                      {users.length > 0 ? (
-                        users.map((user) => (
+                      {currentUsers.length > 0 ? (
+                        currentUsers.map((user) => (
                           <DataTableRow key={user.id}>
                             <DataTableCell>
                               <div className="flex items-center space-x-3">
                                 {user.imageUrl ? (
                                   <div className="relative w-8 h-8 rounded-full overflow-hidden">
-                                    <Image 
-                                      src={user.imageUrl} 
-                                      alt={user.fullName} 
-                                      fill 
-                                      style={{ objectFit: 'cover' }} 
+                                    <Image
+                                      src={user.imageUrl}
+                                      alt={user.fullName}
+                                      fill
+                                      style={{ objectFit: 'cover' }}
                                       className="rounded-full"
                                     />
                                   </div>
