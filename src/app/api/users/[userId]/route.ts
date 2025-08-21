@@ -1,26 +1,76 @@
+// src/app/api/users/[userId]/route.ts
 import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 
-export async function GET() {
+// GET /api/users/:userId
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ userId: string }> }
+) {
   try {
+    const { userId } = await params;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'ID do usuário não fornecido.' },
+        { status: 400 }
+      );
+    }
+
+    // Clerk v5: é necessário obter o client com await
     const client = await clerkClient();
-    const usersResponse = await client.users.getUserList();
-    
-    const usersData = usersResponse.data.map(user => ({
-      id: user.id,
-      email: user.emailAddresses[0]?.emailAddress,
-      fullName: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
-      imageUrl: user.imageUrl,
-      createdAt: user.createdAt,
-      lastSignInAt: user.lastSignInAt,
-    }));
-    
-    return NextResponse.json({
-      data: usersData,
-      totalCount: usersResponse.totalCount,
-    }, { status: 200 });
+
+    const user = await client.users.getUser(userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: 'Usuário não encontrado.' },
+        { status: 404 }
+      );
+    }
+
+    const sessions = await client.sessions.getSessionList({ userId });
+
+    const userWithSessions = {
+      ...user,
+      sessions: sessions.data,
+    };
+
+    return NextResponse.json(userWithSessions, { status: 200 });
   } catch (error) {
-    console.error('Erro ao buscar usuários:', error);
-    return NextResponse.json({ error: 'Erro ao buscar usuários.' }, { status: 500 });
+    console.error('Erro ao buscar usuário:', error);
+    return NextResponse.json(
+      { error: 'Erro ao buscar usuário.' },
+      { status: 500 }
+    );
+  }
+}
+
+// DELETE /api/users/:userId
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const { userId } = await params;
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'ID do usuário não fornecido.' },
+        { status: 400 }
+      );
+    }
+
+    const client = await clerkClient();
+
+    await client.users.deleteUser(userId);
+
+    return NextResponse.json(
+      { message: 'Usuário removido com sucesso!' },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Erro ao remover usuário:', error);
+    return NextResponse.json(
+      { error: 'Erro ao remover o usuário.' },
+      { status: 500 }
+    );
   }
 }
