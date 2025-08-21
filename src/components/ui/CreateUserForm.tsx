@@ -1,4 +1,5 @@
 // src/components/CreateUserForm.tsx
+
 "use client";
 
 import { useState } from "react";
@@ -31,9 +32,10 @@ const formSchema = z.object({
 
 interface CreateUserFormProps {
   onUserCreated: () => void;
+  onClose: () => void; // Adicione esta nova propriedade
 }
 
-export default function CreateUserForm({ onUserCreated }: CreateUserFormProps) {
+export default function CreateUserForm({ onUserCreated, onClose }: CreateUserFormProps) {
   const [loading, setLoading] = useState(false);
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,14 +48,14 @@ export default function CreateUserForm({ onUserCreated }: CreateUserFormProps) {
 
   const handleCreateUser = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
-    
+
     // Divide o nome completo para preencher os campos firstName e lastName
     const nameParts = values.fullName.split(' ');
     const firstName = nameParts[0];
     const lastName = nameParts.slice(1).join(' ') || '';
 
     try {
-      const response = await fetch('/api/users', { 
+      const response = await fetch('/api/users', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -67,6 +69,7 @@ export default function CreateUserForm({ onUserCreated }: CreateUserFormProps) {
       toast.success("Usuário cadastrado com sucesso!");
       form.reset();
       onUserCreated();
+      onClose(); // <--- CHAME A FUNÇÃO onCLose AQUI
     } catch (error) {
       console.error("Erro ao cadastrar usuário:", error);
       toast.error("Erro ao cadastrar o usuário. Tente novamente.");
@@ -103,15 +106,15 @@ export default function CreateUserForm({ onUserCreated }: CreateUserFormProps) {
           />
           <Button type="submit" className="w-full" disabled={loading}>
             {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Cadastrando...
-                </>
-              ) : (
-                <>
-                  <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar
-                </>
-              )}
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Cadastrando...
+              </>
+            ) : (
+              <>
+                <PlusCircle className="mr-2 h-4 w-4" /> Cadastrar
+              </>
+            )}
           </Button>
         </form>
       </Form>
