@@ -11,6 +11,11 @@ const buttonVariants = cva("inline-flex items-center justify-center gap-2 rounde
       outline: "border border-input bg-background hover:bg-accent",
       ghost: "hover:bg-accent",
       link: "underline-offset-4 hover:underline",
+      // Adicione a variante destrutiva para o botão de deletar
+      // bg-red-500: cor de fundo vermelha
+      // text-white: cor do texto branca
+      // hover:bg-red-600: cor de fundo um pouco mais escura ao passar o mouse
+      destructive: "bg-red-500 text-white hover:bg-red-600",
     },
     size: {
       default: "h-9 px-4 py-2",
