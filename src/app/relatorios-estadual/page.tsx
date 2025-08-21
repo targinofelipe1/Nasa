@@ -86,7 +86,7 @@ export default function ReportsPageEstadual() {
         <NoScroll />
 
         <div className="w-full bg-white p-4 shadow-md text-center">
-          <h1 className="text-2xl font-bold">Relatório Estadual</h1>
+          <h1 className="text-2xl font-bold">Geraração de Relatório</h1>
         </div>
 
         <div className="flex bg-white min-h-screen w-full" style={{ zoom: "80%" }}>
