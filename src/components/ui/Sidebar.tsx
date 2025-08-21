@@ -25,6 +25,7 @@ import { MdEmojiObjects, MdHowToVote, MdOutlineHowToVote, MdOutlineMap, MdOutlin
 import { BsArrowLeftRight, BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
+import { Settings, Sliders } from "lucide-react";
 
 const Sidebar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -98,6 +99,18 @@ const Sidebar = () => {
               <Link href="/relatorios-estadual" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <AiOutlineFileText className="mr-3" size={20} />
                 {isOpen && "Gerar Relatórios"}
+              </Link>
+            </li>
+             <li>
+              <Link href="/config" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
+                <Settings className="mr-3" size={20} />
+                {isOpen && "Configurações"}
+              </Link>
+            </li>
+             <li>
+              <Link href="/gestao" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
+                <Sliders className="mr-3" size={20} />
+                {isOpen && "Painel de Gestão"}
               </Link>
             </li>
           </ul>
