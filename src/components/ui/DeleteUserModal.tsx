@@ -1,3 +1,4 @@
+// components/ui/DeleteUserModal.tsx
 "use client";
 
 import { useState } from "react";
@@ -39,16 +40,18 @@ export default function DeleteUserModal({ user, onConfirm, onClose }: DeleteUser
       onClose();
     }
   };
+  
+  // Condicionalmente renderiza o modal apenas se o 'user' estiver presente
+  if (!user) return null;
 
   return (
-    // Alterado: open={true} para open={!!user}
-    <Dialog open={!!user} onOpenChange={onClose}>
+    <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Confirmar Exclusão</DialogTitle>
           <DialogDescription>
-            Tem certeza que deseja remover o usuário <strong>{user.fullName}</strong>? Esta ação não pode ser desfeita.         
-         </DialogDescription>
+            Tem certeza que deseja remover o usuário <strong>{user.fullName}</strong>? Esta ação não pode ser desfeita.
+          </DialogDescription>
         </DialogHeader>
         <DialogFooter className="flex justify-between mt-4">
           <Button
@@ -58,7 +61,6 @@ export default function DeleteUserModal({ user, onConfirm, onClose }: DeleteUser
           >
             Cancelar
           </Button>
-          {/* Alterado: variant="destructive" e removido a classe de cor do ícone */}
           <Button
             variant="destructive"
             onClick={handleDelete}
