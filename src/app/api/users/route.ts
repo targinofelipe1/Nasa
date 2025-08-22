@@ -3,13 +3,9 @@ import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import crypto from 'crypto';
 
-// GET /api/users
 export async function GET() {
   try {
-    // ✅ Obtenha a instância do client
     const client = await clerkClient();
-
-    // (opcional) passe paginação: { limit, offset, orderBy }
     const { data, totalCount } = await client.users.getUserList();
 
     const usersData = data.map((user) => ({
@@ -19,6 +15,7 @@ export async function GET() {
       imageUrl: user.imageUrl ?? null,
       createdAt: user.createdAt,
       lastSignInAt: user.lastSignInAt,
+      isBlocked: !!user.banned// ✅ Adicione esta linha
     }));
 
     return NextResponse.json(

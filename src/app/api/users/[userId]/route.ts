@@ -74,3 +74,43 @@ export async function DELETE(
     );
   }
 }
+
+export async function PATCH(
+  request: Request,
+  { params }: { params: Promise<{ userId: string }> } 
+) {
+  try {
+    const { userId } = await params;
+    const { isBlocked } = await request.json();
+
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'ID do usuário não fornecido.' },
+        { status: 400 }
+      );
+    }
+
+    const client = await clerkClient();
+
+    if (isBlocked) {
+      // Usa a função banUser para bloquear o usuário
+      await client.users.banUser(userId);
+    } else {
+      // Usa a função unbanUser para desbloquear o usuário
+      await client.users.unbanUser(userId);
+    }
+
+    return NextResponse.json(
+      { message: `Usuário ${isBlocked ? 'bloqueado' : 'desbloqueado'} com sucesso!` },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error('Erro ao atualizar o usuário:', error);
+    return NextResponse.json(
+      { error: 'Erro ao atualizar o status do usuário.' },
+      { status: 500 }
+    );
+  }
+}
+
+
