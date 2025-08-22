@@ -1,3 +1,4 @@
+// `LoginPage.tsx`
 "use client";
 
 import { useForm } from "react-hook-form";
@@ -120,8 +121,16 @@ export default function LoginPage() {
       }
     } catch (err) {
       if (isClerkAPIResponseError(err)) {
-        const rawMessage = err.errors?.[0]?.message ?? "Erro inesperado.";
-        const message = rawMessage.toLowerCase();
+        const rawMessage = err.errors?.[0]?.message ?? "";
+        const longMessage = err.errors?.[0]?.longMessage ?? "";
+        const message = (rawMessage + " " + longMessage).toLowerCase();
+
+        // LÓGICA REFORÇADA PARA USUÁRIO BANIDO/BLOQUEADO
+        if (message.includes("banned") || message.includes("blocked")) {
+          toast.error("Acesso bloqueado. Entre em contato com o administrador.");
+          setLoading(false);
+          return;
+        }
 
         if (!pendingVerification) {
           if (
@@ -178,6 +187,9 @@ export default function LoginPage() {
     setTempoRestante(120);
 
     try {
+      // ✅ LIMPA O CAMPO DE CÓDIGO ANTES DE ENVIAR UM NOVO
+      form.resetField("code", { defaultValue: "" });
+
       await signIn.create({ identifier: email, strategy: "email_code" });
       toast.success("Novo código enviado para o e-mail.");
     } catch (error) {
@@ -220,13 +232,10 @@ export default function LoginPage() {
               >
                 {loading ? "Verificando..." : "Continuar"}
               </Button>
-
-
-
               <div className="text-center text-sm">
                 <span className="mr-1">Ainda não possui uma conta?</span>
-                <Link 
-                  href="https://servidor.pbdoc-forms.gedes.rke.codatahml.pb.gov.br/servico/1318" 
+                <Link
+                  href="https://servidor.pbdoc-forms.gedes.rke.codatahml.pb.gov.br/servico/1318"
                   className="underline font-medium text-primary"
                   target="_blank"
                 >
@@ -240,7 +249,10 @@ export default function LoginPage() {
                 variant="link"
                 type="button"
                 className="flex items-center p-1"
-                onClick={() => setPendingVerification(false)}
+                onClick={() => {
+                  setPendingVerification(false);
+                  form.resetField("code"); // ✅ CORREÇÃO: Limpa o campo de código ao voltar
+                }}
               >
                 <ChevronLeft className="h-5 w-5" /> Voltar
               </Button>
@@ -275,8 +287,6 @@ export default function LoginPage() {
               >
                 {loading ? "Verificando..." : "Verificar Código"}
               </Button>
-
-
               <Button
                 type="button"
                 className="w-full"
