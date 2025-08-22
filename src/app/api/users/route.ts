@@ -2,6 +2,55 @@
 import { NextResponse } from 'next/server';
 import { clerkClient } from '@clerk/nextjs/server';
 import crypto from 'crypto';
+import nodemailer from 'nodemailer'; 
+
+
+const LOGO_URL = 'https://gevs.vercel.app/img/provisorio.png';
+const APP_URL = 'https://gevs.vercel.app/';
+
+async function sendWelcomeEmailWithLink(email: string, fullName: string) {
+  const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.EMAIL_USER,
+    to: email,
+    subject: 'Bem-vindo(a) à Plataforma GEVS!',
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="text-align: center; padding: 20px 0; background-color: #f4f4f4;">
+          <img src="${LOGO_URL}" alt="Logo da Plataforma GEVS" style="max-width: 150px; height: auto;">
+        </div>
+        <div style="padding: 20px;">
+          <h2>Olá, ${fullName}!</h2>
+          <p style="margin-top: 20px;">Seja bem-vindo(a)!</p>
+          <p>Seu cadastro na plataforma Paraíba Social foi realizado com sucesso.</p>
+          <p>Este e-mail foi enviado automaticamente. Por favor, não responda.</p>
+          <p>Para acessar sua conta, copie e cole o link abaixo no seu navegador:</p>
+          <div style="margin: 20px 0; background-color: #f0f0f0; padding: 15px; border-radius: 5px; text-align: center;">
+            <a href="${APP_URL}auth/sign-in" style="word-break: break-all; font-weight: bold; color: #007bff; text-decoration: none;">
+              ${APP_URL}auth/sign-in
+            </a>
+          </div>
+        </div>
+        <div style="text-align: center; padding: 10px; font-size: 12px; color: #999;">
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    console.log('E-mail de boas-vindas enviado para:', email);
+  } catch (error) {
+    console.error('Erro ao enviar o e-mail:', error);
+  }
+}
 
 export async function GET() {
   try {
@@ -15,7 +64,7 @@ export async function GET() {
       imageUrl: user.imageUrl ?? null,
       createdAt: user.createdAt,
       lastSignInAt: user.lastSignInAt,
-      isBlocked: !!user.banned// ✅ Adicione esta linha
+      isBlocked: !!user.banned
     }));
 
     return NextResponse.json(
@@ -45,15 +94,16 @@ export async function POST(request: Request) {
 
     const provisionalPassword = crypto.randomBytes(16).toString('hex');
 
-    // ✅ Obtenha a instância do client
     const client = await clerkClient();
 
     const newUser = await client.users.createUser({
       firstName,
       lastName,
-      emailAddress: [email], // forma correta no backend SDK
+      emailAddress: [email], 
       password: provisionalPassword,
     });
+
+    await sendWelcomeEmailWithLink(email, `${firstName || ''} ${lastName || ''}`.trim());
 
     return NextResponse.json(
       { message: 'Usuário cadastrado com sucesso!', userId: newUser.id },
