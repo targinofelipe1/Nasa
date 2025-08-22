@@ -3,7 +3,8 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-import { Loader2, CircleUserRound, ChevronLeft, ChevronRight, Plus, SquarePen, Trash, Info } from "lucide-react";
+// ✅ Importe os novos ícones
+import { Loader2, CircleUserRound, ChevronLeft, ChevronRight, Plus, SquarePen, Trash, Info, Search, X, Mail, User, Calendar } from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
@@ -12,6 +13,7 @@ import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import Sidebar from "@/components/ui/Sidebar";
 import DeleteUserModal from "@/components/ui/DeleteUserModal";
 import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 import {
   Dialog,
   DialogContent,
@@ -23,6 +25,8 @@ import CreateUserForm from "@/components/ui/CreateUserForm";
 import EditUserForm from "@/components/ui/EditUserForm";
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/components/ui/DataTable";
 import UserDetails from "@/components/ui/UserDetailsModal";
+import UserBlockToggle from "@/components/ui/UserBlockToggle";
+
 
 
 interface UserData {
@@ -32,6 +36,7 @@ interface UserData {
   imageUrl?: string;
   lastSignInAt?: number | null;
   createdAt?: number;
+  isBlocked: boolean;
 }
 
 export default function GestaoPage() {
@@ -46,6 +51,12 @@ export default function GestaoPage() {
   const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
+  
+  const [nameFilter, setNameFilter] = useState("");
+  const [emailFilter, setEmailFilter] = useState("");
+  const [createdAtFilter, setCreatedAtFilter] = useState("");
+  const [lastSignInAtFilter, setLastSignInAtFilter] = useState("");
+
   const usersPerPage = 4;
 
   const fetchUsers = async () => {
@@ -72,7 +83,21 @@ export default function GestaoPage() {
   const totalPages = Math.ceil(totalUsers / usersPerPage);
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
-  const currentUsers = users.slice(indexOfFirstUser, indexOfLastUser);
+
+  const filteredUsers = users.filter(user => {
+    const matchesName = user.fullName.toLowerCase().includes(nameFilter.toLowerCase());
+    const matchesEmail = user.email.toLowerCase().includes(emailFilter.toLowerCase());
+    
+    const formattedCreatedAt = user.createdAt ? format(new Date(user.createdAt), 'dd/MM/yyyy') : '';
+    const formattedLastSignInAt = user.lastSignInAt ? format(new Date(user.lastSignInAt), 'dd/MM/yyyy') : '';
+
+    const matchesCreatedAt = formattedCreatedAt.includes(createdAtFilter);
+    const matchesLastSignInAt = formattedLastSignInAt.includes(lastSignInAtFilter);
+
+    return matchesName && matchesEmail && matchesCreatedAt && matchesLastSignInAt;
+  });
+  
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
   
@@ -118,23 +143,26 @@ export default function GestaoPage() {
     setIsDetailsDialogOpen(true);
   };
 
+  const handleClearFilters = () => {
+    setNameFilter('');
+    setEmailFilter('');
+    setCreatedAtFilter('');
+    setLastSignInAtFilter('');
+  };
+
   return (
     <ProtectedRoute allowedRoles={['admin']}>
       <div className="flex bg-white min-h-screen w-full">
-        {/* Sidebar com estilo responsivo */}
         <div style={{ zoom: '80%' }} className="h-screen overflow-auto">
           <Sidebar />
         </div>
-        {/* Adicionado pl-24 para compensar o sidebar em telas pequenas */}
         <main className="flex-1 p-4 sm:p-8 pl-24 sm:pl-8">
           <div className="max-w-7xl mx-auto">
-            {/* Título e Botão - Ajuste de layout responsivo */}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 space-y-4 sm:space-y-0">
               <h1 className="text-xl sm:text-3xl font-bold text-wrap min-w-0">Listagem Geral de Usuários</h1>
               
               <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
                 <DialogTrigger asChild>
-                  {/* Removido w-full para evitar que o botão ocupe toda a largura */}
                   <Button className="shrink-0"> 
                     <Plus className="mr-2 h-4 w-4" /> Adicionar Novo Usuário
                   </Button>
@@ -165,28 +193,28 @@ export default function GestaoPage() {
                 </Dialog>
               )}
 
-              {userToDelete && (
+              {isDeleteDialogOpen && userToDelete && ( 
                   <DeleteUserModal
                     user={userToDelete}
                     onConfirm={handleConfirmDelete}
-                    onClose={() => setIsDeleteDialogOpen(false)}
+                    onClose={() => {
+                      setIsDeleteDialogOpen(false);
+                      setUserToDelete(null);
+                    }}
                   />
                 )}
 
               {isDetailsDialogOpen && selectedUserId && (
-                  // Passando as props de controle para o componente filho
-                  <UserDetails
-                    userId={selectedUserId}
-                    open={isDetailsDialogOpen}
-                    onClose={() => setIsDetailsDialogOpen(false)}
-                  />
-                )}
-                                                                
+                <UserDetails
+                  userId={selectedUserId}
+                  open={isDetailsDialogOpen}
+                  onClose={() => setIsDetailsDialogOpen(false)}
+                />
+              )}
             </div>
-
-            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+            
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
-                <p className="text-sm font-semibold">Total: {totalUsers} usuários</p>
+                <p className="text-sm font-semibold">Total: {filteredUsers.length} usuários</p>
                 {usersLoading ? null : (
                   <div className="flex items-center space-x-2">
                     <Button
@@ -210,13 +238,69 @@ export default function GestaoPage() {
                 )}
               </div>
 
+                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+              <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
+                <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* ✅ Input para Nome com ícone de Pessoa */}
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar por nome..."
+                      value={nameFilter}
+                      onChange={(e) => setNameFilter(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {/* ✅ Input para E-mail com ícone de E-mail */}
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar por e-mail..."
+                      value={emailFilter}
+                      onChange={(e) => setEmailFilter(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {/* ✅ Input para Data de Cadastro com ícone de Calendário */}
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar data de cadastro (dd/mm/yyyy)..."
+                      value={createdAtFilter}
+                      onChange={(e) => setCreatedAtFilter(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                  {/* ✅ Input para Último Acesso com ícone de Calendário */}
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+                    <Input
+                      type="text"
+                      placeholder="Filtrar último acesso (dd/mm/yyyy)..."
+                      value={lastSignInAtFilter}
+                      onChange={(e) => setLastSignInAtFilter(e.target.value)}
+                      className="pl-9"
+                    />
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleClearFilters}
+                  className="sm:mt-0 w-full sm:w-auto shrink-0"
+                >
+                  <X className="w-4 h-4 mr-2" /> Limpar Filtros
+                </Button>
+              </div>
+
               {usersLoading ? (
                 <div className="flex justify-center items-center h-48">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 </div>
               ) : (
                 <div className="overflow-x-auto sm:overflow-visible">
-                  {/* Tabela para telas maiores */}
                   <DataTable className="hidden sm:table w-full"> 
                     <DataTableHeader>
                       <DataTableRow>
@@ -267,6 +351,11 @@ export default function GestaoPage() {
                                 <Button variant="ghost" size="icon" onClick={() => handleDetails(user.id)}>
                                   <Info className="h-4 w-4 text-blue-500" />
                                 </Button>
+                                <UserBlockToggle
+                                  userId={user.id}
+                                  isBlocked={user.isBlocked}
+                                  onUpdate={fetchUsers}
+                                />
                               </div>
                             </DataTableCell>
                           </DataTableRow>
@@ -279,7 +368,6 @@ export default function GestaoPage() {
                     </DataTableBody>
                   </DataTable>
                   
-                  {/* Tabela em forma de Cards para telas pequenas (empilhados, mas com rolagem horizontal interna) */}
                   <div className="sm:hidden space-y-4 mt-4">
                     {currentUsers.length > 0 ? (
                       currentUsers.map((user) => (
@@ -305,7 +393,6 @@ export default function GestaoPage() {
                             <p><span className="font-semibold">Cadastro:</span> {user.createdAt ? format(new Date(user.createdAt), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
                             <p><span className="font-semibold">Último Acesso:</span> {user.lastSignInAt ? format(new Date(user.lastSignInAt), "dd/MM/yyyy", { locale: ptBR }) : 'N/A'}</p>
                           </div>
-                          {/* Ajustado: Centralizado as ações */}
                           <div className="flex justify-center space-x-2 mt-4">
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                               <SquarePen className="h-4 w-4 text-gray-500" />
@@ -316,6 +403,11 @@ export default function GestaoPage() {
                             <Button variant="ghost" size="icon" onClick={() => handleDetails(user.id)}>
                               <Info className="h-4 w-4 text-blue-500" />
                             </Button>
+                            <UserBlockToggle
+                              userId={user.id}
+                              isBlocked={user.isBlocked}
+                              onUpdate={fetchUsers}
+                            />
                           </div>
                         </div>
                       ))
