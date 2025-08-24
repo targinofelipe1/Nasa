@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -40,6 +40,7 @@ interface EditUserFormProps {
 
 export default function EditUserForm({ user, onUserUpdated, onClose }: EditUserFormProps) {
   const [loading, setLoading] = useState(false);
+  const fullNameRef = useRef<HTMLInputElement>(null); // ✅ Adicionado um ref para o input de nome
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -48,6 +49,19 @@ export default function EditUserForm({ user, onUserUpdated, onClose }: EditUserF
       email: user.email,
     },
   });
+
+  // ✅ Adicionado um useEffect para mover o cursor ao renderizar
+  useEffect(() => {
+    if (fullNameRef.current) {
+      // Move o cursor para o final do texto, desfazendo a seleção
+      fullNameRef.current.setSelectionRange(
+        fullNameRef.current.value.length,
+        fullNameRef.current.value.length
+      );
+      // Foca no input
+      fullNameRef.current.focus();
+    }
+  }, [user]); // Roda quando o `user` muda (ou seja, quando o modal abre)
 
   const handleUpdateUser = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
@@ -90,7 +104,10 @@ export default function EditUserForm({ user, onUserUpdated, onClose }: EditUserF
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nome Completo</FormLabel>
-                <FormControl><Input {...field} /></FormControl>
+                <FormControl>
+                  {/* ✅ Anexa o ref ao componente Input */}
+                  <Input {...field} ref={fullNameRef} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
