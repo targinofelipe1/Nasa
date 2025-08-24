@@ -3,7 +3,6 @@
 
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
-// ✅ Importe os novos ícones
 import { Loader2, CircleUserRound, ChevronLeft, ChevronRight, Plus, SquarePen, Trash, Info, Search, X, Mail, User, Calendar } from "lucide-react";
 import Image from "next/image";
 import { format } from "date-fns";
@@ -11,7 +10,6 @@ import { ptBR } from "date-fns/locale";
 
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
 import Sidebar from "@/components/ui/Sidebar";
-import DeleteUserModal from "@/components/ui/DeleteUserModal";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import {
@@ -26,8 +24,7 @@ import EditUserForm from "@/components/ui/EditUserForm";
 import { DataTable, DataTableBody, DataTableCell, DataTableHead, DataTableHeader, DataTableRow } from "@/components/ui/DataTable";
 import UserDetails from "@/components/ui/UserDetailsModal";
 import UserBlockToggle from "@/components/ui/UserBlockToggle";
-
-
+// import DeleteUserModal from "@/components/ui/DeleteUserModal"; // ✅ Modal de deleção comentado
 
 interface UserData {
   id: string;
@@ -47,8 +44,6 @@ export default function GestaoPage() {
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserData | null>(null);
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<UserData | null>(null);
   const [isDetailsDialogOpen, setIsDetailsDialogOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   
@@ -116,27 +111,11 @@ export default function GestaoPage() {
     setIsEditDialogOpen(true);
   };
 
-  const handleConfirmDelete = async () => {
-    if (!userToDelete) return;
-    try {
-      const response = await fetch(`/api/users/${userToDelete.id}`, {
-        method: 'DELETE',
-      });
-      if (!response.ok) throw new Error('Erro ao remover o usuário.');
-      fetchUsers();
-    } catch (error) {
-      console.error("Erro ao remover usuário:", error);
-      toast.error('Erro ao remover o usuário. Tente novamente.');
-    } finally {
-      setIsDeleteDialogOpen(false);
-      setUserToDelete(null);
-    }
-  };
-
-  const handleDelete = (user: UserData) => {
-    setUserToDelete(user);
-    setIsDeleteDialogOpen(true);
-  };
+  // ✅ Função handleDelete comentada
+  // const handleDelete = (user: UserData) => {
+  //   setUserToDelete(user);
+  //   setIsDeleteDialogOpen(true);
+  // };
 
   const handleDetails = (userId: string) => {
     setSelectedUserId(userId);
@@ -193,16 +172,17 @@ export default function GestaoPage() {
                 </Dialog>
               )}
 
+              {/* ✅ Modal de deleção comentado
               {isDeleteDialogOpen && userToDelete && ( 
-                  <DeleteUserModal
-                    user={userToDelete}
-                    onConfirm={handleConfirmDelete}
-                    onClose={() => {
-                      setIsDeleteDialogOpen(false);
-                      setUserToDelete(null);
-                    }}
-                  />
-                )}
+                <DeleteUserModal
+                  user={userToDelete}
+                  onConfirm={handleConfirmDelete}
+                  onClose={() => {
+                    setIsDeleteDialogOpen(false);
+                    setUserToDelete(null);
+                  }}
+                />
+              )} */}
 
               {isDetailsDialogOpen && selectedUserId && (
                 <UserDetails
@@ -213,32 +193,32 @@ export default function GestaoPage() {
               )}
             </div>
             
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
-                <p className="text-sm font-semibold">Total: {filteredUsers.length} usuários</p>
-                {usersLoading ? null : (
-                  <div className="flex items-center space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => paginate(currentPage - 1)}
-                      disabled={currentPage === 1}
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                    </Button>
-                    <span className="text-sm whitespace-nowrap">Página {currentPage} de {totalPages}</span>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => paginate(currentPage + 1)}
-                      disabled={currentPage === totalPages}
-                    >
-                      <ChevronRight className="h-4 w-4" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 space-y-2 sm:space-y-0">
+              <p className="text-sm font-semibold">Total: {filteredUsers.length} usuários</p>
+              {usersLoading ? null : (
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage - 1)}
+                    disabled={currentPage === 1}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <span className="text-sm whitespace-nowrap">Página {currentPage} de {totalPages}</span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => paginate(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              )}
+            </div>
 
-                <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
+            <div className="bg-white p-4 sm:p-6 rounded-lg shadow-md">
               <div className="flex flex-col sm:flex-row items-center gap-4 mb-4">
                 <div className="flex-grow grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   {/* ✅ Input para Nome com ícone de Pessoa */}
@@ -345,9 +325,10 @@ export default function GestaoPage() {
                                 <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                                   <SquarePen className="h-4 w-4 text-gray-500" />
                                 </Button>
+                                {/* ✅ Botão de deleção comentado
                                 <Button variant="ghost" size="icon" onClick={() => handleDelete(user)}>
                                   <Trash className="h-4 w-4 text-red-500" />
-                                </Button>
+                                </Button> */}
                                 <Button variant="ghost" size="icon" onClick={() => handleDetails(user.id)}>
                                   <Info className="h-4 w-4 text-blue-500" />
                                 </Button>
@@ -397,9 +378,10 @@ export default function GestaoPage() {
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(user)}>
                               <SquarePen className="h-4 w-4 text-gray-500" />
                             </Button>
+                            {/* ✅ Botão de deleção comentado
                             <Button variant="ghost" size="icon" onClick={() => handleDelete(user)}>
                               <Trash className="h-4 w-4 text-red-500" />
-                            </Button>
+                            </Button> */}
                             <Button variant="ghost" size="icon" onClick={() => handleDetails(user.id)}>
                               <Info className="h-4 w-4 text-blue-500" />
                             </Button>
