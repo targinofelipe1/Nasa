@@ -52,7 +52,7 @@ const LogoHeader = ({
       }}
     >
       <h1 style={{ fontSize: "32px", fontWeight: "bold" }}>{titulo}</h1>
-      <h2 style={{ fontSize: "24px", marginTop: "10px" }}>Paraíba Social</h2>
+      <h2 style={{ fontSize: "24px", marginTop: "10px" }}>DataMetrics</h2>
 
       {titulo === "Relatório Estadual" && selectedRegionals.length > 0 && (
         <>
@@ -77,7 +77,7 @@ const LogoHeader = ({
 const PrintModal: React.FC<PrintModalProps> = ({ isOpen, onClose, apiData }) => {
   const [tabelasSelecionadas, setTabelasSelecionadas] = useState<string[]>([]);
   
-  const todasAsTabelas = ["Indicadores", "População", "Cadastro Único", "Bolsa Família", "Protecão Básica", "Protecão Especial", "Segurança Alimentar", "Casas da Cidadanias", "Abono Natalino", "Saúde", "Educacão"];
+  const todasAsTabelas = ["Indicadores", "População", "Cadastro Único", "Bolsa Família", "Protecão Básica", "Protecão Especial", "Segurança Alimentar", "Casas da Cidadanias","Posto do SINE", "Abono Natalino", "Saúde", "Educacão"];
 
   const handleTabelaSelecionada = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { value, checked } = event.target;

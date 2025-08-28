@@ -55,7 +55,7 @@ const Card: FC<CardProps> = ({
   };
 
   const displayValue = selectOptions ? selectedOption?.value : value;
-  const displayLabel = selectOptions ? selectedOption?.label : label;
+ const displayLabel = label;
 
   return (
     <div

@@ -43,7 +43,9 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
     { value: "Segurança Alimentar - Restaurante Popular (municípios)", label: "Restaurante Popular" },
     { value: "Segurança Alimentar - PAA LEITE (municípios)", label: "PAA Leite" },
     { value: "Segurança Alimentar - PAA CDS (municípios)", label: "PAA CDS" },
-    { value: "Quantidade de Casa da Cidadania", label: "Casa da Cidadania" }
+    { value: "Quantidade de Casa da Cidadania", label: "Casa da Cidadania" },
+    { value: "Posto do SINE", label: "Posto do SINE" },
+
   ];
 
   const normalizeValue = (value: any) => {
@@ -57,7 +59,6 @@ const ProgramFilter: React.FC<ProgramFilterProps> = ({ data, onFilterChange }) =
     return num > 0 ? "Sim" : "Não";
   };
   
-  // ℹ️ Função auxiliar para converter o valor para um número de forma segura
   const parseNumber = (value: any): number => {
     const num = Number(value);
     return isNaN(num) ? 0 : num;
