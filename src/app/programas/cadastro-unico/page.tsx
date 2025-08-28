@@ -272,7 +272,7 @@ export default function CadastroUnicoPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["admin"]}>
+    <ProtectedRoute>
       <div className="flex bg-white min-h-screen">
         <div style={{ zoom: "80%" }} className="h-screen">
           <Sidebar />

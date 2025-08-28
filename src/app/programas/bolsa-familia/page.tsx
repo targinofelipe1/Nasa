@@ -228,7 +228,7 @@ export default function BolsaFamiliaPage() {
   }
 
   return (
-    <ProtectedRoute allowedRoles={["admin"]}>
+    <ProtectedRoute>
       <div className="flex bg-white min-h-screen w-full">
         <div style={{ zoom: "80%" }} className="h-screen overflow-auto">
           <Sidebar />
