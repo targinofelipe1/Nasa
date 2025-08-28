@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { FaBalanceScale, FaBalanceScaleLeft, FaChartBar, FaChartLine, FaFileAlt, FaFileContract, FaFileInvoice, FaRegAddressBook, FaRegFileAlt, FaVoteYea } from "react-icons/fa";
+import { FaBalanceScale, FaBalanceScaleLeft, FaChartBar, FaChartLine, FaClipboardList, FaFileAlt, FaFileContract, FaFileInvoice, FaHandHoldingUsd, FaIdCard, FaRegAddressBook, FaRegAddressCard, FaRegFileAlt, FaRegIdCard, FaShieldAlt, FaStethoscope, FaUsers, FaUserShield, FaUtensils, FaVoteYea } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -79,7 +79,6 @@ const Sidebar = () => {
           </div>
         )}
 
-        {/* Adicionado overflow-y-auto e flex-1 para preencher o espaço restante */}
         <nav className="mt-6 w-full flex-1 overflow-y-auto pb-4">
           <ul className="space-y-4">
             <li>
@@ -87,6 +86,64 @@ const Sidebar = () => {
                 <AiOutlineHome className="mr-3" size={20} />
                 {isOpen && "Página Inicial"}
               </Link>
+            </li>
+             <li className="flex flex-col">
+              <button
+                onClick={() => setShowPrograms(!showPrograms)}
+                className="flex items-center justify-between text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 w-full"
+              >
+                <div className="flex items-center">
+                  <AiOutlineFolder className="mr-3" size={20} />
+                  {isOpen && "Programas"}
+                </div>
+                {isOpen && (
+                  <span className="ml-auto">
+                    {showPrograms ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
+                  </span>
+                )}
+              </button>
+
+              {showPrograms && isOpen && (
+               <ul className="ml-10 text-gray-600 dark:text-gray-400">
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaRegIdCard className="mr-2" size={16} />
+                  <Link href="/programas/cadastro-unico">Cadastro Único</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaUsers className="mr-2" size={16} />
+                  <Link href="/programas/bolsa-familia">Bolsa Família</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaShieldAlt className="mr-2" size={16} />
+                  <Link href="/programas/protecao-basica">Proteção Social Básica</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaUserShield className="mr-2" size={16} />
+                  <Link href="/programas/protecao-especial">Proteção Social Especial</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaUtensils className="mr-2" size={16} />
+                  <Link href="/programas/seguranca-alimentar">Segurança Alimentar</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaRegAddressCard className="mr-2" size={16} />
+                  <Link href="/programas/casa-da-cidadania-e-sine">Casa da Cidadania</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaHandHoldingUsd className="mr-2" size={16} />
+                  <Link href="/programas/bpc-rmv">BPC/RMV</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaStethoscope className="mr-2" size={16} />
+                  <Link href="/programas/saude">Saúde</Link>
+                </li>
+                 <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaClipboardList className="mr-2" size={16} />
+                  <Link href="/programas/auditoria">Gerenciamento de Ações</Link>
+                </li>
+              </ul>
+
+              )}
             </li>
 
             <li>
