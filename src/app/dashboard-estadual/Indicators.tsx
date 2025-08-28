@@ -71,7 +71,89 @@ export default function Indicators({
       "CADASTRO ÚNICO - Famílias com Renda mensal acima de Meio Salário Mínimo"
     );
 
-   
+    const cadUnicoFamiliasUnipessoaisKey = findKey("CADASTRO ÚNICO - Famílias UNIPESSOAIS no CadÚnico");
+    const cadUnicoFamiliasUnipessoaisPbfKey = findKey("CADASTRO ÚNICO - Famílias UNIPESSOAIS beneficiárias do Programa Bolsa Família");
+    const cadUnicoFamiliasIndigenasKey = findKey("CADASTRO ÚNICO - Famílias Indígenas inscritas no Cadastro Único");
+    const cadUnicoFamiliasIndigenasPbfKey = findKey("CADASTRO ÚNICO - Famílias Indígenas beneficiárias do Programa Bolsa Família");
+    const cadUnicoFamiliasQuilombolasKey = findKey("CADASTRO ÚNICO - Famílias Quilombolas inscritas no Cadastro Único");
+    const cadUnicoFamiliasQuilombolasPbfKey = findKey("CADASTRO ÚNICO - Famílias Quilombolas beneficiárias do Programa Bolsa Família");
+    const cadUnicoFamiliasRuaKey = findKey("CADASTRO ÚNICO - Famílias em Situação de rua inscritas no Cadastro Único");
+    const cadUnicoFamiliasRuaPbfKey = findKey("CADASTRO ÚNICO - Famílias em Situação de rua beneficiárias do Programa Bolsa Família");
+    const cadUnicoFamiliasGPTEKey = findKey("CADASTRO ÚNICO - Famílias em GPTE no Cadastro Único");
+    const cadUnicoFamiliasGPTEPbfKey = findKey("CADASTRO ÚNICO - Famílias em GPTE beneficiárias do Programa Bolsa Família");
+
+    const totalFamiliasUnipessoais = cadUnicoFamiliasUnipessoaisKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasUnipessoaisKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasUnipessoaisPbf = cadUnicoFamiliasUnipessoaisPbfKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasUnipessoaisPbfKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasIndigenas = cadUnicoFamiliasIndigenasKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasIndigenasKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasIndigenasPbf = cadUnicoFamiliasIndigenasPbfKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasIndigenasPbfKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasQuilombolas = cadUnicoFamiliasQuilombolasKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasQuilombolasKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasQuilombolasPbf = cadUnicoFamiliasQuilombolasPbfKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasQuilombolasPbfKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasRua = cadUnicoFamiliasRuaKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasRuaKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasRuaPbf = cadUnicoFamiliasRuaPbfKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasRuaPbfKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasGPTE = cadUnicoFamiliasGPTEKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasGPTEKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+    const totalFamiliasGPTEPbf = cadUnicoFamiliasGPTEPbfKey
+      ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoFamiliasGPTEPbfKey]?.toString().replace(/\./g, "")) || 0), 0)
+      : 0;
+
+      const cadUnicoPessoas0a6AnosKey = findKey("CADASTRO ÚNICO - Pessoas no Cadastro Único de 0 a 6 anos");
+      const cadUnicoPessoas60MaisKey = findKey("CADASTRO ÚNICO - Pessoas no Cadastro Único com 60 anos ou mais");
+      const cadUnicoPessoasDeficienciaKey = findKey("CADASTRO ÚNICO - Pessoas Com deficiência no Cadastro Único");
+      const cadUnicoPessoasBaixaRendaKey = findKey("CADASTRO ÚNICO - Pessoas em em situação de Baixa Renda - Renda per capita (R$) de 218,01 até 1/2 S.M.");
+      const cadUnicoPessoasAcimaRendaKey = findKey("CADASTRO ÚNICO - Pessoas com Renda mensal acima de Meio Salário Mínimo");
+
+      const totalPessoas0a6Anos = cadUnicoPessoas0a6AnosKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoas0a6AnosKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalPessoas60Mais = cadUnicoPessoas60MaisKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoas60MaisKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalPessoasDeficiencia = cadUnicoPessoasDeficienciaKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoasDeficienciaKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalPessoasBaixaRenda = cadUnicoPessoasBaixaRendaKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoasBaixaRendaKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalPessoasAcimaRenda = cadUnicoPessoasAcimaRendaKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[cadUnicoPessoasAcimaRendaKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+            
+
+      const bolsaFamiliaFamiliasIndigenasKey = findKey("PROGRAMA BOLSA FAMÍLIA - Famílias Indígenas beneficiárias do Programa Bolsa Família");
+      const bolsaFamiliaFamiliasQuilombolasKey = findKey("PROGRAMA BOLSA FAMÍLIA - Famílias Quilombolas beneficiárias do Programa Bolsa Família");
+      const bolsaFamiliaFamiliasRuaKey = findKey("PROGRAMA BOLSA FAMÍLIA - Famílias em Situação de rua beneficiárias do Programa Bolsa Família");
+      const bolsaFamiliaFamiliasGPTEKey = findKey("PROGRAMA BOLSA FAMÍLIA - Famílias em GPTE beneficiárias do Programa Bolsa Família");
+
+      const totalFamiliasIndigenasBolsaFamilia = bolsaFamiliaFamiliasIndigenasKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[bolsaFamiliaFamiliasIndigenasKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalFamiliasQuilombolasBolsaFamilia = bolsaFamiliaFamiliasQuilombolasKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[bolsaFamiliaFamiliasQuilombolasKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalFamiliasRuaBolsaFamilia = bolsaFamiliaFamiliasRuaKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[bolsaFamiliaFamiliasRuaKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+      const totalFamiliasGPTEBolsaFamilia = bolsaFamiliaFamiliasGPTEKey
+        ? data.reduce((sum, row) => sum + (parseInt(row[bolsaFamiliaFamiliasGPTEKey]?.toString().replace(/\./g, "")) || 0), 0)
+        : 0;
+        
     const totalMunicipios = municipioKey ? data.filter(row => row[municipioKey]).length : 0;
 
     const renderListaMunicipiosModal = (municipios: string[], total: number) => (
@@ -129,7 +211,12 @@ export default function Indicators({
       <>
         <p><strong>Famílias em situação de Pobreza:</strong> {totalFamiliasPobreza.toLocaleString("pt-BR")}</p>
         <p><strong>Famílias de Baixa Renda:</strong> {totalFamiliasBaixaRenda.toLocaleString("pt-BR")}</p>
-        <p><strong>Renda Acima de Meio Salário Mínimo:</strong> {totalFamiliasAcimaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Famílias com Renda Acima 1/2:</strong> {totalFamiliasAcimaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias Unipessoais:</strong> {totalFamiliasUnipessoais.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias Indígenas:</strong> {totalFamiliasIndigenas.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias Quilombolas:</strong> {totalFamiliasQuilombolas.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias em Situação de Rua:</strong> {totalFamiliasRua.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias em GPTE:</strong> {totalFamiliasGPTE.toLocaleString("pt-BR")}</p>
       </>
     );
     
@@ -167,6 +254,12 @@ export default function Indicators({
     const cadUnicoPessoasModalContent = (
       <>
         <p><strong>Pessoas em situação de Pobreza:</strong> {totalPessoasPobreza.toLocaleString("pt-BR")}</p>
+        <p><strong>Pessoas em situação de Baixa Renda:</strong> {totalPessoasBaixaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Pessoas com Renda acima de Meio Salário Mínimo:</strong> {totalPessoasAcimaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Pessoas de 0 a 6 anos:</strong> {totalPessoas0a6Anos.toLocaleString("pt-BR")}</p>
+        <p><strong>Pessoas com 60 anos ou mais:</strong> {totalPessoas60Mais.toLocaleString("pt-BR")}</p>
+        <p><strong>Pessoas com deficiência:</strong> {totalPessoasDeficiencia.toLocaleString("pt-BR")}</p>
+  
       </>
     );
 
@@ -275,10 +368,14 @@ export default function Indicators({
       ? data.reduce((sum, row) => sum + (parseInt(row[bolsaFamiliaBaixaRendaKey]?.toString().replace(/\./g, "")) || 0), 0)
       : 0;
 
-    const bolsaFamiliaModalContent = (
+  const bolsaFamiliaModalContent = (
       <>
-         <p><strong>Famílias com renda até R$218,00:</strong> {totalBolsaFamiliaPobreza.toLocaleString("pt-BR")}</p>
-         <p><strong>Famílias de Baixa Renda:</strong> {totalBolsaFamiliaBaixaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Famílias com renda até R$218,00:</strong> {totalBolsaFamiliaPobreza.toLocaleString("pt-BR")}</p>
+        <p><strong>Famílias de Baixa Renda:</strong> {totalBolsaFamiliaBaixaRenda.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Famílias Indígenas:</strong> {totalFamiliasIndigenasBolsaFamilia.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Quilombolas:</strong> {totalFamiliasQuilombolasBolsaFamilia.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de Situação de Rua:</strong> {totalFamiliasRuaBolsaFamilia.toLocaleString("pt-BR")}</p>
+        <p><strong>Quantidade de GPTE:</strong> {totalFamiliasGPTEBolsaFamilia.toLocaleString("pt-BR")}</p>
       </>
     );
 
@@ -383,7 +480,7 @@ export default function Indicators({
     
         let value = data.reduce((sum, row) => {
           const fieldValue = row[keyFound]?.toString().trim().toLowerCase();
-          return sum + (binary ? (fieldValue === "sim" ? 1 : 0) : parseInt(fieldValue.replace(/\./g, "")) || 0);
+          return sum + (binary ? (fieldValue === "sim" || fieldValue === "1" ? 1 : 0) : parseInt(fieldValue.replace(/\./g, "")) || 0);
         }, 0);
     
         if (value > 0) {
@@ -654,19 +751,19 @@ export default function Indicators({
         modalContent: bolsaFamiliaPessoasModalContent,
       },
       {
-        value: totalProtecaoSocial,
-        label: "Proteção Social Básica",
-        icon: <FaShieldAlt />,
-        iconColor: "text-green-600",
-        modalContent: protecaoSocialOptions.length > 0 ? (
-            <>
-                {protecaoSocialOptions.map(opt => (
-                    <p key={opt.id}><strong>{opt.label}:</strong> {opt.value.toLocaleString('pt-BR')}</p>
-                ))}
-            </>
-        ) : null,
-        selectOptions: protecaoSocialOptions
-      },
+        value: totalProtecaoSocial,
+        label: "Proteção Social Básica",
+        icon: <FaShieldAlt />,
+        iconColor: "text-green-600",
+        modalContent: protecaoSocialOptions.length > 0 ? (
+            <>
+                {protecaoSocialOptions.map(opt => (
+                    <p key={opt.id}><strong>{opt.label}:</strong> {opt.value.toLocaleString('pt-BR')}</p>
+                ))}
+            </>
+        ) : null,
+        selectOptions: protecaoSocialOptions
+      },
       {
         value: totalProtecaoSocialEspecial,
         label: "Proteção Social Especial",
