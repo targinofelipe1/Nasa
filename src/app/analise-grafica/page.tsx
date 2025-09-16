@@ -107,6 +107,7 @@ export default function AnaliseGraficaPage() {
     fetchAllData();
   }, [hasPermission]);
 
+  // 🔹 Geração de gráfico
   const handleGenerateChart = (data: any[], headers: string[], options: any) => {
     const newChart = {
       title: options.programName,
@@ -116,9 +117,30 @@ export default function AnaliseGraficaPage() {
       yAxis: options.yAxis,
       chartType: options.chartType,
       isRegionalSelected: options.isRegionalSelected,
+      selectedRegional: options.selectedRegional || "", // novo
     };
     setGeneratedCharts(prev => [...prev, newChart]);
     toast.success("Gráfico gerado com sucesso!");
+  };
+
+  // 🔹 Atualiza tipo de gráfico
+  const handleChartTypeChange = (index: number, type: "bar-vertical" | "line" | "pie") => {
+    setGeneratedCharts(prev =>
+      prev.map((chart, i) =>
+        i === index ? { ...chart, chartType: type } : chart
+      )
+    );
+  };
+
+  // 🔹 Atualiza Regional
+  const handleRegionalChange = (index: number, regional: string) => {
+    setGeneratedCharts(prev =>
+      prev.map((chart, i) =>
+        i === index
+          ? { ...chart, selectedRegional: regional, isRegionalSelected: regional !== "" }
+          : chart
+      )
+    );
   };
 
   if (!isLoaded || isVerifying) {
@@ -178,6 +200,9 @@ export default function AnaliseGraficaPage() {
                           yAxis={chart.yAxis}
                           chartType={chart.chartType}
                           isRegionalSelected={chart.isRegionalSelected}
+                          selectedRegional={chart.selectedRegional || ""} // novo
+                          onRegionalChange={(regional) => handleRegionalChange(index, regional)} // novo
+                          onChartTypeChange={(type) => handleChartTypeChange(index, type)}
                         />
                       ))}
                     </div>
