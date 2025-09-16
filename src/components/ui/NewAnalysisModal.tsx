@@ -97,15 +97,15 @@ const programColumnsMap: Record<string, string[]> = {
   'protecao-basica': [
     'Município', 'RGA',
     "Proteção Social Básica - Unidade de CRAS",
-        "Proteção Social Básica - Primeira Infância no SUAS",
-         "Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe",
+    "Proteção Social Básica - Primeira Infância no SUAS",
+    "Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe",
     "Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe (valor investido em 2024/2025)",
-        "Proteção Social Básica - Acessuas Trabalho",
-         "Proteção Social Básica - Residenciais Cidade Madura",
+    "Proteção Social Básica - Acessuas Trabalho",
+    "Proteção Social Básica - Residenciais Cidade Madura",
     "Proteção Social Básica - Residenciais Cidade Madura (valor investido em 2025)",
     "Proteção Social Básica - Centros Sociais Urbanos - CSUs",
     "Proteção Social Básica -  Centros Sociais Urbanos - CSUs (valor investido em 2025)",
-        "Proteção Social Básica - Centros de Convivência",
+    "Proteção Social Básica - Centros de Convivência",
   ],
    'protecao-especial': [
     'Município', 'RGA',
@@ -129,25 +129,25 @@ const programColumnsMap: Record<string, string[]> = {
   ],
   'seguranca-alimentar': [
     'Município', 'RGA',
-     'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/dia',
-    'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/anual',
-    'Segurança Alimentar - Programa "Tá na mesa" - Valor por município anual',
-    'Segurança Alimentar - Programa "Novo Tá na mesa"  (Quant de refeição/dia)',
-    'Segurança Alimentar - Programa "Novo Tá na mesa" - Valor por município anual',
-       "Segurança Alimentar - Cartão Alimentação  (municípios)",
-    "Segurança Alimentar - Cartão Alimentação  (beneficiários)",
-    "Segurança Alimentar - Cartão Alimentação - valor por município",
-        "Segurança Alimentar - Restaurante Popular (municípios)",
- "Segurança Alimentar - PAA LEITE (municípios)",
-    "Segurança Alimentar - PAA LEITE (beneficiários)",
-    "Segurança Alimentar - PAA LEITE (investimento)",
-    "Segurança Alimentar - PAA CDS (municípios)",
-    "Segurança Alimentar - PAA CDS (beneficiários)",
-    "Segurança Alimentar - PAA CDS (investimento anual)",
-    "Segurança Alimentar - Cisternas (quantidade no município)",
-    "Segurança Alimentar - Cisternas (valor investido em 2025",
-      "Segurança Alimentar - Insegurança Alimentar - Índice de INSAN",
-    "Segurança Alimentar - Insegurança Alimentar - Categorias de INSAN",
+  'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/dia',
+  'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/anual',
+  'Segurança Alimentar - Programa "Tá na mesa" - Valor por município anual',
+  'Segurança Alimentar - Programa "Novo Tá na mesa"  (Quant de refeição/dia)',
+  'Segurança Alimentar - Programa "Novo Tá na mesa" - Valor por município anual',
+  'Segurança Alimentar - Cartão Alimentação  (municípios)',
+  'Segurança Alimentar - Cartão Alimentação  (beneficiários)',
+  'Segurança Alimentar - Cartão Alimentação - valor por município',
+  'Segurança Alimentar - Restaurante Popular (municípios)',
+  'Segurança Alimentar - PAA LEITE (municípios)',
+  'Segurança Alimentar - PAA LEITE (beneficiários)',
+  'Segurança Alimentar - PAA LEITE (investimento)',
+  'Segurança Alimentar - PAA CDS (municípios)',
+  'Segurança Alimentar - PAA CDS (beneficiários)',
+  'Segurança Alimentar - PAA CDS (investimento anual)',
+  'Segurança Alimentar - Cisternas (quantidade no município)',
+  'Segurança Alimentar - Cisternas (valor investido em 2025',
+  'Segurança Alimentar - Insegurança Alimentar - Índice de INSAN',
+  'Segurança Alimentar - Insegurança Alimentar - Categorias de INSAN',
   ],
 };
 
@@ -221,7 +221,15 @@ export default function NewAnalysisModal({ open, onClose, onGenerate, allData, a
     const programName = programs.find(p => p.id === selectedProgramId)?.label || "";
     // Passa a informação se uma regional foi selecionada
     const isRegionalSelected = selectedRegional !== "";
-    onGenerate(filteredData, allHeaders, { xAxis: 'Município', yAxis, chartType, programName, isRegionalSelected });
+    onGenerate(filteredData, allHeaders, { 
+      xAxis: 'Município', 
+      yAxis, 
+      chartType, 
+      programName, 
+      isRegionalSelected, 
+      selectedRegional   // 🔹 passa o valor real do filtro
+    });
+
     onClose();
   };
   
