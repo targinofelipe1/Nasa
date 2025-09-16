@@ -147,7 +147,6 @@ const programColumnsMap: Record<string, string[]> = {
   'Segurança Alimentar - Cisternas (quantidade no município)',
   'Segurança Alimentar - Cisternas (valor investido em 2025',
   'Segurança Alimentar - Insegurança Alimentar - Índice de INSAN',
-  'Segurança Alimentar - Insegurança Alimentar - Categorias de INSAN',
   ],
 };
 
