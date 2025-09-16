@@ -99,7 +99,7 @@ export const columnDisplayNames: Record<string, string> = {
   "Saúde - Hospital Geral": "Hospital Geral",
   "Saúde - Centro de Saúde/Unidade Básica de Saúde": "Centro de Saúde/UBS",
   "Saúde - Posto de Saúde": "Posto de Saúde",
-   'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/dia': "Refeições/dia",
+  'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/dia': "Refeições/dia",
   'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/anual': "Refeições/ano",
   'Segurança Alimentar - Programa "Tá na mesa" - Valor por município anual': "Valor anual",
   'Segurança Alimentar - Programa "Novo Tá na mesa"  (Quant de refeição/dia)': "Novo Tá na Mesa (Refeições/dia)",
