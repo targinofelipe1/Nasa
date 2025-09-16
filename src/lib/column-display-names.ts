@@ -117,5 +117,4 @@ export const columnDisplayNames: Record<string, string> = {
   "Segurança Alimentar - Cisternas (quantidade no município)": "Quantidade de Cisternas",
   "Segurança Alimentar - Cisternas (valor investido em 2025": "Valor investido (Cisternas)",
   "Segurança Alimentar - Insegurança Alimentar - Índice de INSAN": "Índice INSAN",
-  "Segurança Alimentar - Insegurança Alimentar - Categorias de INSAN": "Categorias de INSAN",
 };
