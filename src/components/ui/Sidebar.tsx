@@ -21,7 +21,7 @@ import {
   AiOutlineInsertRowBelow,
   AiOutlineLineChart,
 } from "react-icons/ai";
-import { MdEmojiObjects, MdHowToVote, MdOutlineHowToVote, MdOutlineMap, MdOutlineShowChart } from "react-icons/md";
+import { MdEmojiObjects, MdHowToVote, MdOutlineAnalytics, MdOutlineHowToVote, MdOutlineMap, MdOutlineShowChart } from "react-icons/md";
 import { BsArrowLeftRight, BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
@@ -152,6 +152,16 @@ const Sidebar = () => {
                 {isOpen && "Mapa"}
               </Link>
             </li>
+            <li>
+            <Link
+              href="/analise-grafica"
+              className="flex items-center text-gray-700 hover:text-blue-600 px-4"
+            >
+              <MdOutlineAnalytics className="mr-3" size={20} />
+              {isOpen && "Análise Gráfica"}
+            </Link>
+          </li>
+
             <li>
               <Link href="/relatorios-estadual" className="flex items-center text-gray-700 hover:text-blue-600 px-4">
                 <AiOutlineFileText className="mr-3" size={20} />

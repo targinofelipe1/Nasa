@@ -12,8 +12,8 @@ interface PrintModalProps {
 
 const getTituloRelatorio = (): string => {
   return window.location.pathname.includes("relatorio-municipal")
-    ? "Relatório Municipal"
-    : "Relatório Estadual";
+    ? "Relatório"
+    : "Relatório";
 };
 
 // Componente JSX do cabeçalho
@@ -51,7 +51,7 @@ const LogoHeader = ({
         textAlign: "center",
       }}
     >
-      <h1 style={{ fontSize: "32px", fontWeight: "bold" }}>{titulo}</h1>
+      <h1 style={{ fontSize: "32px", fontWeight: "bold" }}>Gerência de Vigilância Socioassistencial</h1>
       <h2 style={{ fontSize: "24px", marginTop: "10px" }}>DataMetrics</h2>
 
       {titulo === "Relatório Estadual" && selectedRegionals.length > 0 && (

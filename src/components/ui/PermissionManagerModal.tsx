@@ -22,6 +22,10 @@ interface PermissionManagerModalProps {
 }
 
 const programsWithTabs = {
+  "analise-grafica": {
+    name: "Análise Gráfica",
+    tabs: ["Geral"]
+  },
   "bolsa-familia": {
     name: "Bolsa Família",
     tabs: ["Famílias", "Pessoas"]
@@ -47,13 +51,13 @@ const programsWithTabs = {
     tabs: ["Tá na Mesa", "Cartão Alimentação", "Restaurante Popular", "PAA - Leite", "PAA - CDS", "Cisternas", "INSAN"]
   },
   "bpc-rmv": {
-    name: "BPC/RMV",
-    tabs: ["BPC/RMV"]
-  },
+    name: "BPC/RMV",
+    tabs: ["BPC/RMV"]
+  },
   "casa-da-cidadania-e-sine": {
-    name: "Casa da Cidadania e SINE",
-    tabs: ["Casa da Cidadania", "SINE"]
-  },
+    name: "Casa da Cidadania e SINE",
+    tabs: ["Casa da Cidadania", "SINE"]
+  },
 };
 
 export default function PermissionManagerModal({ open, onClose, userId, userName }: PermissionManagerModalProps) {
