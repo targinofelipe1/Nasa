@@ -10,11 +10,6 @@ import { Button } from "@/components/ui/Button";
 import NewAnalysisModal from "@/components/ui/NewAnalysisModal";
 import ChartCard from "@/components/ui/ChartCard";
 import { useUser } from "@clerk/nextjs";
-import { columnDisplayNames } from '@/lib/column-display-names';
-
-export interface TableData {
-  [key: string]: any;
-}
 
 const programId = "analise-grafica";
 const requiredTab = "Geral";
@@ -78,15 +73,14 @@ export default function AnaliseGraficaPage() {
       try {
         const response = await fetch("/api/sheets");
         const result = await response.json();
-        
         const apiData = result.data || result.values;
 
         if (result.success && Array.isArray(apiData) && apiData.length > 0) {
-          const headers = apiData[0]; // mantém os headers originais, sem trim
+          const headers = apiData[0];
           setAllHeaders(headers);
           const formattedData = apiData.slice(1).map((row: any[]) =>
-            headers.reduce((acc: TableData, key: string, index: number) => {
-              acc[key] = row[index]?.toString() || ""; // sem trim nos valores
+            headers.reduce((acc: any, key: string, index: number) => {
+              acc[key] = row[index]?.toString() || "";
               return acc;
             }, {})
           );
@@ -107,37 +101,32 @@ export default function AnaliseGraficaPage() {
     fetchAllData();
   }, [hasPermission]);
 
-  // 🔹 Geração de gráfico
   const handleGenerateChart = (data: any[], headers: string[], options: any) => {
     const newChart = {
       title: options.programName,
       subtitle: `Eixos: ${options.xAxis} vs. ${options.yAxis}`,
-      data: data,
+      data,
       xAxis: options.xAxis,
       yAxis: options.yAxis,
       chartType: options.chartType,
       isRegionalSelected: options.isRegionalSelected,
-      selectedRegional: options.selectedRegional || "", // novo
+      selectedRegional: options.selectedRegional || "",
     };
     setGeneratedCharts(prev => [...prev, newChart]);
     toast.success("Gráfico gerado com sucesso!");
   };
 
-  // 🔹 Atualiza tipo de gráfico
-  const handleChartTypeChange = (index: number, type: "bar-vertical" | "line" | "pie") => {
+  const handleChartTypeChange = (index: number, type: "bar-vertical" | "bar-horizontal" | "line" | "pie") => {
     setGeneratedCharts(prev =>
-      prev.map((chart, i) =>
-        i === index ? { ...chart, chartType: type } : chart
-      )
+      prev.map((chart, i) => i === index ? { ...chart, chartType: type } : chart)
     );
   };
 
-  // 🔹 Atualiza Regional
   const handleRegionalChange = (index: number, regional: string) => {
     setGeneratedCharts(prev =>
       prev.map((chart, i) =>
         i === index
-          ? { ...chart, selectedRegional: regional, isRegionalSelected: regional !== "" }
+          ? { ...chart, selectedRegional: regional, isRegionalSelected: regional !== "" && regional !== "Todas as Regionais" }
           : chart
       )
     );
@@ -178,12 +167,8 @@ export default function AnaliseGraficaPage() {
                   {generatedCharts.length === 0 ? (
                     <div className="flex flex-col items-center justify-center h-[calc(100vh-200px)]">
                       <h2 className="text-2xl font-semibold mb-4 text-gray-800">Pronto para a Análise!</h2>
-                      <p className="text-gray-600 mb-6">
-                        Clique no botão abaixo para selecionar as variáveis e gerar seu primeiro gráfico.
-                      </p>
-                      <p className="text-gray-600 mb-6">
-                        Lembre-se: os gráficos são estáticos e serão apagados a cada atualização da página.
-                      </p>
+                      <p className="text-gray-600 mb-6">Clique no botão abaixo para selecionar as variáveis e gerar seu primeiro gráfico.</p>
+                      <p className="text-gray-600 mb-6">Lembre-se: os gráficos são estáticos e serão apagados a cada atualização da página.</p>
                       <Button onClick={() => setIsModalOpen(true)} size="lg">
                         <Plus className="h-5 w-5 mr-2" /> Gerar Gráfico
                       </Button>
@@ -200,8 +185,8 @@ export default function AnaliseGraficaPage() {
                           yAxis={chart.yAxis}
                           chartType={chart.chartType}
                           isRegionalSelected={chart.isRegionalSelected}
-                          selectedRegional={chart.selectedRegional || ""} // novo
-                          onRegionalChange={(regional) => handleRegionalChange(index, regional)} // novo
+                          selectedRegional={chart.selectedRegional}
+                          onRegionalChange={(regional) => handleRegionalChange(index, regional)}
                           onChartTypeChange={(type) => handleChartTypeChange(index, type)}
                         />
                       ))}
