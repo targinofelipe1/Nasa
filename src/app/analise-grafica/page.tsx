@@ -101,20 +101,22 @@ export default function AnaliseGraficaPage() {
     fetchAllData();
   }, [hasPermission]);
 
-  const handleGenerateChart = (data: any[], headers: string[], options: any) => {
-    const newChart = {
-      title: options.programName,
-      subtitle: `Eixos: ${options.xAxis} vs. ${options.yAxis}`,
-      data,
-      xAxis: options.xAxis,
-      yAxis: options.yAxis,
-      chartType: options.chartType,
-      isRegionalSelected: options.isRegionalSelected,
-      selectedRegional: options.selectedRegional || "",
-    };
-    setGeneratedCharts(prev => [...prev, newChart]);
-    toast.success("Gráfico gerado com sucesso!");
+const handleGenerateChart = (data: any[], headers: string[], options: any) => {
+  const newChart = {
+    title: options.programName,
+    subtitle: `Eixos: ${options.xAxis} vs. ${options.yAxis}${options.yAxis2 ? " e " + options.yAxis2 : ""}`,
+    data,
+    xAxis: options.xAxis,
+    yAxis: options.yAxis,
+    yAxis2: options.yAxis2 || null,
+    chartType: options.chartType,
+    isRegionalSelected: options.isRegionalSelected,
+    selectedRegional: options.selectedRegional || "",
+    showGeneral: options.showGeneral || false, // 🔹 salvar aqui
   };
+  setGeneratedCharts(prev => [...prev, newChart]);
+  toast.success("Gráfico gerado com sucesso!");
+};
 
   const handleChartTypeChange = (index: number, type: "bar-vertical" | "bar-horizontal" | "line" | "pie") => {
     setGeneratedCharts(prev =>
@@ -176,19 +178,22 @@ export default function AnaliseGraficaPage() {
                   ) : (
                     <div className="grid grid-cols-1 gap-6">
                       {generatedCharts.map((chart, index) => (
-                        <ChartCard
-                          key={`generated-${index}`}
-                          title={chart.title}
-                          subtitle={chart.subtitle}
-                          data={chart.data}
-                          xAxis={chart.xAxis}
-                          yAxis={chart.yAxis}
-                          chartType={chart.chartType}
-                          isRegionalSelected={chart.isRegionalSelected}
-                          selectedRegional={chart.selectedRegional}
-                          onRegionalChange={(regional) => handleRegionalChange(index, regional)}
-                          onChartTypeChange={(type) => handleChartTypeChange(index, type)}
-                        />
+                      <ChartCard
+                        key={`generated-${index}`}
+                        title={chart.title}
+                        subtitle={chart.subtitle}
+                        data={chart.data}
+                        xAxis={chart.xAxis}
+                        yAxis={chart.yAxis}
+                        yAxis2={chart.yAxis2}
+                        chartType={chart.chartType}
+                        isRegionalSelected={chart.isRegionalSelected}
+                        selectedRegional={chart.selectedRegional}
+                        onRegionalChange={(regional) => handleRegionalChange(index, regional)}
+                        onChartTypeChange={(type) => handleChartTypeChange(index, type)}
+                        showGeneral={chart.showGeneral} 
+                      />
+
                       ))}
                     </div>
                   )}

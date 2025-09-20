@@ -117,4 +117,13 @@ export const columnDisplayNames: Record<string, string> = {
   "Segurança Alimentar - Cisternas (quantidade no município)": "Quantidade de Cisternas",
   "Segurança Alimentar - Cisternas (valor investido em 2025": "Valor investido (Cisternas)",
   "Segurança Alimentar - Insegurança Alimentar - Índice de INSAN": "Índice INSAN",
+  "SISAN": " Status SISAN",
+  "ENTIDADE CADASTRADA": "Entidade Cadastrada",
+  "BENEFICIADOS": "Beneficiados",
+  "EQUIPAMENTO": "Equipamento",
+  "PAA 2023 – Recurso Federal (Quantidade Kg de alimentos)": "Total de Alimentos do PAA com Recurso Federal 2023",
+  "PAA 2024 – Recurso Federal (Quantidade Kg de alimentos)": "Total de Alimentos do PAA com Recurso Federal 2024",
+  "PAA 2024 – Recurso Estadual (Quantidade Kg de alimentos)": "Total de Alimentos do PAA com Recurso Estadual 2024",
+  "PAA 2024 – Recurso Estadual e Federal (Quantidade Kg de alimentos)": "Total de Alimentos do PAA com Recurso Misto (Estadual e Federal) 2024",
+  "PAA VALOR TOTAL INVESTIDO (COMPRAS)": "Valor Total Investido nas Compras",
 };

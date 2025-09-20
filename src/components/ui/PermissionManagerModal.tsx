@@ -58,6 +58,10 @@ const programsWithTabs = {
     name: "Casa da Cidadania e SINE",
     tabs: ["Casa da Cidadania", "SINE"]
   },
+   "paa": {
+    name: "PAA",
+    tabs: ["Dados Gerais"]
+  }
 };
 
 export default function PermissionManagerModal({ open, onClose, userId, userName }: PermissionManagerModalProps) {

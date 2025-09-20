@@ -13,9 +13,10 @@ import {
 import { Button } from "@/components/ui/Button";
 import CustomSelect from "@/components/ui/CustomSelect";
 import CustomRadioGroup from "@/components/ui/CustomRadioGroup";
-import { BarChart, LineChart, PieChart } from "lucide-react";
+import { BarChart, LineChart, PieChart, Search } from "lucide-react";
 import { Label } from "@/components/ui/Label";
-import { columnDisplayNames } from '@/lib/column-display-names';
+import { columnDisplayNames } from "@/lib/column-display-names";
+import { GroupingIcon } from "./GroupingIcon";
 
 interface NewAnalysisModalProps {
   open: boolean;
@@ -34,7 +35,7 @@ const programs = [
   { id: "protecao-especial", label: "Proteção Social Especial" },
   { id: "saude", label: "Saúde" },
   { id: "seguranca-alimentar", label: "Segurança Alimentar" },
-
+  { id: "paa", label: "PAA" },
 ];
 
 const programColumnsMap: Record<string, string[]> = {
@@ -148,94 +149,255 @@ const programColumnsMap: Record<string, string[]> = {
   'Segurança Alimentar - Cisternas (valor investido em 2025',
   'Segurança Alimentar - Insegurança Alimentar - Índice de INSAN',
   ],
+
+  
+  "paa": [
+    "MUNICÍPIO",
+    "ENTIDADE CADASTRADA",
+    "BENEFICIADOS",
+    "PAA 2023 – Recurso Federal (Quantidade Kg de alimentos)",
+    "PAA 2024 – Recurso Federal (Quantidade Kg de alimentos)",
+    "PAA 2024 – Recurso Estadual (Quantidade Kg de alimentos)",
+    "PAA 2024 – Recurso Estadual e Federal (Quantidade Kg de alimentos)",
+    "PAA VALOR TOTAL INVESTIDO (COMPRAS)",
+  ],
 };
 
-
-export default function NewAnalysisModal({ open, onClose, onGenerate, allData, allHeaders }: NewAnalysisModalProps) {
+export default function NewAnalysisModal({
+  open,
+  onClose,
+  onGenerate,
+  allData,
+  allHeaders,
+}: NewAnalysisModalProps) {
   const [loading, setLoading] = useState(false);
   const [selectedProgramId, setSelectedProgramId] = useState("");
   const [currentProgramData, setCurrentProgramData] = useState<any[]>([]);
-  
-  const [chartType, setChartType] = useState<"bar-vertical" | "bar-horizontal" | "line" | "pie">("bar-vertical");
-  // Removendo Eixo X, ele será sempre Município
+  const [selectedEntity, setSelectedEntity] = useState("");
+  const [showGeneral, setShowGeneral] = useState(false);
+
+
+
+  const [chartType, setChartType] = useState<
+    "bar-vertical" | "bar-horizontal" | "line" | "pie"
+  >("bar-vertical");
   const [yAxis, setYAxis] = useState("");
+  const [yAxis2, setYAxis2] = useState("");
+  const [groupingAxis, setGroupingAxis] = useState<"municipio" | "ano">(
+    "municipio"
+  );
+
   const [selectedRegional, setSelectedRegional] = useState("");
   const [selectedMunicipality, setSelectedMunicipality] = useState("");
-  
+
   const chartTypeOptions = [
-    { value: "bar-vertical" as const, label: "Barra Vertical", icon: <BarChart className="h-4 w-4" /> },
-    { value: "bar-horizontal" as const, label: "Barra Horizontal", icon: <BarChart className="h-4 w-4" style={{ transform: 'rotate(90deg)' }} /> },
+    {
+      value: "bar-vertical" as const,
+      label: "Barra Vertical",
+      icon: <BarChart className="h-4 w-4" />,
+    },
+    {
+      value: "bar-horizontal" as const,
+      label: "Barra Horizontal",
+      icon: (
+        <BarChart
+          className="h-4 w-4"
+          style={{ transform: "rotate(90deg)" }}
+        />
+      ),
+    },
     { value: "line" as const, label: "Linha", icon: <LineChart className="h-4 w-4" /> },
     { value: "pie" as const, label: "Pizza", icon: <PieChart className="h-4 w-4" /> },
   ];
 
+  // Função utilitária para normalizar
+  const normalizeKey = (key: string) =>
+    key.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+
   useEffect(() => {
-    if (selectedProgramId && allData.length > 0) {
+    const fetchPaaData = async () => {
       setLoading(true);
-      const requiredHeaders = programColumnsMap[selectedProgramId] || [];
-      const filteredData = allData.map(row => {
+      try {
+        const res = await fetch(`/api/paa-sheet?programa=paa`);
+        const json = await res.json();
+        if (json.success) {
+          setCurrentProgramData(json.data);
+        } else {
+          setCurrentProgramData([]);
+        }
+      } catch (e) {
+        console.error("Erro ao buscar dados do PAA:", e);
+        setCurrentProgramData([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (selectedProgramId === "paa") {
+      fetchPaaData();
+    } else if (selectedProgramId && allData.length > 0) {
+      // 👉 lógica atual para os outros programas
+      setLoading(true);
+      const requiredHeaders = (programColumnsMap[selectedProgramId] || []).map(normalizeKey);
+      const normalizedData = allData.map((row) => {
         const newRow: any = {};
-        requiredHeaders.forEach(header => {
-          if (row.hasOwnProperty(header)) {
-            newRow[header] = row[header];
-          }
-        });
+        for (const key in row) {
+          newRow[normalizeKey(key)] = row[key];
+        }
         return newRow;
-      }).filter(row => Object.keys(row).length > 1);
-      
+      });
+      const filteredData = normalizedData
+        .map((row) => {
+          const newRow: any = {};
+          (programColumnsMap[selectedProgramId] || []).forEach((header) => {
+            const normHeader = normalizeKey(header);
+            if (row.hasOwnProperty(normHeader)) {
+              newRow[header] = row[normHeader];
+            }
+          });
+          return newRow;
+        })
+        .filter((row) => Object.keys(row).length > 1);
+
       setCurrentProgramData(filteredData);
-      setYAxis(""); // Limpa o eixo Y ao mudar de programa
+      setYAxis("");
+      setYAxis2("");
+      setGroupingAxis("municipio");
       setLoading(false);
     } else {
       setCurrentProgramData([]);
       setYAxis("");
     }
   }, [selectedProgramId, allData]);
-  
-  const filteredData = useMemo(() => {
-    return currentProgramData.filter(item => {
-      const regionalMatch = selectedRegional === "" || item.RGA === selectedRegional;
-      const municipalityMatch = selectedMunicipality === "" || item["Município"] === selectedMunicipality;
-      return regionalMatch && municipalityMatch;
+
+
+ const filteredData = useMemo(() => {
+    return currentProgramData.filter((item) => {
+      const regionalMatch = selectedRegional === "" || item["RGA"] === selectedRegional;
+      const municipalityMatch =
+        selectedMunicipality === "" || item["MUNICÍPIO"] === selectedMunicipality;
+      const entityMatch =
+        selectedEntity === "" || item["ENTIDADE CADASTRADA"] === selectedEntity;
+      return regionalMatch && municipalityMatch && entityMatch;
     });
-  }, [currentProgramData, selectedRegional, selectedMunicipality]);
+  }, [currentProgramData, selectedRegional, selectedMunicipality, selectedEntity]);
 
-  const availableRegionals = useMemo(() => ["", ...new Set(currentProgramData.map(item => item.RGA).filter(Boolean))], [currentProgramData]);
-  const availableMunicipalities = useMemo(() => ["", ...new Set(currentProgramData.filter(item => selectedRegional === "" || item.RGA === selectedRegional).map(item => item["Município"]).filter(Boolean))], [currentProgramData, selectedRegional]);
 
-  const numericHeaders = useMemo(() => {
-    const currentProgramHeaders = programColumnsMap[selectedProgramId] || [];
-    return currentProgramHeaders.filter(header => !["Município", "RGA", "Programa", "Unidade"].includes(header));
-  }, [selectedProgramId]);
-  
-  const yAxisOptions = numericHeaders.map(header => ({ id: header, label: columnDisplayNames[header] || header, value: header }));
-  const regionalOptions = availableRegionals.map(regional => ({ id: regional, label: regional === "" ? "Todas as Regionais" : regional, value: regional }));
-  const municipalityOptions = availableMunicipalities.map(municipality => ({ id: municipality, label: municipality === "" ? "Todos os Municípios" : municipality, value: municipality }));
+  const availableRegionals = useMemo(
+    () => ["", ...new Set(currentProgramData.map((item) => item["RGA"]).filter(Boolean))],
+    [currentProgramData]
+  );
+
+  const availableEntities = useMemo(
+    () => ["", ...new Set(currentProgramData.map((item) => item["ENTIDADE CADASTRADA"]).filter(Boolean))],
+    [currentProgramData]
+  );
+
+  const entityOptions = availableEntities.map((entidade) => ({
+    id: entidade,
+    label: entidade === "" ? "Todas as Entidades" : entidade,
+    value: entidade,
+  }));
+
+  const availableMunicipalities = useMemo(
+    () => [
+      "",
+      ...new Set(
+        currentProgramData
+          .filter(
+            (item) => selectedRegional === "" || item["RGA"] === selectedRegional
+          )
+          .map((item) => item["MUNICÍPIO"])
+          .filter(Boolean)
+      ),
+    ],
+    [currentProgramData, selectedRegional]
+  );
+
+const numericHeaders = useMemo(() => {
+  const currentProgramHeaders = programColumnsMap[selectedProgramId] || [];
+
+  // 🔹 Se for o PAA e estiver agrupando por ano, mostra só as colunas que têm ano no nome
+  if (selectedProgramId === "paa" && groupingAxis === "ano") {
+    return currentProgramHeaders.filter(
+      (header) =>
+        header.includes("2023") || header.includes("2024") // só variáveis anuais
+    );
+  }
+
+  // 🔹 Caso contrário, todas as colunas numéricas (menos chaves fixas)
+  return currentProgramHeaders.filter(
+    (header) =>
+      !["Município", "MUNICÍPIO", "RGA", "Programa", "Unidade"].includes(header)
+  );
+}, [selectedProgramId, groupingAxis]);
+
+
+
+  const yAxisOptions = numericHeaders.map((header) => ({
+    id: header,
+    label: columnDisplayNames[header] || header,
+    value: header,
+  }));
+
+  const regionalOptions = availableRegionals.map((regional) => ({
+    id: regional,
+    label: regional === "" ? "Todas as Regionais" : regional,
+    value: regional,
+  }));
+
+  const municipalityOptions = availableMunicipalities.map((municipio) => ({
+    id: municipio,
+    label: municipio === "" ? "Todos os Municípios" : municipio,
+    value: municipio,
+  }));
 
   const handleGenerateClick = () => {
-    if (!selectedProgramId || !yAxis) {
+    if (selectedProgramId === "paa") {
+      if (!yAxis || !yAxis2 || !groupingAxis) {
+        toast.error("Selecione as duas variáveis e o tipo de agrupamento para o PAA.");
+        return;
+      }
+    } else if (!selectedProgramId || !yAxis) {
       toast.error("Selecione um programa e a variável numérica.");
       return;
     }
-    const programName = programs.find(p => p.id === selectedProgramId)?.label || "";
-    // Passa a informação se uma regional foi selecionada
-    const isRegionalSelected = selectedRegional !== "";
-    onGenerate(filteredData, allHeaders, { 
-      xAxis: 'Município', 
-      yAxis, 
-      chartType, 
-      programName, 
-      isRegionalSelected, 
-      selectedRegional   // 🔹 passa o valor real do filtro
-    });
 
+    const programName =
+      programs.find((p) => p.id === selectedProgramId)?.label || "";
+    const isRegionalSelected = selectedRegional !== "";
+
+    const options =
+      selectedProgramId === "paa"
+        ? {
+            xAxis: groupingAxis,
+            yAxis: yAxis,
+            yAxis2: yAxis2,
+            chartType: chartType,
+            programName: programName,
+            isRegionalSelected: isRegionalSelected,
+            selectedRegional: selectedRegional,
+            showGeneral: showGeneral,
+          }
+        : {
+            xAxis: "MUNICÍPIO",
+            yAxis: yAxis,
+            chartType: chartType,
+            programName: programName,
+            isRegionalSelected: isRegionalSelected,
+            selectedRegional: selectedRegional,
+          };
+
+    onGenerate(filteredData, allHeaders, options);
     onClose();
   };
-  
+
   useEffect(() => {
     if (open) {
       setSelectedProgramId("");
       setYAxis("");
+      setYAxis2("");
+      setGroupingAxis("municipio");
       setSelectedRegional("");
       setSelectedMunicipality("");
       setCurrentProgramData([]);
@@ -251,46 +413,118 @@ export default function NewAnalysisModal({ open, onClose, onGenerate, allData, a
             Selecione um programa e as variáveis para gerar um novo gráfico.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-6 py-4">
           <div className="space-y-2">
             <Label>Programa</Label>
             <CustomSelect
-              options={programs.map(p => ({ id: p.id, label: p.label, value: p.id }))}
+              options={programs.map((p) => ({
+                id: p.id,
+                label: p.label,
+                value: p.id,
+              }))}
               onChange={setSelectedProgramId}
               defaultValue={selectedProgramId}
               placeholder="Selecione um programa..."
             />
           </div>
-          
+
           {loading ? (
             <div className="flex justify-center items-center h-24">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : currentProgramData.length > 0 && selectedProgramId ? (
-            <div className="space-y-4">            
-              <div className="space-y-2">
-                <Label>Variável para o Eixo Y</Label>
-                <CustomSelect
-                  options={yAxisOptions}
-                  onChange={setYAxis}
-                  defaultValue={yAxis}
-                  placeholder="Selecione a variável numérica..."
-                />
-              </div>
+            <div className="space-y-4">
+              {selectedProgramId === "paa" && (
+                <>
+                 <div className="space-y-2">
+                  <div className="space-y-2">
+                      <Label>Filtrar por Entidade (opcional)</Label>
+                      <CustomSelect
+                        options={entityOptions}
+                        onChange={setSelectedEntity}
+                        defaultValue={selectedEntity}
+                        placeholder="Todas as Entidades"
+                      />
+                    </div>
+                    <Label>Agrupar por</Label>
+                    <CustomRadioGroup
+                      options={[
+                        {
+                          value: "municipio" as const,
+                          label: "Município",
+                          icon: <Search className="h-4 w-4" />,
+                        },
+                        {
+                          value: "ano" as const,
+                          label: "Ano",
+                          icon: <GroupingIcon className="h-4 w-4" />,
+                        },
+                      ]}
+                      value={groupingAxis}
+                      onValueChange={setGroupingAxis}
+                    />
+                    {groupingAxis === "ano" && (
+                    <div className="flex items-center space-x-2 mt-2">
+                      <input
+                        type="checkbox"
+                        id="showGeneral"
+                        checked={showGeneral}
+                        onChange={(e) => setShowGeneral(e.target.checked)}
+                        className="cursor-pointer"
+                      />
+                      <label htmlFor="showGeneral" className="text-sm cursor-pointer">
+                        Exibir Geral (soma total por ano)
+                      </label>
+                    </div>
+                  )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Variável para o Eixo Y (1ª)</Label>
+                    <CustomSelect
+                      options={yAxisOptions.filter(opt => opt.value !== yAxis2)} // 🔹 exclui a já escolhida no 2º
+                      onChange={setYAxis}
+                      defaultValue={yAxis}
+                      placeholder="Selecione a 1ª variável numérica..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Variável para o Eixo Y (2ª)</Label>
+                    <CustomSelect
+                        options={yAxisOptions.filter(opt => opt.value !== yAxis)} // 🔹 exclui a já escolhida no 1º
+                        onChange={setYAxis2}
+                        defaultValue={yAxis2}
+                        placeholder="Selecione a 2ª variável numérica..."
+                      />
+                  </div>
+                </>
+              )}
 
-              <div className="space-y-2">
-                <Label>Filtrar por Regional</Label>
-                <CustomSelect
-                  options={regionalOptions}
-                  onChange={setSelectedRegional}
-                  defaultValue={selectedRegional}
-                  placeholder="Todas as Regionais"
-                />
-              </div>
+              {selectedProgramId !== "paa" && (
+                <>
+                  <div className="space-y-2">
+                    <Label>Variável para o Eixo Y</Label>
+                   <CustomSelect
+                      options={yAxisOptions.filter(opt => opt.value !== yAxis2)} // 🔹 exclui a já escolhida no 2º
+                      onChange={setYAxis}
+                      defaultValue={yAxis}
+                      placeholder="Selecione a 1ª variável numérica..."
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Filtrar por Regional</Label>
+                    <CustomSelect
+                        options={regionalOptions}
+                        onChange={setSelectedRegional}
+                        defaultValue={selectedRegional}
+                        placeholder="Todas as Regionais"
+                    />
+                  </div>
+                </>
+              )}
 
-                <div className="space-y-4">
-                  <Label className="mb-6">Tipo de Gráfico</Label>
+              <div className="space-y-4">
+                <Label className="mb-6">Tipo de Gráfico</Label>
                 <CustomRadioGroup
                   options={chartTypeOptions}
                   value={chartType}
@@ -299,13 +533,21 @@ export default function NewAnalysisModal({ open, onClose, onGenerate, allData, a
               </div>
             </div>
           ) : (
-            selectedProgramId && <p className="text-center text-gray-500">Nenhum dado encontrado para este programa.</p>
+            selectedProgramId && (
+              <p className="text-center text-gray-500">
+                Nenhum dado encontrado para este programa.
+              </p>
+            )
           )}
         </div>
 
         <Button
           onClick={handleGenerateClick}
-          disabled={!selectedProgramId || !yAxis || loading}
+          disabled={
+            !selectedProgramId ||
+            (selectedProgramId === "paa" ? !yAxis || !yAxis2 : !yAxis) ||
+            loading
+          }
           className="w-full mt-4"
         >
           {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}

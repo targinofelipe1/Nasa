@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { FiMenu } from "react-icons/fi";
-import { FaBalanceScale, FaBalanceScaleLeft, FaChartBar, FaChartLine, FaClipboardList, FaFileAlt, FaFileContract, FaFileInvoice, FaHandHoldingUsd, FaIdCard, FaRegAddressBook, FaRegAddressCard, FaRegFileAlt, FaRegIdCard, FaShieldAlt, FaStethoscope, FaUsers, FaUserShield, FaUtensils, FaVoteYea } from "react-icons/fa";
+import { FaBalanceScale, FaBalanceScaleLeft, FaChartBar, FaChartLine, FaClipboardList, FaFileAlt, FaFileContract, FaFileInvoice, FaHandHoldingUsd, FaIdCard, FaRegAddressBook, FaRegAddressCard, FaRegFileAlt, FaRegIdCard, FaShieldAlt, FaShoppingBasket, FaStethoscope, FaUsers, FaUserShield, FaUtensils, FaVoteYea } from "react-icons/fa";
 import {
   AiOutlineBarChart,
   AiOutlineFund,
@@ -141,6 +141,11 @@ const Sidebar = () => {
                   <FaClipboardList className="mr-2" size={16} />
                   <Link href="/programas/auditoria">Gerenciamento de Ações</Link>
                 </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaShoppingBasket className="mr-2" size={16} />
+                  <Link href="/programas/paa">PAA</Link>
+                </li>
+
               </ul>
 
               )}

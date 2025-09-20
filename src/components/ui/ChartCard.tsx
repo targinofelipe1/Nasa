@@ -15,12 +15,15 @@ interface ChartCardProps {
   data: any[];
   xAxis: string;
   yAxis: string;
+  yAxis2?: string; // 🔹 adiciona
   chartType: "bar-vertical" | "bar-horizontal" | "line" | "pie";
   isRegionalSelected: boolean;
   onChartTypeChange: (type: "bar-vertical" | "bar-horizontal" | "line" | "pie") => void;
   selectedRegional: string;
   onRegionalChange: (regional: string) => void;
+  showGeneral?: boolean;
 }
+
 
 export default function ChartCard({
   title,
@@ -28,11 +31,13 @@ export default function ChartCard({
   data,
   xAxis,
   yAxis,
+  yAxis2, // 🔹 adiciona aqui
   chartType,
   isRegionalSelected,
   onChartTypeChange,
   selectedRegional,
   onRegionalChange,
+  showGeneral = false, 
 }: ChartCardProps) {
   const chartRef = useRef<HTMLDivElement>(null);
 
@@ -153,14 +158,16 @@ export default function ChartCard({
 
       {/* 🔹 Gráfico */}
       <div ref={chartRef} className="p-4">
-        <ChartDisplay
+      <ChartDisplay
           data={data}
           xAxis={xAxis}
           yAxis={yAxis}
+          yAxis2={yAxis2}
           chartType={chartType}
           columnDisplayNames={columnDisplayNames}
           programTitle={title}
           selectedRegional={selectedRegional}
+          showGeneral={showGeneral} // 🔹 acrescentar
         />
       </div>
     </div>
