@@ -545,7 +545,7 @@ if (selectedProgramId === "paa" && groupingAxis === "ano") {
           ) : (
             selectedProgramId && (
               <p className="text-center text-gray-500">
-                Nenhum dado encontrado para este programa.
+                Nenhum dado foi encontrado para este programa.
               </p>
             )
           )}
