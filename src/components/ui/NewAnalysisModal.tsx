@@ -317,13 +317,18 @@ export default function NewAnalysisModal({
 const numericHeaders = useMemo(() => {
   const currentProgramHeaders = programColumnsMap[selectedProgramId] || [];
 
-  // 🔹 Se for o PAA e estiver agrupando por ano, mostra só as colunas que têm ano no nome
-  if (selectedProgramId === "paa" && groupingAxis === "ano") {
-    return currentProgramHeaders.filter(
-      (header) =>
-        header.includes("2023") || header.includes("2024") // só variáveis anuais
+if (selectedProgramId === "paa" && groupingAxis === "ano") {
+  return currentProgramHeaders.filter((header) => {
+    const norm = header.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase();
+    return (
+      norm.includes("2023") ||
+      norm.includes("2024") ||
+      norm.includes("PAA VALOR TOTAL INVESTIDO (COMPRAS)")
     );
-  }
+  });
+}
+
+
 
   // 🔹 Caso contrário, todas as colunas numéricas (menos chaves fixas)
   return currentProgramHeaders.filter(
@@ -353,15 +358,20 @@ const numericHeaders = useMemo(() => {
   }));
 
   const handleGenerateClick = () => {
-    if (selectedProgramId === "paa") {
-      if (!yAxis || !yAxis2 || !groupingAxis) {
-        toast.error("Selecione as duas variáveis e o tipo de agrupamento para o PAA.");
-        return;
-      }
-    } else if (!selectedProgramId || !yAxis) {
-      toast.error("Selecione um programa e a variável numérica.");
-      return;
-    }
+   if (selectedProgramId === "paa") {
+  const isValorCompras = yAxis === "PAA VALOR TOTAL INVESTIDO (COMPRAS)" || 
+                         yAxis === "Valor Total Investido nas Compras";
+
+  if (!yAxis || (!isValorCompras && !yAxis2) || !groupingAxis) {
+    toast.error(
+      isValorCompras
+        ? "Selecione a variável e o agrupamento."
+        : "Selecione as duas variáveis e o tipo de agrupamento para o PAA."
+    );
+    return;
+  }
+}
+
 
     const programName =
       programs.find((p) => p.id === selectedProgramId)?.label || "";
@@ -545,7 +555,14 @@ const numericHeaders = useMemo(() => {
           onClick={handleGenerateClick}
           disabled={
             !selectedProgramId ||
-            (selectedProgramId === "paa" ? !yAxis || !yAxis2 : !yAxis) ||
+            (selectedProgramId === "paa"
+              ? !yAxis || (
+                  yAxis !== "PAA VALOR TOTAL INVESTIDO (COMPRAS)" &&
+                  yAxis !== "Valor Total Investido nas Compras" &&
+                  !yAxis2
+                )
+              : !yAxis
+            ) ||
             loading
           }
           className="w-full mt-4"

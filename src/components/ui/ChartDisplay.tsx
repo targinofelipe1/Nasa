@@ -39,27 +39,17 @@ const parseCurrency = (value: any): number => {
   if (!value) return 0;
 
   const str = value.toString().trim();
-  const normalized = str.replace(/\s+/g, " ");
 
-  if (
-    normalized === "-" ||
-    normalized === "–" ||
-    normalized === "R$ -" ||
-    normalized === "R$ -"
-  ) {
-    return 0;
-  }
+  const normalized = str
+    .replace(/\./g, "")   
+    .replace(",", ".");  
 
-  return (
-    parseFloat(
-      normalized
-        .replace("R$", "")
-        .replace(/\s+/g, "")
-        .replace(/\./g, "")
-        .replace(",", ".")
-    ) || 0
-  );
+  const parsed = Number(normalized);
+
+  return isNaN(parsed) ? 0 : parsed;
 };
+
+
 
 // 🔹 Mapear colunas
 const columnParsers: Record<string, (val: any) => number> = {
@@ -76,6 +66,11 @@ const columnParsers: Record<string, (val: any) => number> = {
   "Segurança Alimentar - PAA LEITE (investimento)": parseBinary,
   "Segurança Alimentar - PAA CDS (investimento anual)": parseCurrency,
   "Segurança Alimentar - Cisternas (valor investido em 2025": parseCurrency,
+  "PAA VALOR TOTAL INVESTIDO (COMPRAS)": parseCurrency, 
+   "PAA 2023 – Recurso Federal (Quantidade Kg de alimentos)": parseCurrency, 
+  "PAA 2024 – Recurso Federal (Quantidade Kg de alimentos)": parseCurrency, 
+  "PAA 2024 – Recurso Estadual (Quantidade Kg de alimentos)": parseCurrency, 
+  "PAA 2024 – Recurso Estadual e Federal (Quantidade Kg de alimentos)": parseCurrency, 
   default: parseNumber,
 };
 
@@ -110,11 +105,14 @@ const formatValue = (value: number) => {
   return value.toLocaleString("pt-BR");
 };
 
-// 🔹 Nova função para extrair ano das colunas
 const extractYear = (str: string) => {
+  if (str.toUpperCase().includes("VALOR TOTAL INVESTIDO")) {
+    return "Total Investido";
+  }
   const match = str.match(/\b(20\d{2})\b/);
   return match ? match[1] : "Sem Ano";
 };
+
 
 export default function ChartDisplay({
   data,
@@ -152,9 +150,11 @@ export default function ChartDisplay({
   // 🔹 Ordenar e limitar
   const sortedData = [...filteredData].sort((a, b) => b[yAxis] - a[yAxis]);
   const finalData =
-    selectedRegional && selectedRegional !== "Todas as Regionais"
-      ? sortedData
-      : sortedData.slice(0, 10);
+  showGeneral && xAxis === "ano"
+    ? sortedData // ✅ usa todos
+    : (selectedRegional && selectedRegional !== "Todas as Regionais"
+        ? sortedData
+        : sortedData.slice(0, 10));
 
   let chartFormatted: any[] = [];
 
