@@ -35,7 +35,7 @@ const parseBinary = (value: any): number => {
   return v === "sim" || v === "x" || v === "1" ? 1 : 0;
 };
 
-const parseCurrency = (value: any): number => {
+const parseNumberpaa = (value: any): number => {
   if (!value) return 0;
 
   const str = value.toString().trim();
@@ -49,6 +49,31 @@ const parseCurrency = (value: any): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
+const parseCurrency = (value: any): number => {
+  if (!value) return 0;
+
+  const str = value.toString().trim();
+  const normalized = str.replace(/\s+/g, " ");
+
+  if (
+    normalized === "-" ||
+    normalized === "–" ||
+    normalized === "R$ -" ||
+    normalized === "R$ -"
+  ) {
+    return 0;
+  }
+
+  return (
+    parseFloat(
+      normalized
+        .replace("R$", "")
+        .replace(/\s+/g, "")
+        .replace(/\./g, "")
+        .replace(",", ".")
+    ) || 0
+  );
+};
 
 
 // 🔹 Mapear colunas
@@ -66,11 +91,11 @@ const columnParsers: Record<string, (val: any) => number> = {
   "Segurança Alimentar - PAA LEITE (investimento)": parseBinary,
   "Segurança Alimentar - PAA CDS (investimento anual)": parseCurrency,
   "Segurança Alimentar - Cisternas (valor investido em 2025": parseCurrency,
-  "PAA VALOR TOTAL INVESTIDO (COMPRAS)": parseCurrency, 
-   "PAA 2023 – Recurso Federal (Quantidade Kg de alimentos)": parseCurrency, 
-  "PAA 2024 – Recurso Federal (Quantidade Kg de alimentos)": parseCurrency, 
-  "PAA 2024 – Recurso Estadual (Quantidade Kg de alimentos)": parseCurrency, 
-  "PAA 2024 – Recurso Estadual e Federal (Quantidade Kg de alimentos)": parseCurrency, 
+  "PAA VALOR TOTAL INVESTIDO (COMPRAS)": parseNumberpaa, 
+   "PAA 2023 – Recurso Federal (Quantidade Kg de alimentos)": parseNumberpaa, 
+  "PAA 2024 – Recurso Federal (Quantidade Kg de alimentos)": parseNumberpaa, 
+  "PAA 2024 – Recurso Estadual (Quantidade Kg de alimentos)": parseNumberpaa, 
+  "PAA 2024 – Recurso Estadual e Federal (Quantidade Kg de alimentos)":parseNumberpaa, 
   default: parseNumber,
 };
 
