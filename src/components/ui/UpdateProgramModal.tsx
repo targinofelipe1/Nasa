@@ -6,28 +6,29 @@ import { Loader2, SquarePen, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 
 import {
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
 } from "@/components/ui/Dialog";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 interface TableData {
-  [key: string]: any;
+  [key: string]: any;
 }
 
 interface UpdateProgramModalProps {
-  rowData: TableData;
-  rowIndex: number;
-  onUpdate: () => void;
-  onClose: () => void;
-  programName: string;
-  activeTab: string;
-  tabGroups: { [key: string]: string[] };
+  rowData: TableData;
+  rowIndex: number;
+  onUpdate: () => void;
+  onClose: () => void;
+  programName: string;
+  activeTab: string;
+  tabGroups: { [key: string]: string[] };
 }
+
 const columnDisplayNames: Record<string, string> = {
-'Município': 'Município',
+  Município: "Município",
   'CADASTRO ÚNICO - Famílias em situação de Pobreza - Renda per capita (R$) de 0,00 a 218,00 ': 'Famílias em Pobreza',
   'CADASTRO ÚNICO - Famílias em situação de Baixa Renda - Renda per capita (R$) de  218,01 até 1/2 S.M. ':'Famílias Baixa Renda',
   'CADASTRO ÚNICO - Famílias com Renda mensal acima de Meio Salário Mínimo ': 'Famílias Renda Acima de 1/2 S.M.',
@@ -107,13 +108,31 @@ const columnDisplayNames: Record<string, string> = {
 
 
 
-export default function UpdateProgramModal({ rowData, rowIndex, onUpdate, onClose, programName, activeTab, tabGroups }: UpdateProgramModalProps) {
+// 🔹 Normalizador igual ao backend
+const normalize = (str: string) =>
+  str ? str.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
+
+export default function UpdateProgramModal({
+  rowData,
+  rowIndex,
+  onUpdate,
+  onClose,
+  programName,
+  activeTab,
+  tabGroups,
+}: UpdateProgramModalProps) {
   const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
+
+  // Campos editáveis da aba atual
   const editableKeys = useMemo(() => {
     const currentTabKeys = tabGroups[activeTab] || [];
-    return currentTabKeys.filter(key => key !== 'CÓDIGO IBGE' && key !== 'Município');
-  }, [activeTab, tabGroups]);  const [currentStep, setCurrentStep] = useState(0);
+    return currentTabKeys.filter(
+      (key) => key !== "CÓDIGO IBGE" && key !== "Município"
+    );
+  }, [activeTab, tabGroups]);
+
+  const [currentStep, setCurrentStep] = useState(0);
   const [values, setValues] = useState<TableData>(rowData);
 
   const handleUpdate = async (shouldClose: boolean) => {
@@ -125,58 +144,77 @@ export default function UpdateProgramModal({ rowData, rowIndex, onUpdate, onClos
       return;
     }
 
+    // Linha real na planilha (headers estão na linha 1 → +2)
+    const sheetRowIndex = rowIndex + 2;
+
     try {
-      const sheetRowIndex = rowIndex + 2;
-      const updates = editableKeys.map(key => {
-        return {
-          key: key, 
+      const updates = editableKeys.map((key) => {
+        let sheetKey = key;
+
+        // 🔹 Para ODE: casar pelo header real da planilha
+        if (programName === "ode") {
+          sheetKey =
+            Object.keys(rowData).find(
+              (h) => normalize(h) === normalize(key)
+            ) || key;
+        }
+
+        const updateObj = {
+          key: sheetKey, // agora garantimos que casa com o header da planilha
+          normalizedKey: normalize(sheetKey),
+          displayName: columnDisplayNames[key] || key,
           row: sheetRowIndex,
-          originalValue: rowData[key],
+          originalValue: rowData[sheetKey],
           value: values[key],
         };
+
+        console.log("🔹 Campo preparado para update:", updateObj);
+        return updateObj;
       });
 
       const payload = {
         updates,
         programa: programName,
         userId,
-        municipio: rowData['Município']
+        municipio: rowData["Município"],
       };
 
-      console.log("Dados enviados para a API:", payload);
+      console.log("📌 Payload enviado para a API (/api/sheets):", payload);
 
       const response = await fetch(`/api/sheets`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Erro ao atualizar a planilha.');
+        console.error("❌ Erro da API:", errorData);
+        throw new Error(errorData.message || "Erro ao atualizar a planilha.");
       }
 
       toast.success("Dados atualizados com sucesso!");
       onUpdate();
-      if (shouldClose) {
-          onClose();
-      }
+      if (shouldClose) onClose();
     } catch (error: any) {
-      console.error("Erro ao atualizar a planilha:", error);
+      console.error("❌ Erro ao atualizar a planilha:", error);
       toast.error(error.message || "Erro ao atualizar os dados. Tente novamente.");
     } finally {
       setLoading(false);
     }
   };
 
-if (editableKeys.length === 0) {
-  return (
-    <div className="p-4 text-center">
-      <p>Não há campos editáveis nesta aba.</p>
-      <Button onClick={onClose} className="mt-4">Fechar</Button>
-    </div>
-  );
-}
+  // Caso não tenha nada editável na aba
+  if (editableKeys.length === 0) {
+    return (
+      <div className="p-4 text-center">
+        <p>Não há campos editáveis nesta aba.</p>
+        <Button onClick={onClose} className="mt-4">
+          Fechar
+        </Button>
+      </div>
+    );
+  }
 
   const currentKey = editableKeys[currentStep];
   const currentDisplayName = columnDisplayNames[currentKey] || currentKey;
@@ -186,25 +224,29 @@ if (editableKeys.length === 0) {
       <DialogHeader className="p-4 border-b">
         <DialogTitle>Atualizar Dados do Município</DialogTitle>
         <DialogDescription>
-          Município: <strong>{rowData['Município']}</strong>
+          Município: <strong>{rowData["Município"]}</strong>
         </DialogDescription>
       </DialogHeader>
 
+      {/* Campo de edição */}
       <div className="p-4 space-y-4">
         <div>
-          <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+          <label className="text-sm font-medium">
             {currentDisplayName}
           </label>
           <Input
             type="text"
-            value={values[currentKey] || ''}
-            onChange={(e) => setValues(prev => ({ ...prev, [currentKey]: e.target.value }))}
+            value={values[currentKey] || ""}
+            onChange={(e) =>
+              setValues((prev) => ({ ...prev, [currentKey]: e.target.value }))
+            }
             disabled={loading}
             className="mt-2"
           />
         </div>
       </div>
 
+      {/* Navegação e botões */}
       <div className="flex justify-between p-4 border-t gap-2 items-center">
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Cancelar
@@ -214,17 +256,14 @@ if (editableKeys.length === 0) {
           {currentStep > 0 && (
             <Button
               variant="ghost"
-              onClick={() => setCurrentStep(prev => prev - 1)}
+              onClick={() => setCurrentStep((prev) => prev - 1)}
               disabled={loading}
             >
               <ArrowLeft className="mr-2 h-4 w-4" /> Anterior
             </Button>
           )}
 
-          <Button 
-            onClick={() => handleUpdate(true)} // ✅ Botão de salvar agora aparece em todos os passos
-            disabled={loading}
-          >
+          <Button onClick={() => handleUpdate(true)} disabled={loading}>
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -239,13 +278,12 @@ if (editableKeys.length === 0) {
 
           {currentStep < editableKeys.length - 1 && (
             <Button
-              onClick={() => setCurrentStep(prev => prev + 1)}
+              onClick={() => setCurrentStep((prev) => prev + 1)}
               disabled={loading}
             >
               Próximo <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           )}
-
         </div>
       </div>
     </>
