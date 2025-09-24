@@ -1,3 +1,4 @@
+// app/ode/list/page.tsx
 "use client";
 
 import { useEffect, useState, useMemo, useRef } from "react";
@@ -19,9 +20,8 @@ import {
   DialogHeader,
 } from "@/components/ui/Dialog";
 import { Input } from "@/components/ui/Input";
-import UpdateProgramModal from "@/components/ui/UpdateProgramModal";
-import { useUser } from "@clerk/nextjs";
 import UpdateOdeModal from "@/components/ui/UpdateOdeModal";
+import { useUser } from "@clerk/nextjs";
 
 export interface TableData {
   [key: string]: any;
@@ -30,8 +30,7 @@ export interface TableData {
 // Nome que vai aparecer no título
 const programId = "ode";
 const programTitle = "ODE - Obras, Serviços e Programas";
-const screenId = "ode_list"; // ou "ode" se quiser unificar
-
+const screenId = "ode_list"; 
 
 // Display amigável para colunas
 const columnDisplayNames: Record<string, string> = {
@@ -52,24 +51,9 @@ const columnDisplayNames: Record<string, string> = {
   "Fonte de Recurso": "Fonte",
 };
 
-// Abas para organizar colunas
-const tabGroups = {
-  Identificação: ["NOME", "Setor de Trabalho", "Região", "Município"],
-  Detalhes: ["Descrição", "Outro", "Obra", "Serviço"],
-  Programa: ["Programa/Projeto/Entidade", "Ação"],
-  Execução: [
-    "Quantidade de Benefícios/Beneficiários",
-    "Status",
-    "Ano",
-    "Valor",
-    "Fonte de Recurso",
-  ],
-};
-
 export default function OdeListPage() {
   const { isLoaded, isSignedIn, user } = useUser();
   const router = useRouter();
-  const pathname = usePathname();
 
   const [data, setData] = useState<TableData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,16 +61,13 @@ export default function OdeListPage() {
   const [selectedRow, setSelectedRow] = useState<TableData | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
   const [municipioFilter, setMunicipioFilter] = useState("");
-  const [activeTab, setActiveTab] = useState<keyof typeof tabGroups>("Identificação");
   const [hasPermission, setHasPermission] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
   const redirectedRef = useRef(false);
-
-
   const toastShownRef = useRef(false);
 
-  const itemsPerPage = 5;
+  const itemsPerPage = 10;
 
   // Busca dados na API do ODE
   const fetchData = async () => {
@@ -135,69 +116,68 @@ export default function OdeListPage() {
     );
   }, [data, municipioFilter]);
 
+  // Verificação de permissões
   useEffect(() => {
-  if (!isLoaded || !isSignedIn || !user) return;
+    if (!isLoaded || !isSignedIn || !user) return;
 
-  const verify = async () => {
-    try {
-      const res = await fetch(`/api/users/${user.id}/permissions`, {
-        cache: "no-store",
-      });
-      const json = await res.json();
+    const verify = async () => {
+      try {
+        const res = await fetch(`/api/users/${user.id}/permissions`, {
+          cache: "no-store",
+        });
+        const json = await res.json();
 
-      const allowed = Array.isArray(json?.allowedTabs)
-        ? json.allowedTabs.includes(screenId)
-        : false;
+        const allowed = Array.isArray(json?.allowedTabs)
+          ? json.allowedTabs.includes(screenId)
+          : false;
 
+        setHasPermission(allowed);
 
-      setHasPermission(allowed);
-
-      if (!allowed) {
+        if (!allowed) {
+          if (!toastShownRef.current) {
+            toastShownRef.current = true;
+            toast.error("Acesso negado: você não possui permissão!");
+          }
+          if (!redirectedRef.current) {
+            redirectedRef.current = true;
+            router.push("/");
+          }
+        }
+      } catch (e) {
+        console.error("Falha ao verificar permissões:", e);
         if (!toastShownRef.current) {
           toastShownRef.current = true;
-          toast.error("Acesso negado: você não possui permissão!");
+          toast.error("Erro ao verificar permissões.");
         }
-        if (!redirectedRef.current) {
-          redirectedRef.current = true;
-          router.push("/");
-        }
+        router.push("/");
+      } finally {
+        setIsVerifying(false);
       }
-    } catch (e) {
-      console.error("Falha ao verificar permissões:", e);
-      if (!toastShownRef.current) {
-        toastShownRef.current = true;
-        toast.error("Erro ao verificar permissões.");
-      }
-      router.push("/");
-    } finally {
-      setIsVerifying(false);
-    }
-  };
+    };
 
-  verify();
-}, [isLoaded, isSignedIn, user, router]);
-
+    verify();
+  }, [isLoaded, isSignedIn, user, router]);
 
   const totalPages = Math.max(1, Math.ceil(filteredData.length / itemsPerPage));
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredData.slice(indexOfFirstItem, indexOfLastItem);
 
-  const currentHeaders = tabGroups[activeTab] ?? [];
+  const allHeaders = Object.keys(columnDisplayNames);
 
   const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   if (!isLoaded || isVerifying) {
-  return (
-    <div className="flex justify-center items-center h-screen">
-      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-    </div>
-  );
-}
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
-if (!hasPermission) {
-  return null; // já redirecionou no useEffect
-}
+  if (!hasPermission) {
+    return null; // já redirecionou no useEffect
+  }
 
   return (
     <ProtectedRoute>
@@ -215,28 +195,6 @@ if (!hasPermission) {
               </div>
             ) : data.length > 0 ? (
               <div className="overflow-x-auto bg-white p-6 rounded-lg shadow-md">
-                {/* Tabs */}
-                <div className="mb-6">
-                  <div className="flex border-b border-gray-200">
-                    {Object.keys(tabGroups).map((tabName) => (
-                      <button
-                        key={tabName}
-                        onClick={() => {
-                          setActiveTab(tabName as keyof typeof tabGroups);
-                          setCurrentPage(1);
-                        }}
-                        className={`-mb-px mr-1 px-4 py-2 text-sm font-medium ${
-                          activeTab === tabName
-                            ? "border-b-2 border-blue-600 text-blue-600"
-                            : "text-gray-500 hover:text-gray-700"
-                        }`}
-                      >
-                        {tabName}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
                 {/* Filtro */}
                 <div className="mb-4 relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
@@ -252,11 +210,11 @@ if (!hasPermission) {
                   />
                 </div>
 
-                {/* Tabela */}
+                {/* Tabela completa sem abas */}
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      {currentHeaders.map((key) => (
+                      {allHeaders.map((key) => (
                         <th
                           key={key}
                           scope="col"
@@ -273,7 +231,7 @@ if (!hasPermission) {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {currentItems.map((row, rowIndex) => (
                       <tr key={rowIndex}>
-                        {currentHeaders.map((key, colIndex) => (
+                        {allHeaders.map((key, colIndex) => (
                           <td
                             key={colIndex}
                             className={`px-6 py-4 whitespace-nowrap text-sm ${
@@ -338,12 +296,12 @@ if (!hasPermission) {
           <DialogContent>
             <DialogHeader />
             <UpdateOdeModal
-            rowData={selectedRow}
-            rowIndex={data.indexOf(selectedRow)}
-            onUpdate={fetchData}
-            onClose={handleCloseUpdateModal}
-            activeTab={activeTab}
-            tabGroups={tabGroups}
+              rowData={selectedRow}
+              rowIndex={data.indexOf(selectedRow)}
+              onUpdate={fetchData}
+              onClose={handleCloseUpdateModal}
+              activeTab={"Todos"} 
+              tabGroups={{ Todos: allHeaders }}
             />
           </DialogContent>
         </Dialog>

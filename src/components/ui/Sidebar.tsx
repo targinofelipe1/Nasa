@@ -139,13 +139,13 @@ const Sidebar = () => {
                   <FaStethoscope className="mr-2" size={16} />
                   <Link href="/programas/saude">Saúde</Link>
                 </li>
-                 <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
-                  <FaClipboardList className="mr-2" size={16} />
-                  <Link href="/programas/auditoria">Gerenciamento de Ações</Link>
-                </li>
                 <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
                   <FaShoppingBasket className="mr-2" size={16} />
                   <Link href="/programas/paa">PAA</Link>
+                </li>
+                  <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaClipboardList className="mr-2" size={16} />
+                  <Link href="/programas/auditoria">Gerenciamento de Ações</Link>
                 </li>
 
               </ul>

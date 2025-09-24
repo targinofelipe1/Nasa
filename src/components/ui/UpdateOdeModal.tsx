@@ -134,11 +134,15 @@ export default function UpdateOdeModal({
 
   // Campos editáveis
   const editableKeys = useMemo(() => {
-    const currentTabKeys = tabGroups[activeTab] || [];
-    return currentTabKeys.filter(
-      (key) => key !== "CÓDIGO IBGE" && key !== "Município" && key !== "NOME"
-    );
-  }, [activeTab, tabGroups]);
+  const currentTabKeys = tabGroups[activeTab] || [];
+  return currentTabKeys.filter(
+    (key) =>
+      key !== "CÓDIGO IBGE" &&
+      key !== "Município" &&
+      key !== "Região" && // 🚫 agora Região também não pode ser alterada
+      key !== "NOME"
+  );
+}, [activeTab, tabGroups]);
 
   const handleUpdate = async (shouldClose: boolean) => {
     setLoading(true);
@@ -193,8 +197,6 @@ export default function UpdateOdeModal({
   // 🔹 Mapa de campos → opções
   const fieldOptions: Record<string, string[]> = {
     "Setor de Trabalho": setores,
-    Região: Object.keys(regioes),
-    Município: values["Região"] ? regioes[values["Região"]] || [] : [],
     Descrição: descricoes,
     "Programa/Projeto/Entidade": programas,
     Ação: acoes,
