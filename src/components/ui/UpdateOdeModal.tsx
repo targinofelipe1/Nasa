@@ -13,6 +13,99 @@ import {
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
+// 🔹 SETORES
+const setores = [
+  "Proteção Social Básica",
+  "Proteção Social Especial de Média Complexidade",
+  "Proteção Social Especial de Alta Complexidade",
+  "Diretoria do SUAS",
+  "Segurança Alimentar",
+  "Engenharia",
+  "FUNCEP",
+  "Casa da Cidadania",
+  "SINE",
+  "Cadastro Único e Bolsa Família",
+  "Vigilância Socioassistencial",
+];
+
+// 🔹 REGIÕES E MUNICÍPIOS
+const regioes: Record<string, string[]> = {
+  "1ª": ["ALHANDRA","BAYEUX","CAAPORÃ","CABEDELO","CONDE","CRUZ DO ESPÍRITO SANTO","LUCENA","MARI","PITIMBU","RIACHÃO DO POÇO","SANTA RITA","SAPÉ","SOBRADO","JOÃO PESSOA"],
+  "2ª": ["ALAGOINHA","ARAÇAGI","ARARUNA","BANANEIRAS","BELÉM","BORBOREMA","CACIMBA DE DENTRO","CAIÇARA","CASSERENGUE","CUITEGI","DONA INÊS","DUAS ESTRADAS","GUARABIRA","LOGRADOURO","MULUNGU","PILÕES","PILÕEZINHOS","PIRPIRITUBA","RIACHÃO","SERRA DA RAIZ","SERRARIA","SERTÃOZINHO","SOLÂNEA","TACIMA"],
+  "3ª": ["ALAGOA GRANDE","ALAGOA NOVA","ALCANTIL","ALGODÃO DE JANDAÍRA","ARARA","AREIA","AREIAL","AROEIRAS","ASSUNÇÃO","BARRA DE SANTANA","BARRA DE SÃO MIGUEL","BOA VISTA","BOQUEIRÃO","CATURITÉ","CABACEIRAS","ESPERANÇA","FAGUNDES","GADO BRAVO","JUAZEIRINHO","LAGOA SECA","LIVRAMENTO","MASSARANDUBA","MATINHAS","MONTADAS","NATUBA","OLIVEDOS","POCINHOS","PUXINANÃ","QUEIMADAS","REMÍGIO","RIACHO DE SANTO ANTÔNIO","SANTA CECÍLIA","SÃO DOMINGOS DO CARIRI","SÃO SEBASTIÃO DE LAGOA DE ROÇA","SOLEDADE","TAPEROÁ","TENÓRIO","UMBUZEIRO","CAMPINA GRANDE"],
+  "4ª": ["BARAÚNA","BARRA DE SANTA ROSA","CUBATI","CUITÉ","DAMIÃO","FREI MARTINHO","NOVA FLORESTA","NOVA PALMEIRA","PEDRA LAVRADA","PICUÍ","SÃO VICENTE DO SERIDÓ","SOSSÊGO"],
+  "5ª": ["AMPARO","CAMALAÚ","CARAÚBAS","CONGO","COXIXOLA","GURJÃO","MONTEIRO","OURO VELHO","PARARI","PRATA","SANTO ANDRÉ","SÃO JOÃO DO CARIRI","SÃO JOÃO DO TIGRE","SÃO JOSÉ DOS CORDEIROS","SÃO SEBASTIÃO DO UMBUZEIRO","SERRA BRANCA","SUMÉ","ZABELÊ"],
+  "6ª": ["AREIA DE BARAÚNAS","CACIMBA DE AREIA","CACIMBAS","CATINGUEIRA","DESTERRO","EMAS","JUNCO DO SERIDÓ","MÃE D'ÁGUA","MALTA","MATURÉIA","PASSAGEM","PATOS","QUIXABA","SALGADINHO","SANTA LUZIA","SANTA TERESINHA","SÃO JOSÉ DE ESPINHARAS","SÃO JOSÉ DO BONFIM","SÃO JOSÉ DO SABUGI","SÃO MAMEDE","TEIXEIRA","VÁRZEA"],
+  "7ª": ["AGUIAR","BOA VENTURA","CONCEIÇÃO","COREMAS","CURRAL VELHO","DIAMANTE","IBIARA","IGARACY","ITAPORANGA","NOVA OLINDA","OLHO D'ÁGUA","PEDRA BRANCA","PIANCÓ","SANTA INÊS","SANTANA DE MANGUEIRA","SERRA GRANDE","SANTANA DOS GARROTES","SÃO JOSÉ DE CAIANA"],
+  "8ª": ["BELÉM DO BREJO DO CRUZ","BOM SUCESSO","BREJO DO CRUZ","BREJO DOS SANTOS","CATOLÉ DO ROCHA","JERICÓ","MATO GROSSO","RIACHO DOS CAVALOS","SÃO BENTO","SÃO JOSÉ DO BREJO DO CRUZ"],
+  "9ª": ["BERNARDINO BATISTA","BONITO DE SANTA FÉ","BOM JESUS","CACHOEIRA DOS ÍNDIOS","CAJAZEIRAS","CARRAPATEIRA","JOCA CLAUDINO","MONTE HOREBE","POÇO DANTAS","POÇO DE JOSÉ DE MOURA","SANTA HELENA","SÃO JOÃO DO RIO DO PEIXE","SÃO JOSÉ DE PIRANHAS","TRIUNFO","UIRAÚNA"],
+  "10ª": ["LASTRO","MARIZÓPOLIS","NAZAREZINHO","SANTA CRUZ","SÃO FRANCISCO","SÃO JOSÉ DA LAGOA TAPADA","SOUSA","VIEIRÓPOLIS"],
+  "11ª": ["ÁGUA BRANCA","IMACULADA","JURU","MANAÍRA","PRINCESA ISABEL","SÃO JOSÉ DE PRINCESA","TAVARES"],
+  "12ª": ["CALDAS BRANDÃO","GURINHÉM","INGÁ","ITABAIANA","ITATUBA","JUAREZ TÁVORA","JURIPIRANGA","MOGEIRO","PEDRAS DE FOGO","PILAR","RIACHÃO DO BACAMARTE","SALGADO DE SÃO FÉLIX","SÃO JOSÉ DOS RAMOS","SÃO MIGUEL DE TAIPU","SERRA REDONDA"],
+  "13ª": ["APARECIDA","CAJAZEIRINHAS","CONDADO","LAGOA","PAULISTA","POMBAL","SÃO BENTINHO","SÃO DOMINGOS","VISTA SERRANA"],
+  "14ª": ["BAÍA DA TRAIÇÃO","CAPIM","CUITÉ DE MAMANGUAPE","CURRAL DE CIMA","ITAPOROROCA","JACARAÚ","LAGOA DE DENTRO","MAMANGUAPE","MARCAÇÃO","MATARACA","PEDRO RÉGIS","RIO TINTO"],
+};
+
+// 🔹 DESCRIÇÃO
+const descricoes = [
+  "Programa Estadual de Proteção aos Defensores de Direitos Humanos - PEPDDH",
+  "Programa de Proteção à Vítimas e Testemunhas - PROVITA",
+  "Programa de Proteção a Crianças e Adolescentes Ameaçadas de Morte - PPCAAM",
+  "Abrigamento dos Indígenas Venezuelanos Migrantes Refugiados da etnia Warao",
+  "Núcleo Estadual de Enfrentamento ao Tráfico de Pessoas da Paraíba",
+  "Projeto Acolher",
+  "Capacita SUAS",
+  "Abono natalino",
+  "Tá na mesa",
+  "Restaurante Popular",
+  "Novo Tá na mesa",
+  "Cartão Alimentação",
+  "PAA - LEITE",
+  "PAA - CDS",
+  "Cistenas",
+  "Paraíba que Acolhe",
+  "Cofinanciamento para CRAS, CREAS, UNIDADES DE ACOLHIMENTO, GESTÃO MUNICIPAIS E BENEFICIOS EVENTUAIS",
+  "Programa Cidade Madura",
+  "Outro",
+];
+
+// 🔹 PROGRAMAS
+const programas = [
+  "5008 - Assistência Social, Direitos Humanos e Proteção Social",
+  "5009 - Assistência Social, Direitos Humanos e Proteção Social",
+  "(Novo PAC) 960186",
+  "Trabalhadores(as)",
+  "5008 - Assistência Social - Direitos Humanos e Proteção Social",
+  "5008 - Assistência Social - Direitos",
+  "500 - Segurança Alimentar - Direitos",
+  "PAA ALIMENTOS",
+];
+
+// 🔹 AÇÕES
+const acoes = [
+  "BENEFICIÁRIOS",
+  "TRANSFERÊNCIA DE RENDA",
+  "REFEIÇÕES DIÁRIAS",
+  "CISTERNAS",
+  "BENEFICIÁRIOS – PESSOA IDOSA",
+  "SERVIÇO DE ACOLHIMENTO CRIANÇA E ADOLESCENTE",
+  "SERVIÇO DE ACOLHIMENTO FAMÍLIAS E ADULTOS",
+  "BENEFICIÁRIOS – (ÓRFÃOS DECORRENTE DA COVID-19)",
+  "DOCUMENTAÇÃO BÁSICA",
+];
+
+// 🔹 STATUS
+const statusOptions = [
+  "Contínuo",
+  "Ações e/ou obras a iniciar, em licitação ou a licitar",
+  "A iniciar",
+  "Ações e/ou obras concluídas",
+  "Concluído",
+  "Em andamento",
+  "A inaugurar (2025)/Lançar",
+  "Paralisado",
+];
+
 interface TableData {
   [key: string]: any;
 }
@@ -26,29 +119,6 @@ interface UpdateOdeModalProps {
   tabGroups: { [key: string]: string[] };
 }
 
-// 🔹 Display amigável só para ODE
-const columnDisplayNames: Record<string, string> = {
-  NOME: "Nome",
-  "Setor de Trabalho": "Setor",
-  Região: "Região",
-  Município: "Município",
-  Descrição: "Descrição",
-  Outro: "Outro",
-  Obra: "Obra",
-  Serviço: "Serviço",
-  "Programa/Projeto/Entidade": "Programa",
-  Ação: "Ação",
-  "Quantidade de Benefícios/Beneficiários": "Qtd Benefícios",
-  Status: "Status",
-  Ano: "Ano",
-  Valor: "Valor",
-  "Fonte de Recurso": "Fonte",
-};
-
-// 🔹 Normalizador igual ao backend
-const normalize = (str: string) =>
-  str ? str.toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "") : "";
-
 export default function UpdateOdeModal({
   rowData,
   rowIndex,
@@ -59,41 +129,27 @@ export default function UpdateOdeModal({
 }: UpdateOdeModalProps) {
   const { userId } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [values, setValues] = useState<TableData>(rowData);
 
-  // Campos editáveis da aba atual
+  // Campos editáveis
   const editableKeys = useMemo(() => {
     const currentTabKeys = tabGroups[activeTab] || [];
     return currentTabKeys.filter(
-        (key) => key !== "CÓDIGO IBGE" && key !== "Município" && key !== "NOME"
-
+      (key) => key !== "CÓDIGO IBGE" && key !== "Município" && key !== "NOME"
     );
   }, [activeTab, tabGroups]);
-
-  const [currentStep, setCurrentStep] = useState(0);
-  const [values, setValues] = useState<TableData>(rowData);
 
   const handleUpdate = async (shouldClose: boolean) => {
     setLoading(true);
 
-    if (!userId) {
-      toast.error("Erro: Usuário não autenticado.");
-      setLoading(false);
-      return;
-    }
-
     try {
-      const updates = editableKeys.map((key) => {
-        // sempre casa pelo header real vindo da planilha
-        const sheetKey =
-          Object.keys(rowData).find((h) => normalize(h) === normalize(key)) || key;
-
-        return {
-          key: sheetKey, // header real da planilha
-          row: rowData.__rowNumber || rowIndex + 2, // preferir __rowNumber se vier do GET
-          originalValue: rowData[sheetKey],
-          value: values[sheetKey],
-        };
-      });
+      const updates = editableKeys.map((key) => ({
+        key,
+        row: rowData.__rowNumber || rowIndex + 2,
+        originalValue: rowData[key],
+        value: values[key],
+      }));
 
       const payload = {
         updates,
@@ -102,32 +158,25 @@ export default function UpdateOdeModal({
         municipio: rowData["Município"],
       };
 
-      console.log("📌 Payload enviado para a API (/api/ode):", payload);
-
       const response = await fetch(`/api/ode`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error("❌ Erro da API:", errorData);
-        throw new Error(errorData.message || "Erro ao atualizar a planilha.");
-      }
+      if (!response.ok) throw new Error("Erro ao atualizar");
 
       toast.success("Dados atualizados com sucesso!");
       onUpdate();
       if (shouldClose) onClose();
     } catch (error: any) {
-      console.error("❌ Erro ao atualizar a planilha ODE:", error);
-      toast.error(error.message || "Erro ao atualizar os dados. Tente novamente.");
+      console.error("❌ Erro ao atualizar:", error);
+      toast.error(error.message || "Erro ao atualizar");
     } finally {
       setLoading(false);
     }
   };
 
-  // Caso não tenha nada editável na aba
   if (editableKeys.length === 0) {
     return (
       <div className="p-4 text-center">
@@ -140,7 +189,21 @@ export default function UpdateOdeModal({
   }
 
   const currentKey = editableKeys[currentStep];
-  const currentDisplayName = columnDisplayNames[currentKey] || currentKey;
+
+  // 🔹 Mapa de campos → opções
+  const fieldOptions: Record<string, string[]> = {
+    "Setor de Trabalho": setores,
+    Região: Object.keys(regioes),
+    Município: values["Região"] ? regioes[values["Região"]] || [] : [],
+    Descrição: descricoes,
+    "Programa/Projeto/Entidade": programas,
+    Ação: acoes,
+    Status: statusOptions,
+    Obra: ["Sim", "Não"],
+    Serviço: ["Sim", "Não"],
+  };
+
+  const options = fieldOptions[currentKey] || null;
 
   return (
     <>
@@ -151,23 +214,39 @@ export default function UpdateOdeModal({
         </DialogDescription>
       </DialogHeader>
 
-      {/* Campo de edição */}
       <div className="p-4 space-y-4">
         <div>
-          <label className="text-sm font-medium">{currentDisplayName}</label>
-          <Input
-            type="text"
-            value={values[currentKey] || ""}
-            onChange={(e) =>
-              setValues((prev) => ({ ...prev, [currentKey]: e.target.value }))
-            }
-            disabled={loading}
-            className="mt-2"
-          />
+          <label className="text-sm font-medium">{currentKey}</label>
+          {options ? (
+            <select
+              value={values[currentKey] || ""}
+              onChange={(e) =>
+                setValues((prev) => ({ ...prev, [currentKey]: e.target.value }))
+              }
+              disabled={loading}
+              className="mt-2 w-full border rounded-md p-2 text-sm"
+            >
+              <option value="">Selecione...</option>
+              {options.map((opt) => (
+                <option key={opt} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <Input
+              type="text"
+              value={values[currentKey] || ""}
+              onChange={(e) =>
+                setValues((prev) => ({ ...prev, [currentKey]: e.target.value }))
+              }
+              disabled={loading}
+              className="mt-2"
+            />
+          )}
         </div>
       </div>
 
-      {/* Navegação e botões */}
       <div className="flex justify-between p-4 border-t gap-2 items-center">
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Cancelar
