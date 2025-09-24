@@ -21,7 +21,7 @@ import {
   AiOutlineInsertRowBelow,
   AiOutlineLineChart,
 } from "react-icons/ai";
-import { MdEmojiObjects, MdHowToVote, MdOutlineAnalytics, MdOutlineHowToVote, MdOutlineMap, MdOutlineShowChart } from "react-icons/md";
+import { MdEmojiObjects, MdFormatAlignLeft, MdHowToVote, MdOutlineAnalytics, MdOutlineHowToVote, MdOutlineMap, MdOutlineShowChart, MdOutlineVisibility } from "react-icons/md";
 import { BsArrowLeftRight, BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
@@ -34,6 +34,8 @@ const Sidebar = () => {
   const router = useRouter();
   const [showPrograms, setShowPrograms] = useState(false);
   const [showElections, setShowElections] = useState(false);
+  const [showOde, setShowOde] = useState(false);            // 🔹 novo state
+
 
   const handleLogout = async () => {
     await signOut();
@@ -165,6 +167,40 @@ const Sidebar = () => {
               <MdOutlineAnalytics className="mr-3" size={20} />
               {isOpen && "Análise Gráfica"}
             </Link>
+          </li>
+
+          <li className="flex flex-col">
+            <button
+              onClick={() => setShowOde(!showOde)}
+              className="flex items-center justify-between text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 px-4 py-2 w-full"
+            >
+              <div className="flex items-center">
+                <MdHowToVote className="mr-3" size={20} />
+                {isOpen && "Orçamento Democrático"}
+              </div>
+              {isOpen && (
+                <span className="ml-auto">
+                  {showOde ? <AiOutlineUp size={14} /> : <AiOutlineDown size={14} />}
+                </span>
+              )}
+            </button>
+
+            {showOde && isOpen && (
+              <ul className="ml-10 text-gray-600 dark:text-gray-400">
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <MdFormatAlignLeft className="mr-2" size={16} />
+                  <Link href="/ode/form">Formulário</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <MdOutlineVisibility className="mr-2" size={16} />
+                  <Link href="/ode/lista">Visualização</Link>
+                </li>
+                <li className="flex items-center py-1 hover:text-blue-500 dark:hover:text-blue-400">
+                  <FaClipboardList className="mr-2" size={16} />
+                  <Link href="/ode/gerenciamento">Gerenciamento de Ações</Link>
+                </li>
+              </ul>
+            )}
           </li>
 
             <li>
