@@ -24,47 +24,81 @@ interface PermissionManagerModalProps {
 const programsWithTabs = {
   "analise-grafica": {
     name: "Análise Gráfica",
-    tabs: ["Geral"]
+    tabs: ["Geral"],
   },
   "bolsa-familia": {
     name: "Bolsa Família",
-    tabs: ["Famílias", "Pessoas"]
+    tabs: ["Famílias", "Pessoas"],
   },
   "cadastro-unico": {
     name: "Cadastro Único",
-    tabs: ["Famílias", "Pessoas e Idade", "Instrução", "Trabalho"]
+    tabs: ["Famílias", "Pessoas e Idade", "Instrução", "Trabalho"],
   },
   "protecao-basica": {
     name: "Proteção Social Básica",
-    tabs: ["CRAS", "Primeira Infância", "Órfãos", "Acessuas Trabalho", "Cidade Madura", "CSUs", "Centros de Convivência"]
+    tabs: [
+      "CRAS",
+      "Primeira Infância",
+      "Órfãos",
+      "Acessuas Trabalho",
+      "Cidade Madura",
+      "CSUs",
+      "Centros de Convivência",
+    ],
   },
   "protecao-especial": {
     name: "Proteção Social Especial",
-    tabs: ["CREAS", "Centros Pop/Dia", "Acolhimento", "Família Acolhedora", "Projeto Acolher"]
+    tabs: [
+      "CREAS",
+      "Centros Pop/Dia",
+      "Acolhimento",
+      "Família Acolhedora",
+      "Projeto Acolher",
+    ],
   },
-  "saude": {
+  saude: {
     name: "Saúde",
-    tabs: ["Infraestrutura", "Vacinas"]
+    tabs: ["Infraestrutura", "Vacinas"],
   },
   "seguranca-alimentar": {
     name: "Segurança Alimentar",
-    tabs: ["Tá na Mesa", "Cartão Alimentação", "Restaurante Popular", "PAA - Leite", "PAA - CDS", "Cisternas", "INSAN"]
+    tabs: [
+      "Tá na Mesa",
+      "Cartão Alimentação",
+      "Restaurante Popular",
+      "PAA - Leite",
+      "PAA - CDS",
+      "Cisternas",
+      "INSAN",
+    ],
   },
   "bpc-rmv": {
     name: "BPC/RMV",
-    tabs: ["BPC/RMV"]
+    tabs: ["BPC/RMV"],
   },
   "casa-da-cidadania-e-sine": {
     name: "Casa da Cidadania e SINE",
-    tabs: ["Casa da Cidadania", "SINE"]
+    tabs: ["Casa da Cidadania", "SINE"],
   },
-   "paa": {
+  paa: {
     name: "PAA",
-    tabs: ["Dados Gerais"]
-  }
+    tabs: ["Dados Gerais"],
+  },
+  ode: {
+    name: "ODE",
+    tabs: [
+      { id: "ode_form", label: "Formulário" },
+      { id: "ode_list", label: "Visualização" },
+    ],
+  },
 };
 
-export default function PermissionManagerModal({ open, onClose, userId, userName }: PermissionManagerModalProps) {
+export default function PermissionManagerModal({
+  open,
+  onClose,
+  userId,
+  userName,
+}: PermissionManagerModalProps) {
   const [loading, setLoading] = useState(true);
   const [userPermissions, setUserPermissions] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
@@ -76,15 +110,13 @@ export default function PermissionManagerModal({ open, onClose, userId, userName
       setLoading(true);
       try {
         const response = await fetch(`/api/users/${userId}/permissions`);
-        
+
         if (!response.ok) {
           throw new Error("Erro ao buscar as permissões.");
         }
-        
+
         const data = await response.json();
-        // Garante que o estado seja um array, mesmo se a API retornar null
         setUserPermissions(data.allowedTabs || []);
-        
       } catch (error) {
         console.error("Erro ao buscar permissões:", error);
         toast.error("Erro ao carregar as permissões do usuário.");
@@ -96,12 +128,16 @@ export default function PermissionManagerModal({ open, onClose, userId, userName
     fetchPermissions();
   }, [open, userId]);
 
-  const handleToggleTab = (programId: string, tabName: string, isChecked: boolean) => {
-    const permissionString = `${programId}_${tabName}`;
-    setUserPermissions(prev =>
+  const handleToggleTab = (
+    programId: string,
+    tabId: string,
+    isChecked: boolean
+  ) => {
+    const permissionString = `${programId}_${tabId}`;
+    setUserPermissions((prev) =>
       isChecked
         ? [...prev, permissionString]
-        : prev.filter(p => p !== permissionString)
+        : prev.filter((p) => p !== permissionString)
     );
   };
 
@@ -137,7 +173,7 @@ export default function PermissionManagerModal({ open, onClose, userId, userName
             {`Selecione os programas e abas que este usuário terá acesso para visualização e edição.`}
           </DialogDescription>
         </DialogHeader>
-        
+
         {loading ? (
           <div className="flex justify-center items-center h-24">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -146,24 +182,36 @@ export default function PermissionManagerModal({ open, onClose, userId, userName
           <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
             {Object.entries(programsWithTabs).map(([programId, program]) => (
               <div key={programId}>
-                <h3 className="text-lg font-semibold mb-3 border-b pb-2">{program.name}</h3>
+                <h3 className="text-lg font-semibold mb-3 border-b pb-2">
+                  {program.name}
+                </h3>
                 <div className="grid grid-cols-2 gap-4">
-                  {program.tabs.map(tabName => {
-                    const permissionString = `${programId}_${tabName}`;
-                    const isEnabled = userPermissions.includes(permissionString);
+                  {program.tabs.map((tab) => {
+                    // 🔹 Suporte a string OU objeto {id, label}
+                    const tabId = typeof tab === "string" ? tab : tab.id;
+                    const tabLabel = typeof tab === "string" ? tab : tab.label;
+
+                    const permissionString = `${programId}_${tabId}`;
+                    const isEnabled =
+                      userPermissions.includes(permissionString);
 
                     return (
-                      <div key={permissionString} className="flex items-center space-x-2">
+                      <div
+                        key={permissionString}
+                        className="flex items-center space-x-2"
+                      >
                         <Checkbox
                           id={permissionString}
                           checked={isEnabled}
-                          onCheckedChange={(checked: boolean) => handleToggleTab(programId, tabName, checked)}
+                          onCheckedChange={(checked: boolean) =>
+                            handleToggleTab(programId, tabId, checked)
+                          }
                         />
                         <label
                           htmlFor={permissionString}
                           className="text-sm font-medium leading-none"
                         >
-                          {tabName}
+                          {tabLabel}
                         </label>
                       </div>
                     );
@@ -173,19 +221,15 @@ export default function PermissionManagerModal({ open, onClose, userId, userName
             ))}
           </div>
         )}
-        
+
         <DialogFooter className="p-4 border-t sm:justify-end">
-          <Button 
-            variant="ghost" 
-            onClick={onClose}
-          >
+          <Button variant="ghost" onClick={onClose}>
             Cancelar
           </Button>
-          <Button 
-            onClick={handleSavePermissions} 
-            disabled={isSaving || loading}
-          >
-            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+          <Button onClick={handleSavePermissions} disabled={isSaving || loading}>
+            {isSaving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : null}
             Salvar
           </Button>
         </DialogFooter>

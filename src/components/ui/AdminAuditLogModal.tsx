@@ -3,7 +3,12 @@
 
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, UserRound, X, ChevronLeft, ChevronRight } from "lucide-react"; // ✅ Importe os ícones de navegação
+import {
+  Loader2,
+  UserRound,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@clerk/nextjs";
@@ -27,17 +32,25 @@ interface AuditLogEntry {
   at: string;
 }
 
-export default function AdminAuditLogModal({ open, onClose }: AdminAuditLogModalProps) {
+interface UserData {
+  id: string;
+  fullName: string;
+}
+
+export default function AdminAuditLogModal({
+  open,
+  onClose,
+}: AdminAuditLogModalProps) {
   const { userId } = useAuth();
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
+  const [users, setUsers] = useState<UserData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1); // ✅ Novo estado para a página
-  const logsPerPage = 2; // ✅ Quantidade de logs por página
+  const [page, setPage] = useState(1);
+  const logsPerPage = 2;
 
   useEffect(() => {
     if (!open || !userId) return;
 
-    // ✅ Reseta a página para 1 sempre que o modal for aberto
     setPage(1);
 
     const fetchAuditLog = async () => {
@@ -57,14 +70,30 @@ export default function AdminAuditLogModal({ open, onClose }: AdminAuditLogModal
       }
     };
 
+    const fetchAllUsers = async () => {
+      try {
+        const response = await fetch("/api/users");
+        if (!response.ok) throw new Error("Erro ao buscar usuários.");
+        const { data } = await response.json();
+        setUsers(data || []);
+      } catch (error) {
+        console.error("Erro ao carregar usuários:", error);
+      }
+    };
+
     fetchAuditLog();
+    fetchAllUsers();
   }, [open, userId]);
 
   if (!open) {
     return null;
   }
 
-  // ✅ Lógica de paginação
+  const getUserName = (id: string): string => {
+    const user = users.find((u) => u.id === id);
+    return user ? user.fullName : id;
+  };
+
   const totalPages = Math.ceil(auditLog.length / logsPerPage);
   const startIndex = (page - 1) * logsPerPage;
   const currentLogs = auditLog.slice(startIndex, startIndex + logsPerPage);
@@ -85,7 +114,10 @@ export default function AdminAuditLogModal({ open, onClose }: AdminAuditLogModal
           <div className="p-4 space-y-4 overflow-y-auto">
             <div className="space-y-4 mb-4">
               {currentLogs.map((log, index) => (
-                <div key={index} className="border rounded-lg p-3 bg-gray-50 shadow-sm">
+                <div
+                  key={index}
+                  className="border rounded-lg p-3 bg-gray-50 shadow-sm"
+                >
                   <div className="flex items-start space-x-2">
                     <UserRound className="h-6 w-6 text-gray-500 flex-shrink-0 mt-1" />
                     <div className="flex flex-col flex-grow">
@@ -93,17 +125,20 @@ export default function AdminAuditLogModal({ open, onClose }: AdminAuditLogModal
                         {log.action}
                       </p>
                       <p className="text-xs text-gray-500">
-                        Em: {format(new Date(log.at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                        Em:{" "}
+                        {format(new Date(log.at), "dd/MM/yyyy 'às' HH:mm", {
+                          locale: ptBR,
+                        })}
                       </p>
                       <p className="text-xs text-gray-500">
-                        ID do Usuário Afetado: {log.targetUserId}
+                        Usuário afetado: {getUserName(log.targetUserId)}
                       </p>
                     </div>
                   </div>
                 </div>
               ))}
             </div>
-            {/* ✅ Controles de Paginação */}
+            {/* Paginação */}
             <div className="flex justify-center items-center space-x-2">
               <Button
                 variant="outline"
@@ -113,7 +148,9 @@ export default function AdminAuditLogModal({ open, onClose }: AdminAuditLogModal
               >
                 <ChevronLeft className="h-4 w-4" />
               </Button>
-              <span className="text-sm whitespace-nowrap">Página {page} de {totalPages}</span>
+              <span className="text-sm whitespace-nowrap">
+                Página {page} de {totalPages}
+              </span>
               <Button
                 variant="outline"
                 size="sm"
