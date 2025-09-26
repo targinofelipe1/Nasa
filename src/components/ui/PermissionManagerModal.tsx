@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -91,6 +91,10 @@ const programsWithTabs = {
       { id: "ode_list", label: "Visualização" },
     ],
   },
+  "paa-inscricao": {
+    name: "PAA - Inscrição",
+    tabs: ["Todos"], 
+  },
 };
 
 export default function PermissionManagerModal({
@@ -127,6 +131,33 @@ export default function PermissionManagerModal({
 
     fetchPermissions();
   }, [open, userId]);
+
+
+   const allPossiblePermissions = useMemo(() => {
+        const allPermissions: string[] = [];
+        Object.entries(programsWithTabs).forEach(([programId, program]) => {
+            program.tabs.forEach((tab) => {
+                const tabId = typeof tab === "string" ? tab : tab.id;
+                allPermissions.push(`${programId}_${tabId}`);
+            });
+        });
+        return allPermissions;
+    }, []);
+
+    // Calcula o estado do checkbox mestre (se todas estão marcadas ou se está meio-marcado)
+    const isAllChecked = userPermissions.length === allPossiblePermissions.length;
+    const isIndeterminate = userPermissions.length > 0 && userPermissions.length < allPossiblePermissions.length;
+
+    // Função para marcar/desmarcar TUDO
+    const handleToggleAll = (checked: boolean) => {
+        if (checked) {
+            // Se checked for true, seta TODAS as permissões
+            setUserPermissions(allPossiblePermissions);
+        } else {
+            // Se checked for false, esvazia as permissões
+            setUserPermissions([]);
+        }
+    };
 
   const handleToggleTab = (
     programId: string,
@@ -172,6 +203,23 @@ export default function PermissionManagerModal({
           <DialogDescription className="mt-2">
             {`Selecione os programas e abas que este usuário terá acesso para visualização e edição.`}
           </DialogDescription>
+
+
+          <div className="flex items-center space-x-2 mt-2">
+                <Checkbox
+                    id="toggle-all"
+                    checked={isAllChecked}
+                    onCheckedChange={(checked: boolean) => handleToggleAll(checked)}
+                    // Estilo para o estado 'meio-marcado'
+                    className={isIndeterminate ? "data-[state=checked]:bg-gray-400" : ""} 
+                />
+                <label
+                    htmlFor="toggle-all"
+                    className="text-sm font-medium leading-none"
+                >
+                    Marcar/Desmarcar Todas as {allPossiblePermissions.length} Permissões
+                </label>
+            </div>
         </DialogHeader>
 
         {loading ? (

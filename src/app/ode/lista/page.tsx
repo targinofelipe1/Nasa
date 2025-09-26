@@ -30,7 +30,7 @@ export interface TableData {
 // Nome que vai aparecer no título
 const programId = "ode";
 const programTitle = "ODE - Obras, Serviços e Programas";
-const screenId = "ode_list"; 
+const screenId = "ode_ode_list";
 
 // Display amigável para colunas
 const columnDisplayNames: Record<string, string> = {
