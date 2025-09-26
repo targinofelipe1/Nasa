@@ -28,7 +28,7 @@ interface UpdatePAAModalProps {
 }
 
 // ⚠️ CHAVES EDITÁVEIS FIXAS PARA O PAA-INSCRIÇÃO
-const PAA_EDITABLE_KEYS = ["Pontuação", "Critérios", "Avaliação"];
+const PAA_EDITABLE_KEYS = ["Quantidade de Filhos","Pontuação", "Critérios", "Avaliação"];
 
 export default function UpdatePAAModal({
   rowData,
