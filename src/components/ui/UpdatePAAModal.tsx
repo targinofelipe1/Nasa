@@ -114,14 +114,14 @@ export default function UpdatePAAModal({
             </label>
 
             {/* Renderização condicional para o tipo de input */}
-            {key === "Pontuação" ? (
+            {key === "Pontuação" || key === "Quantidade de Filhos" ? (
               <Input
                 id={key.toLowerCase()}
                 type="number"
                 value={values[key] || ""}
                 onChange={(e) => handleChange(key, e.target.value)}
                 disabled={loading}
-                placeholder="Insira a pontuação..."
+                placeholder={`Insira ${key.toLowerCase()}...`}
               />
             ) : (
               // Use um <textarea> ou um componente Textarea (se você o tiver) 
