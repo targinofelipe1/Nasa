@@ -301,28 +301,30 @@ export default function OdeListPage() {
   const parseDate = (v: any) => {
     if (!v) return new Date(NaN);
     const s = String(v).trim();
-    const ddmmyyyy = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/;
-    if (ddmmyyyy.test(s)) {
-      const [, d, m, y] = s.match(ddmmyyyy) as RegExpMatchArray;
-      return new Date(Number(y), Number(m) - 1, Number(d));
+
+    // Ex.: 19/09/2025 às 16:55 | 19/09/2025 as 16:55 | 19/09/2025 16:55 | 19/09/2025
+    const re = /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})(?:\s*(?:às|as)?\s*(\d{1,2}):(\d{2}))?$/i;
+    const m = s.match(re);
+    if (m) {
+      const d = Number(m[1]);
+      const mo = Number(m[2]) - 1;
+      const y = Number(m[3]);
+      const hh = m[4] !== undefined ? Number(m[4]) : 0;
+      const mm = m[5] !== undefined ? Number(m[5]) : 0;
+      return new Date(y, mo, d, hh, mm, 0, 0);
     }
-    const dt = new Date(s);
+
+    // Tenta ISO/US como fallback (ex.: 2025-09-19 16:55)
+    const cleaned = s.replace("às", " ").replace("as", " ").replace(/ +/g, " ");
+    const dt = new Date(cleaned);
     return isNaN(dt.getTime()) ? new Date(NaN) : dt;
   };
 
-  /** Ordena respeitando: 
-   * - Primário por Pontuação (desc/asc) OU Data (desc/asc)
-   * - Desempate **somente** se reportOrderBy === "Pontuação" **e** pontuações iguais:
-   *     1) Quantidade de Filhos (desc) se marcado
-   *     2) Data (asc) se marcado
-   * - Fallback: Nome (asc)
-   */
   const compareForReport = (a: TableData, b: TableData) => {
     if (reportOrderBy === "Pontuação") {
       const ap = normalizeScore(parseNumber(a["Pontuação"]));
       const bp = normalizeScore(parseNumber(b["Pontuação"]));
       if (ap !== bp) {
-        // maior primeiro quando 'desc'
         return reportOrderDir === "asc" ? ap - bp : bp - ap;
       }
 
@@ -338,14 +340,12 @@ export default function OdeListPage() {
         if (ad !== bd) return ad - bd; // mais antigo primeiro
       }
 
-      // fallback
       return String(a["Nome"] ?? "").localeCompare(String(b["Nome"] ?? ""));
     } else {
       // Ordenar por DATA
       const ad = parseDate(a["Data"]).getTime();
       const bd = parseDate(b["Data"]).getTime();
       if (ad !== bd) return reportOrderDir === "asc" ? ad - bd : bd - ad;
-      // sem desempate por filhos aqui (pedido do usuário)
       return String(a["Nome"] ?? "").localeCompare(String(b["Nome"] ?? ""));
     }
   };
@@ -356,44 +356,99 @@ export default function OdeListPage() {
       classificados: TableData[];
       espera: TableData[];
       cols: string[];
+      criterioOrdenacao?: string;
+      criterioDesempate?: string;
     }>
   ) => {
     const style = `
-      <style>
-        *{box-sizing:border-box}
-        body{font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";color:#111827;padding:24px}
-        h1{font-size:20px;margin:0 0 16px}
-        h2{font-size:16px;margin:24px 0 8px}
-        table{width:100%;border-collapse:collapse;margin-top:8px}
-        th,td{border:1px solid #e5e7eb;padding:8px;font-size:12px;text-align:left;vertical-align:top}
-        th{background:#f9fafb;font-weight:600}
-        .section{page-break-inside:avoid;margin-bottom:24px}
-        .header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-        .badge{display:inline-block;padding:2px 6px;border-radius:9999px;border:1px solid #d1d5db;font-size:10px;color:#374151}
-      </style>`;
+     <style>
+       @page { size: A4 landscape; margin: 12mm; }
+       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+       body{
+         font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
+         color:#111827;
+         padding:24px;
+       }
+       h1{ font-size:20px; margin:0 0 16px; }
+       h2{ font-size:16px; margin:24px 0 8px; }
+
+       table{
+         width:100%;
+         border-collapse:collapse;
+         table-layout:fixed;
+         margin-top:8px;
+       }
+       thead{ display: table-header-group; }
+       tr{ page-break-inside: avoid; }
+
+       th, td{
+         border:1px solid #e5e7eb;
+         padding:8px;
+         font-size:12px;
+         text-align:left;
+         vertical-align:top;
+         word-wrap:break-word;
+       }
+       th{
+         background:#f9fafb;
+         font-weight:600;
+       }
+       .badge{
+         display:inline-block;padding:2px 8px;border-radius:9999px;border:1px solid #d1d5db;font-size:11px;color:#374151
+       }
+     </style>`;
+
     const renderTable = (title: string, rows: TableData[], cols: string[]) => {
       const thead = cols.map((c) => `<th>${columnDisplayNames[c] || c}</th>`).join("");
       const tbody =
         rows.length === 0
           ? `<tr><td colspan="${cols.length}" style="color:#6b7280">Sem registros</td></tr>`
-          : rows.map((r) => `<tr>${cols.map((c) => `<td>${r[c] ?? ""}</td>`).join("")}</tr>`).join("");
+          : rows
+              .map(
+                (r) =>
+                  `<tr>${cols.map((c) => `<td>${r[c] ?? ""}</td>`).join("")}</tr>`
+              )
+              .join("");
       return `<h2>${title}</h2><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
     };
+
     const generatedAt = new Date().toLocaleString();
-    const content = grupos
-      .map(
-        (g) => `
-        <div class="section">
-          <div class="header">
-            <h1>Município: ${g.municipio}</h1>
-            <span class="badge">Gerado em ${generatedAt}</span>
+
+const content = grupos
+  .map(
+    (g) => `
+      <div class="section">
+
+        <!-- Cabeçalho: esquerda em coluna, data à direita -->
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+          <!-- Bloco ESQUERDO -->
+          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+            <div style="font-size:20px;font-weight:700;">Inscrição PAA - Classificação</div>
+            <div style="font-size:16px;"><b>Município:</b> ${g.municipio}</div>
+            ${
+              g.criterioOrdenacao
+                ? `<div style="font-size:14px;line-height:1.35;"><b>Ordenação:</b> ${g.criterioOrdenacao}</div>`
+                : ""
+            }
+            ${
+              g.criterioDesempate
+                ? `<div style="font-size:14px;line-height:1.35;"><b>Desempate:</b> ${g.criterioDesempate}</div>`
+                : ""
+            }
           </div>
-          ${renderTable("Classificados", g.classificados, g.cols)}
-          ${renderTable("Lista de Espera", g.espera, g.cols)}
-        </div>`
-      )
-      .join("");
-    // sem window.print aqui; quem chama o print é o helper
+
+          <!-- Bloco DIREITO (data) -->
+          <div class="badge" style="align-self:flex-start;"><b>Classificação Gerada em: </b>${generatedAt}</div>
+        </div>
+
+        ${renderTable("Classificados", g.classificados, g.cols)}
+        ${renderTable("Lista de Espera", g.espera, g.cols)}
+      </div>
+    `
+  )
+  .join("");
+
+        
     return `<!doctype html><html><head><meta charSet="utf-8" /><title>Relatório PAA</title>${style}</head><body>${content}</body></html>`;
   };
 
@@ -430,7 +485,7 @@ export default function OdeListPage() {
       const mun = selectedMunicipio;
       const rows = base.filter((r) => String(r["Município"] ?? "") === mun);
 
-      // ordenação correta (maior pontuação na frente quando 'desc')
+      // ordenação correta
       rows.sort(compareForReport);
 
       const classificados: TableData[] = [];
@@ -441,8 +496,29 @@ export default function OdeListPage() {
         else espera.push(clone);
       });
 
+      // textos claros para cabeçalho
+      const criterioOrdenacao =
+        reportOrderBy === "Pontuação"
+          ? `Pontuação ${reportOrderDir === "desc" ? "(maior primeiro)" : "(menor primeiro)"}`
+          : `Data ${reportOrderDir === "desc" ? "(mais recente primeiro)" : "(mais antiga primeiro)"}`;
+
+      let criterioDesempate = "";
+      if (reportOrderBy === "Pontuação") {
+        const parts: string[] = [];
+        if (tieUseQtdFilhos) parts.push("Quantidade de filhos");
+        if (tieUseData) parts.push("Data de Inscrição mais antiga");
+        if (parts.length) criterioDesempate = parts.join(" + ");
+      }
+
       const html = buildReportHTML([
-        { municipio: mun, classificados, espera, cols },
+        {
+          municipio: mun,
+          classificados,
+          espera,
+          cols,
+          criterioOrdenacao,
+          criterioDesempate,
+        },
       ]);
 
       const ok = openPrintView(html);
