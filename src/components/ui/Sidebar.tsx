@@ -21,7 +21,7 @@ import {
   AiOutlineInsertRowBelow,
   AiOutlineLineChart,
 } from "react-icons/ai";
-import { MdEmojiObjects, MdFormatAlignLeft, MdHowToVote, MdOutlineAnalytics, MdOutlineHowToVote, MdOutlineMap, MdOutlineSearch, MdOutlineShowChart, MdOutlineVisibility } from "react-icons/md";
+import { MdEmojiObjects, MdFormatAlignLeft, MdHowToVote, MdOutlineAnalytics, MdOutlineAssignment, MdOutlineHowToVote, MdOutlineMap, MdOutlineSearch, MdOutlineShowChart, MdOutlineVisibility } from "react-icons/md";
 import { BsArrowLeftRight, BsBoxArrowInDown } from "react-icons/bs";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
@@ -173,8 +173,8 @@ const Sidebar = () => {
               href="/analise-paa"
               className="flex items-center text-gray-700 hover:text-blue-600 px-4"
             >
-              <MdOutlineSearch className="mr-3" size={20} />
-              {isOpen && "Análise de Inscrição"}
+              <MdOutlineAssignment className="mr-3" size={20} />
+              {isOpen && "Análise de Inscrição (PAA)"}
             </Link>
           </li>
 

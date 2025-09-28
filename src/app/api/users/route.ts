@@ -1,11 +1,13 @@
 // src/app/api/users/route.ts
+
 import { NextResponse } from 'next/server';
-import { clerkClient, auth } from '@clerk/nextjs/server'; // ✅ Importe 'auth'
+import { clerkClient, auth } from '@clerk/nextjs/server';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer'; 
 
 const LOGO_URL = 'https://gevs.vercel.app/img/provisorio.png';
 const APP_URL = 'https://gevs.vercel.app/';
+const LOG_LIMIT = 19; // Limita o log a 19 entradas para que a 20ª entrada (nova) caiba.
 
 async function sendWelcomeEmailWithLink(email: string, fullName: string) {
   const transporter = nodemailer.createTransport({
@@ -35,7 +37,7 @@ async function sendWelcomeEmailWithLink(email: string, fullName: string) {
             <a href="${APP_URL}auth/sign-in" style="word-break: break-all; font-weight: bold; color: #007bff; text-decoration: none;">
               ${APP_URL}auth/sign-in
             </a>
-          </div>
+        </div>
         </div>
         <div style="text-align: center; padding: 10px; font-size: 12px; color: #999;">
         </div>
@@ -47,10 +49,14 @@ async function sendWelcomeEmailWithLink(email: string, fullName: string) {
     await transporter.sendMail(mailOptions);
     console.log('E-mail de boas-vindas enviado para:', email);
   } catch (error) {
+    // Captura o erro aqui para que a função POST não caia no catch principal.
     console.error('Erro ao enviar o e-mail:', error);
   }
 }
 
+// ===================================================================
+// GET /api/users - Listar usuários
+// ===================================================================
 export async function GET() {
   try {
     const client = await clerkClient();
@@ -79,7 +85,9 @@ export async function GET() {
   }
 }
 
-// POST /api/users
+// ===================================================================
+// POST /api/users - Criar usuário
+// ===================================================================
 export async function POST(request: Request) {
   try {
     const { firstName, lastName, email } = await request.json();
@@ -94,52 +102,59 @@ export async function POST(request: Request) {
     const provisionalPassword = crypto.randomBytes(16).toString('hex');
     const client = await clerkClient();
 
+    // 1. Cria o usuário no Clerk
     const newUser = await client.users.createUser({
       firstName,
       lastName,
       emailAddress: [email], 
       password: provisionalPassword,
     });
-    
+    
     const { userId: adminId } = await auth();
 
     if (adminId) {
-      const adminUser = await client.users.getUser(adminId);
-      const adminFullName = `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim();
-      
-      // ✅ NOVO CÓDIGO AQUI: Registra a ação no log de auditoria do NOVO usuário
-      const newUserAuditEntry = {
-          action: 'Criação',
-          by: adminFullName,
-          byUserId: adminId,
-          at: new Date().toISOString(),
-      };
-      
-      await client.users.updateUser(newUser.id, {
-          privateMetadata: {
-              auditLog: [newUserAuditEntry],
-          },
-      });
+      const adminUser = await client.users.getUser(adminId);
+      const adminFullName = `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim();
+      
+      // Log de auditoria para o NOVO usuário
+      const newUserAuditEntry = {
+          action: 'Criação',
+          by: adminFullName,
+          byUserId: adminId,
+          at: new Date().toISOString(),
+      };
+      
+      await client.users.updateUser(newUser.id, {
+          privateMetadata: {
+              auditLog: [newUserAuditEntry],
+          },
+      });
 
-      // ✅ CÓDIGO EXISTENTE: Registra a ação no log de auditoria do ADMINISTRADOR
-      const currentAdminAuditLog = (adminUser.privateMetadata?.adminAuditLog || []) as any[];
+      // Log de auditoria para o ADMINISTRADOR
+      const currentAdminAuditLog = (adminUser.privateMetadata?.adminAuditLog || []) as any[];
 
-      const newAdminLogEntry = {
-          action: `Criou o usuário ${newUser.fullName} (${newUser.emailAddresses[0].emailAddress})`,
-          targetUserId: newUser.id,
-          at: new Date().toISOString(),
-      };
+      const newAdminLogEntry = {
+          action: `Criou o usuário ${newUser.fullName} (${newUser.emailAddresses[0].emailAddress})`,
+          targetUserId: newUser.id,
+          at: new Date().toISOString(),
+      };
 
-      await client.users.updateUser(adminId, {
-          privateMetadata: {
-              ...adminUser.privateMetadata,
-              adminAuditLog: [...currentAdminAuditLog, newAdminLogEntry],
-          },
-      });
-    }
+      // 🏆 CORREÇÃO APLICADA: Truncagem do log e sintaxe correta do objeto
+      await client.users.updateUser(adminId, {
+          privateMetadata: {
+              ...adminUser.privateMetadata,
+              // Usa .slice(-LOG_LIMIT) para garantir que o array não exceda o limite do Clerk
+              adminAuditLog: [...currentAdminAuditLog.slice(-LOG_LIMIT), newAdminLogEntry], 
+          },
+      });
+    }
 
-    await sendWelcomeEmailWithLink(email, `${firstName || ''} ${lastName || ''}`.trim());
+    // 2. Envia e-mail de forma não-bloqueante (evita erro 500 se o e-mail falhar)
+    sendWelcomeEmailWithLink(email, `${firstName || ''} ${lastName || ''}`.trim()).catch(
+        (e) => console.error("Falha silenciosa ao enviar e-mail de boas-vindas:", e)
+    );
 
+    // 3. Retorna sucesso
     return NextResponse.json(
       { message: 'Usuário cadastrado com sucesso!', userId: newUser.id },
       { status: 201 }
@@ -158,6 +173,7 @@ export async function POST(request: Request) {
       }
     }
 
+    // Retorna erro 500 se não for um erro 422 conhecido do Clerk.
     return NextResponse.json(
       { error: 'Erro ao cadastrar o usuário. Tente novamente.' },
       { status: 500 }
