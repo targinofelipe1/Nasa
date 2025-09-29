@@ -443,7 +443,7 @@ const content = grupos
         <!-- 🔹 Legenda -->
         <div style="font-size:10px;line-height:1.4;margin-top:12px;color:#555;">
           <b>Legenda:</b> 
-          cad = CadÚnico · ind = Indígena · quil = Quilombola · trad = Tradicional · 
+          cad = CadÚnico ·  ind/quil/trad = Indígena/Quilombola/Tradicional · 
           neg = Negro · mul = Mulher · ass = Assentado · pesc = Pescador · 
           jov = Jovem (18-29) · prod = apartir de 3 produtos · mix = Vegetal e Animal (Alimentos processados)
         </div>
