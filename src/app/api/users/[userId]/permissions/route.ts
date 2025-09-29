@@ -1,157 +1,222 @@
-import { NextResponse } from "next/server";
-import { clerkClient, auth } from "@clerk/nextjs/server";
+// src/app/api/users/[userId]/permissions/route.ts
+import { NextResponse } from 'next/server';
+import { clerkClient, auth } from '@clerk/nextjs/server';
 
 type UserPrivateMetadata = {
-  allowedTabs?: string[];
-  adminAuditLog?: Array<{
-    action: string;
-    targetUserId?: string;
-    at: string;
-    by?: string;
-  }>;
+  allowedTabs?: string[];
+  adminAuditLog?: Array<{
+    action: string;
+    targetUserId?: string;
+    at: string;
+    by?: string;
+  }>;
+  auditLog?: Array<{
+    action: string;
+    at: string;
+    by?: string;
+  }>;
 };
 
-export async function GET(
-  _request: Request,
-  ctx: { params: Promise<{ userId: string }> }
-) {
-  try {
-    const { userId } = await ctx.params;
-    if (!userId) {
-      return NextResponse.json({ error: "ID do usuário não fornecido." }, { status: 400 });
-    }
+/* ===================== Helper de Log (cap por itens e bytes) ===================== */
+const MAX_LOG_ITEMS = 20;       // mantém até 20 entradas
+const MAX_LOG_BYTES = 12_000;   // ~12 KB por JSON de log (conservador)
 
-    const { userId: adminId } = await auth();
-    if (!adminId) {
-      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-    }
-
-    const client = await clerkClient();
-    const user = await client.users.getUser(userId);
-    if (!user) {
-      return NextResponse.json({ error: "Usuário não encontrado." }, { status: 404 });
-    }
-
-    const allowedFromUnsafe =
-      ((user.unsafeMetadata || {}) as { allowedTabs?: string[] }).allowedTabs;
-    const allowedFromPrivate =
-      ((user.privateMetadata || {}) as UserPrivateMetadata).allowedTabs;
-
-    const allowedTabs = allowedFromUnsafe ?? allowedFromPrivate ?? [];
-    return NextResponse.json({ allowedTabs }, { status: 200 });
-  } catch (error) {
-    console.error("GET /permissions erro:", error);
-    return NextResponse.json({ error: "Erro ao buscar permissões." }, { status: 500 });
-  }
+function clipStr(s: string | undefined, max = 400) {
+  if (!s) return s as any;
+  return s.length > max ? s.slice(0, max) + '…' : s;
 }
 
-export async function PATCH(
-  request: Request,
-  ctx: { params: Promise<{ userId: string }> }
+type LogEntry = { action: string; at: string; targetUserId?: string; by?: string };
+
+function appendCappedLog(prev: LogEntry[] | undefined, entry: LogEntry): LogEntry[] {
+  const sanitized: LogEntry = {
+    ...entry,
+    action: clipStr(entry.action, 400),
+    by: clipStr(entry.by, 100),
+  };
+  let log = [...(prev || []).slice(-(MAX_LOG_ITEMS - 1)), sanitized];
+  let json = JSON.stringify(log);
+  while (json.length > MAX_LOG_BYTES && log.length > 1) {
+    log = log.slice(1); // remove mais antigo até caber
+    json = JSON.stringify(log);
+  }
+  return log;
+}
+/* ================================================================================ */
+
+// GET permissões
+export async function GET(
+  _request: Request,
+  ctx: { params: Promise<{ userId: string }> }
 ) {
-  try {
-    const { userId } = await ctx.params;
-    const body = await request.json();
+  try {
+    const { userId } = await ctx.params;
+    if (!userId) {
+      return NextResponse.json({ error: 'ID do usuário não fornecido.' }, { status: 400 });
+    }
 
-    // 🔑 garante sempre array válido de string
-    const allowedTabs: string[] = Array.isArray(body?.allowedTabs)
-      ? body.allowedTabs.filter((t: unknown) => typeof t === "string")
-      : [];
+    const { userId: adminId } = await auth();
+    if (!adminId) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
-    if (!userId) {
-      return NextResponse.json({ error: "ID do usuário não fornecido." }, { status: 400 });
-    }
+    const client = await clerkClient();
+    const user = await client.users.getUser(userId);
+    if (!user) {
+      return NextResponse.json({ error: 'Usuário não encontrado.' }, { status: 404 });
+    }
 
-    const { userId: adminId } = await auth();
-    if (!adminId) {
-      return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-    }
+    const allowedFromUnsafe =
+      ((user.unsafeMetadata || {}) as { allowedTabs?: string[] }).allowedTabs;
+    const allowedFromPrivate =
+      ((user.privateMetadata || {}) as UserPrivateMetadata).allowedTabs;
 
-    const client = await clerkClient();
-    const [userToUpdate, adminUser] = await Promise.all([
-      client.users.getUser(userId),
-      client.users.getUser(adminId),
-    ]);
-    if (!userToUpdate || !adminUser) {
-      return NextResponse.json({ error: "Usuário ou Admin não encontrado." }, { status: 404 });
-    }
+    const allowedTabs = allowedFromUnsafe ?? allowedFromPrivate ?? [];
+    return NextResponse.json({ allowedTabs }, { status: 200 });
+  } catch (error) {
+    console.error('GET /permissions erro:', error);
+    return NextResponse.json({ error: 'Erro ao buscar permissões.' }, { status: 500 });
+  }
+}
 
-    const existingPrivate = (userToUpdate.privateMetadata || {}) as UserPrivateMetadata;
-    const existingUnsafe = (userToUpdate.unsafeMetadata || {}) as Record<string, unknown>;
+// PATCH permissões (com logs capados + fallback anti-422)
+export async function PATCH(
+  request: Request,
+  ctx: { params: Promise<{ userId: string }> }
+) {
+  try {
+    const { userId } = await ctx.params;
+    const body = await request.json();
 
-    const oldAllowedTabs = existingPrivate.allowedTabs || [];
+    // ===== Sanitização de allowedTabs =====
+    const RAW_MAX_ITEMS = 50; // limite máximo de abas por usuário
+    const RAW_MAX_LEN = 60;   // limite de caracteres por aba
 
-    const addedTabs = allowedTabs.filter((tab) => !oldAllowedTabs.includes(tab));
-    const removedTabs = oldAllowedTabs.filter((tab) => !allowedTabs.includes(tab));
+    const allowedTabs: string[] = Array.isArray(body?.allowedTabs)
+  ? [
+      ...new Set(
+        (body.allowedTabs as unknown[])
+          .filter((t): t is string => typeof t === 'string')
+          .map((s) => s.trim())
+          .filter((s) => s.length > 0)
+          .map((s) => (s.length > RAW_MAX_LEN ? s.slice(0, RAW_MAX_LEN) : s))
+      ),
+    ]
+      .sort((a, b) => a.localeCompare(b))
+      .slice(0, RAW_MAX_ITEMS)
+  : [];
 
-    const newPrivateMetadata: UserPrivateMetadata = {
-      ...existingPrivate,
-      allowedTabs,
-    };
-    const newUnsafeMetadata = {
-      ...existingUnsafe,
-      allowedTabs,
-    };
 
-    await client.users.updateUser(userId, {
-      privateMetadata: newPrivateMetadata,
-      unsafeMetadata: newUnsafeMetadata,
-    });
+    if (!userId) {
+      return NextResponse.json({ error: 'ID do usuário não fornecido.' }, { status: 400 });
+    }
 
-    const userFullName = `${userToUpdate.firstName || ""} ${userToUpdate.lastName || ""}`.trim();
-    const adminFullName = `${adminUser.firstName || ""} ${adminUser.lastName || ""}`.trim();
+    const { userId: adminId } = await auth();
+    if (!adminId) {
+      return NextResponse.json({ error: 'Não autorizado.' }, { status: 401 });
+    }
 
-    // log para admin
-    let adminActionMessage = `Alterou as permissões do usuário ${userFullName}.`;
-    if (addedTabs.length > 0) adminActionMessage += ` Adicionou: ${addedTabs.join(", ")}.`;
-    if (removedTabs.length > 0) adminActionMessage += ` Removeu: ${removedTabs.join(", ")}.`;
+    const client = await clerkClient();
+    const [userToUpdate, adminUser] = await Promise.all([
+      client.users.getUser(userId),
+      client.users.getUser(adminId),
+    ]);
+    if (!userToUpdate || !adminUser) {
+      return NextResponse.json({ error: 'Usuário ou Admin não encontrado.' }, { status: 404 });
+    }
 
-    const adminLogEntry = {
-      action: adminActionMessage,
-      targetUserId: userId,
-      at: new Date().toISOString(),
-    };
+    const existingPrivate = (userToUpdate.privateMetadata || {}) as UserPrivateMetadata;
+    // const existingUnsafe = (userToUpdate.unsafeMetadata || {}) as Record<string, unknown>; // use se precisar
 
-    // log para usuário
-    let userActionMessage = `Suas permissões foram alteradas por ${adminFullName}.`;
-    if (addedTabs.length > 0) userActionMessage += ` Adicionadas: ${addedTabs.join(", ")}.`;
-    if (removedTabs.length > 0) userActionMessage += ` Removidas: ${removedTabs.join(", ")}.`;
+    const oldAllowedTabs = existingPrivate.allowedTabs || [];
 
-    const userLogEntry = {
-      action: userActionMessage,
-      at: new Date().toISOString(),
-      by: adminFullName,
-    };
+    // diffs
+    const addedTabs = allowedTabs.filter((tab) => !oldAllowedTabs.includes(tab));
+    const removedTabs = oldAllowedTabs.filter((tab) => !allowedTabs.includes(tab));
 
-    const currentAdminPrivate = (adminUser.privateMetadata || {}) as UserPrivateMetadata;
-    const currentAdminAuditLog = currentAdminPrivate.adminAuditLog || [];
+    // se nada mudou, evita writes desnecessários e crescimento de logs
+    if (addedTabs.length === 0 && removedTabs.length === 0) {
+      return NextResponse.json({ message: 'Nenhuma mudança de permissões.' }, { status: 200 });
+    }
 
-    const currentUserPrivate = (userToUpdate.privateMetadata || {}) as UserPrivateMetadata;
-    const currentUserAuditLog = currentUserPrivate.adminAuditLog || [];
+    // grava as abas (apenas em privateMetadata para economizar espaço)
+    const newPrivateMetadata: UserPrivateMetadata = {
+      ...existingPrivate,
+      allowedTabs,
+    };
+    await client.users.updateUser(userId, {
+      privateMetadata: newPrivateMetadata,
+      // unsafeMetadata: { ...existingUnsafe, allowedTabs }, // descomente se você realmente usa isso no front
+    });
 
-    // 🔑 CORREÇÃO: Define o limite de logs (mantém 19 + 1 nova = 20 total)
-    const LOG_LIMIT = 19; 
+    const userFullName = `${userToUpdate.firstName || ''} ${userToUpdate.lastName || ''}`.trim();
+    const adminFullName = `${adminUser.firstName || ''} ${adminUser.lastName || ''}`.trim();
 
-    await Promise.all([
-      client.users.updateUser(adminId, {
-        privateMetadata: {
-          ...currentAdminPrivate,
-          // ✅ TRUNCAGEM: Limita o log do Admin
-          adminAuditLog: [...currentAdminAuditLog.slice(-LOG_LIMIT), adminLogEntry],
-        },
-      }),
-      client.users.updateUser(userId, {
-        privateMetadata: {
-          ...currentUserPrivate,
-          // ✅ TRUNCAGEM: Limita o log do Usuário
-          adminAuditLog: [...currentUserAuditLog.slice(-LOG_LIMIT), userLogEntry],
-        },
-      }),
-    ]);
+    // mensagens de log
+    let adminActionMessage = `Alterou as permissões do usuário ${userFullName}.`;
+    if (addedTabs.length > 0) adminActionMessage += ` Adicionou: ${addedTabs.join(', ')}.`;
+    if (removedTabs.length > 0) adminActionMessage += ` Removeu: ${removedTabs.join(', ')}.`;
 
-    return NextResponse.json({ message: "Permissões atualizadas com sucesso!" }, { status: 200 });
-  } catch (error) {
-    console.error("PATCH /permissions erro:", error);
-    return NextResponse.json({ error: "Erro ao atualizar permissões." }, { status: 500 });
-  }
+    let userActionMessage = `Suas permissões foram alteradas por ${adminFullName}.`;
+    if (addedTabs.length > 0) userActionMessage += ` Adicionadas: ${addedTabs.join(', ')}.`;
+    if (removedTabs.length > 0) userActionMessage += ` Removidas: ${removedTabs.join(', ')}.`;
+
+    const currentAdminPrivate = (adminUser.privateMetadata || {}) as UserPrivateMetadata;
+    const currentUserPrivate = (userToUpdate.privateMetadata || {}) as UserPrivateMetadata;
+
+    const nextAdminAuditLog = appendCappedLog(currentAdminPrivate.adminAuditLog, {
+      action: adminActionMessage,
+      targetUserId: userId,
+      at: new Date().toISOString(),
+    });
+
+    const nextUserAuditLog = appendCappedLog(currentUserPrivate.auditLog, {
+      action: userActionMessage,
+      at: new Date().toISOString(),
+      by: adminFullName,
+    });
+
+    // grava logs com fallback anti-422
+    try {
+      await Promise.all([
+        client.users.updateUser(adminId, {
+          privateMetadata: {
+            ...(currentAdminPrivate ?? {}),
+            adminAuditLog: nextAdminAuditLog,
+          },
+        }),
+        client.users.updateUser(userId, {
+          privateMetadata: {
+            ...(currentUserPrivate ?? {}),
+            auditLog: nextUserAuditLog, // log curto do usuário-alvo
+          },
+        }),
+      ]);
+    } catch (e: any) {
+      if (e?.clerkError && e.status === 422) {
+        // Se já estourou, reduz para 5 entradas e tenta novamente (em ambos)
+        await Promise.all([
+          client.users.updateUser(adminId, {
+            privateMetadata: {
+              ...(currentAdminPrivate ?? {}),
+              adminAuditLog: (nextAdminAuditLog || []).slice(-5),
+            },
+          }),
+          client.users.updateUser(userId, {
+            privateMetadata: {
+              ...(currentUserPrivate ?? {}),
+              auditLog: (nextUserAuditLog || []).slice(-5),
+            },
+          }),
+        ]);
+      } else {
+        throw e;
+      }
+    }
+
+    return NextResponse.json({ message: 'Permissões atualizadas com sucesso!' }, { status: 200 });
+  } catch (error) {
+    console.error('PATCH /permissions erro:', error);
+    return NextResponse.json({ error: 'Erro ao atualizar permissões.' }, { status: 500 });
+  }
 }
