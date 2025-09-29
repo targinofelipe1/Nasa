@@ -23,7 +23,7 @@ const rgaColors: Record<string, string> = {
   "RGA 8": "#90BE6D",
   "RGA 9": "#4D908E",
   "RGA 10": "#F3722C",
-  "RGA 11": "#F9F8F4",
+  "RGA 11": "#577590",
   "RGA 12": "#A999C2",
   "RGA 13": "#277DA1",
   "RGA 14": "#E69C00",
