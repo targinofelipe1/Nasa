@@ -60,7 +60,9 @@ async function sendWelcomeEmailWithLink(email: string, fullName: string) {
 export async function GET() {
   try {
     const client = await clerkClient();
-    const { data, totalCount } = await client.users.getUserList();
+    const { data, totalCount } = await client.users.getUserList({
+        limit: 500, 
+    });
 
     const usersData = data.map((user) => ({
       id: user.id,
