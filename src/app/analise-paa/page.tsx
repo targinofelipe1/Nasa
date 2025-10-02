@@ -117,6 +117,9 @@ export default function OdeListPage() {
   const [nomeFilter, setNomeFilter] = useState("");
   const [isVerifying, setIsVerifying] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
+  // logo com os outros states de relatório
+  const [includeEspera, setIncludeEspera] = useState(false);
+
 
   // grade: colunas visíveis
   const [visibleColumns, setVisibleColumns] = useState<string[]>(
@@ -350,16 +353,17 @@ export default function OdeListPage() {
     }
   };
 
-  const buildReportHTML = (
-    grupos: Array<{
-      municipio: string;
-      classificados: TableData[];
-      espera: TableData[];
-      cols: string[];
-      criterioOrdenacao?: string;
-      criterioDesempate?: string;
-    }>
-  ) => {
+    const buildReportHTML = (
+      grupos: Array<{
+        municipio: string;
+        classificados: TableData[];
+        espera: TableData[];
+        cols: string[];
+        criterioOrdenacao?: string;
+        criterioDesempate?: string;
+      }>,
+      includeEspera: boolean
+    ) => {
     const style = `
      <style>
        @page { size: A4 landscape; margin: 12mm; }
@@ -414,46 +418,57 @@ export default function OdeListPage() {
 
     const generatedAt = new Date().toLocaleString();
 
-const content = grupos
-  .map(
-      (g) => `
-      <div class="section">
+    const content = grupos
+      .map(
+        (g) => `
+          <div class="section">
 
-        <!-- Cabeçalho: esquerda em coluna, data à direita -->
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-          <!-- Bloco ESQUERDO -->
-          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-            <div style="font-size:20px;font-weight:700;">Inscrição PAA - Classificação</div>
-            <div style="font-size:16px;"><b>Município:</b> ${g.municipio}</div>
+            <!-- Cabeçalho: esquerda em coluna, data à direita -->
+            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+              <!-- Bloco ESQUERDO -->
+              <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
+                <div style="font-size:20px;font-weight:700;">Inscrição PAA - Classificação</div>
+                <div style="font-size:16px;"><b>Município:</b> ${g.municipio}</div>
+                ${
+                  g.criterioOrdenacao
+                    ? `<div style="font-size:14px;line-height:1.35;"><b>Ordenação:</b> ${g.criterioOrdenacao}</div>`
+                    : ""
+                }
+                ${
+                  g.criterioDesempate
+                    ? `<div style="font-size:14px;line-height:1.35;"><b>Desempate:</b> ${g.criterioDesempate}</div>`
+                    : ""
+                }
+              </div>
+
+              <!-- Bloco DIREITO (data) -->
+              <div class="badge" style="align-self:flex-start;">
+                <div style="font-size:12px;color:#555;font-weight:600;">
+                  Plataforma Paraíba Social
+                </div>
+                <b>Classificação Gerada em: </b>${generatedAt}
+              </div>
+              
+            </div>
+
+            <!-- 🔹 Legenda -->
+            <div style="font-size:10px;line-height:1.4;margin-top:12px;color:#555;">
+              <b>Legenda:</b> 
+              cad = CadÚnico · ind/quil/trad = Indígena/Quilombola/Tradicional · 
+              neg = Negro · mul = Mulher · ass = Assentado · pesc = Pescador · 
+              jov = Jovem (18-29) · prod = a partir de 3 produtos · mix = Vegetal e Animal (Alimentos processados)
+            </div>
+
+            ${renderTable("Classificados", g.classificados, g.cols)}
             ${
-              g.criterioOrdenacao
-                ? `<div style="font-size:14px;line-height:1.35;"><b>Ordenação:</b> ${g.criterioOrdenacao}</div>`
-                : ""
-            }
-            ${
-              g.criterioDesempate
-                ? `<div style="font-size:14px;line-height:1.35;"><b>Desempate:</b> ${g.criterioDesempate}</div>`
+              includeEspera
+                ? renderTable("Lista de Espera", g.espera, g.cols)
                 : ""
             }
           </div>
-
-          <!-- Bloco DIREITO (data) -->
-          <div class="badge" style="align-self:flex-start;"><b>Classificação Gerada em: </b>${generatedAt}</div>
-        </div>
-        <!-- 🔹 Legenda -->
-        <div style="font-size:10px;line-height:1.4;margin-top:12px;color:#555;">
-          <b>Legenda:</b> 
-          cad = CadÚnico ·  ind/quil/trad = Indígena/Quilombola/Tradicional · 
-          neg = Negro · mul = Mulher · ass = Assentado · pesc = Pescador · 
-          jov = Jovem (18-29) · prod = apartir de 3 produtos · mix = Vegetal e Animal (Alimentos processados)
-        </div>
-
-        ${renderTable("Classificados", g.classificados, g.cols)}
-        ${renderTable("Lista de Espera", g.espera, g.cols)}
-      </div>
-    `
-  )
-  .join("");
+        `
+      )
+      .join("");
 
         
     return `<!doctype html><html><head><meta charSet="utf-8" /><title>Relatório PAA</title>${style}</head><body>${content}</body></html>`;
@@ -517,16 +532,19 @@ const content = grupos
         if (parts.length) criterioDesempate = parts.join(" + ");
       }
 
-      const html = buildReportHTML([
-        {
-          municipio: mun,
-          classificados,
-          espera,
-          cols,
-          criterioOrdenacao,
-          criterioDesempate,
-        },
-      ]);
+      const html = buildReportHTML(
+        [
+          {
+            municipio: mun,
+            classificados,
+            espera,
+            cols,
+            criterioOrdenacao,
+            criterioDesempate,
+          },
+        ],
+        includeEspera
+      );
 
       const ok = openPrintView(html);
       if (!ok) {
@@ -600,7 +618,18 @@ const content = grupos
                       />
                     </div>
                   </div>
-
+                  <div className="mt-2 mb-3 flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="includeEspera"
+                      checked={includeEspera}
+                      onChange={(e) => setIncludeEspera(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    <label htmlFor="includeEspera" className="text-sm">
+                      Incluir Lista de Espera no PDF
+                    </label>
+                  </div>
                   {/* ações direita */}
                   <div className="flex items-center gap-2">
                     {/* seletor de colunas */}
