@@ -574,7 +574,31 @@ export default function OdeListPage() {
   }
   if (!hasPermission) return null;
 
-  const handleGenerateExcel = () => {
+  // 🔹 Mantém apenas as colunas selecionadas em cada linha
+  const filterColumns = (rows: TableData[], columns: string[]) => {
+    return rows.map((row) => {
+      const filtered: Record<string, any> = {};
+      columns.forEach((col) => {
+        filtered[col] = row[col]; // pega só o valor das colunas escolhidas
+      });
+      return filtered;
+    });
+  };
+
+  // 🔹 Excel só aceita até 31 caracteres no nome da aba
+const sanitizeSheetName = (name: string) => {
+  const invalidChars = /[\\/?*:[\]]/g; // remove caracteres proibidos
+  let safeName = name.replace(invalidChars, " ");
+
+  if (safeName.length > 31) {
+    safeName = safeName.slice(0, 28) + "..."; // corta e adiciona "..."
+  }
+  return safeName;
+};
+
+
+
+    const handleGenerateExcel = () => {
   try {
     if (Object.keys(vagasByMunicipio).length === 0) {
       toast.error("Nenhum município selecionado.");
@@ -583,8 +607,6 @@ export default function OdeListPage() {
     }
 
     const base = [...data];
-    const cols = ["Classificação", ...reportColumns.filter((c) => c !== "Classificação")];
-
     const grupos = Object.entries(vagasByMunicipio).map(([mun, vagas]) => {
       const rows = base.filter((r) => String(r["Município"] ?? "") === mun);
       rows.sort(compareForReport);
@@ -608,18 +630,27 @@ export default function OdeListPage() {
     const wb = XLSX.utils.book_new();
 
     grupos.forEach((g) => {
-      // Sheet de classificados
-      const wsClassificados = XLSX.utils.json_to_sheet(g.classificados, {
-        header: reportColumns,
-      });
-      XLSX.utils.book_append_sheet(wb, wsClassificados, `${g.municipio}-Classificados`);
+      // 🔹 aplica filtro de colunas aqui
+      const wsClassificados = XLSX.utils.json_to_sheet(
+        filterColumns(g.classificados, reportColumns),
+        { header: reportColumns }
+      );
+      XLSX.utils.book_append_sheet(
+        wb,
+        wsClassificados,
+        sanitizeSheetName(`${g.municipio}-Classificados`)
+      );
 
       if (includeEspera) {
-        // Sheet de espera
-        const wsEspera = XLSX.utils.json_to_sheet(g.espera, {
-          header: reportColumns,
-        });
-        XLSX.utils.book_append_sheet(wb, wsEspera, `${g.municipio}-Espera`);
+        const wsEspera = XLSX.utils.json_to_sheet(
+          filterColumns(g.espera, reportColumns),
+          { header: reportColumns }
+        );
+        XLSX.utils.book_append_sheet(
+          wb,
+          wsEspera,
+          sanitizeSheetName(`${g.municipio}-Espera`)
+        );
       }
     });
 
@@ -635,6 +666,7 @@ export default function OdeListPage() {
     toast.error("Falha ao gerar Excel.");
   }
 };
+
 
   return (
     <ProtectedRoute>
@@ -867,7 +899,7 @@ export default function OdeListPage() {
       >
         <DialogContent className="max-w-xl w-full">
           <DialogHeader>
-            <DialogTitle>Relatório (PDF)</DialogTitle>
+            <DialogTitle>Relatório</DialogTitle>
           </DialogHeader>
 
           <div className="px-1 pb-2 text-sm text-gray-600">
@@ -903,7 +935,8 @@ export default function OdeListPage() {
       </div>
 
       {/* Lista de municípios adicionados */}
-      <div className="space-y-2">
+      {/* Lista de municípios adicionados com rolagem própria */}
+      <div className="max-h-64 overflow-y-auto space-y-2 pr-2 border rounded-md p-2">
         {Object.entries(vagasByMunicipio).map(([mun, vagas]) => (
           <div key={mun} className="flex items-center gap-2">
             <span className="min-w-[120px] text-sm font-semibold">{mun}</span>
