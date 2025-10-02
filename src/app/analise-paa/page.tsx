@@ -20,6 +20,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/Input";
 import { useUser } from "@clerk/nextjs";
 import UpdatePAAModal from "@/components/ui/UpdatePAAModal";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 
 export interface TableData {
   [key: string]: any;
@@ -149,9 +151,7 @@ export default function OdeListPage() {
 
   // seleção de município + vagas
   const [selectedMunicipio, setSelectedMunicipio] = useState<string>("");
-  const [vagasByMunicipio, setVagasByMunicipio] = useState<Record<string, number>>(
-    {}
-  );
+  const [vagasByMunicipio, setVagasByMunicipio] = useState<Record<string, number>>({});
 
   const maskCpfValue = (cpf: string): string => {
     if (!cpf) return "";
@@ -365,134 +365,128 @@ export default function OdeListPage() {
   };
 
     const buildReportHTML = (
-      grupos: Array<{
-        municipio: string;
-        classificados: TableData[];
-        espera: TableData[];
-        cols: string[];
-        criterioOrdenacao?: string;
-        criterioDesempate?: string;
-      }>,
-      includeEspera: boolean
-    ) => {
-    const style = `
-     <style>
-       @page { size: A4 landscape; margin: 12mm; }
-       * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-       body{
-         font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
-         color:#111827;
-         padding:24px;
-       }
-       h1{ font-size:20px; margin:0 0 16px; }
-       h2{ font-size:16px; margin:24px 0 8px; }
+  grupos: Array<{
+    municipio: string;
+    classificados: TableData[];
+    espera: TableData[];
+    cols: string[];
+    criterioOrdenacao?: string;
+    criterioDesempate?: string;
+  }>,
+  includeEspera: boolean
+) => {
+  const style = `
+   <style>
+     @page { size: A4 landscape; margin: 12mm; }
+     * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+     body{
+       font-family: ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji";
+       color:#111827;
+       padding:24px;
+     }
+     h1{ font-size:22px; margin:0 0 16px; }
+     h2{ font-size:16px; margin:24px 0 8px; }
+     h3{ font-size:14px; margin:12px 0 6px; }
 
-       table{
-         width:100%;
-         border-collapse:collapse;
-         table-layout:fixed;
-         margin-top:8px;
-       }
-       thead{ display: table-header-group; }
-       tr{ page-break-inside: avoid; }
+     table{
+       width:100%;
+       border-collapse:collapse;
+       table-layout:fixed;
+       margin-top:8px;
+     }
+     thead{ display: table-header-group; }
+     tr{ page-break-inside: avoid; }
 
-       th, td{
-         border:1px solid #e5e7eb;
-         padding:8px;
-         font-size:12px;
-         text-align:left;
-         vertical-align:top;
-         word-wrap:break-word;
-       }
-       th{
-         background:#f9fafb;
-         font-weight:600;
-       }
-       .badge{
-         display:inline-block;padding:2px 8px;border-radius:9999px;border:1px solid #d1d5db;font-size:11px;color:#374151
-       }
-     </style>`;
+     th, td{
+       border:1px solid #e5e7eb;
+       padding:8px;
+       font-size:12px;
+       text-align:left;
+       vertical-align:top;
+       word-wrap:break-word;
+     }
+     th{
+       background:#f9fafb;
+       font-weight:600;
+     }
+     .badge{
+       display:inline-block;padding:2px 8px;border-radius:9999px;
+       border:1px solid #d1d5db;font-size:11px;color:#374151
+     }
+   </style>`;
 
-    const renderTable = (title: string, rows: TableData[], cols: string[]) => {
-      const thead = cols.map((c) => `<th>${columnDisplayNames[c] || c}</th>`).join("");
-      const tbody =
-        rows.length === 0
-          ? `<tr><td colspan="${cols.length}" style="color:#6b7280">Sem registros</td></tr>`
-          : rows
-              .map(
-                (r) =>
-                  `<tr>${cols
-                    .map((c) => {
-                      let value = r[c] ?? "";
-                      if (c === "CPF" && maskCPF) {
-                        value = maskCpfValue(String(value));
-                      }
-                      return `<td>${value}</td>`;
-                    })
-                    .join("")}</tr>`
-              )
-              .join("");
-      return `<h2>${title}</h2><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
-    };
-
-
-    const generatedAt = new Date().toLocaleString();
-
-    const content = grupos
-      .map(
-        (g) => `
-          <div class="section">
-
-            <!-- Cabeçalho: esquerda em coluna, data à direita -->
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-              <!-- Bloco ESQUERDO -->
-              <div style="display:flex;flex-direction:column;align-items:flex-start;gap:6px;">
-                <div style="font-size:20px;font-weight:700;">Inscrição PAA - Classificação</div>
-                <div style="font-size:16px;"><b>Município:</b> ${g.municipio}</div>
-                ${
-                  g.criterioOrdenacao
-                    ? `<div style="font-size:14px;line-height:1.35;"><b>Ordenação:</b> ${g.criterioOrdenacao}</div>`
-                    : ""
-                }
-                ${
-                  g.criterioDesempate
-                    ? `<div style="font-size:14px;line-height:1.35;"><b>Desempate:</b> ${g.criterioDesempate}</div>`
-                    : ""
-                }
-              </div>
-
-              <!-- Bloco DIREITO (data) -->
-              <div class="badge" style="align-self:flex-start;">
-                <div style="font-size:12px;color:#555;font-weight:600;">
-                  Plataforma Paraíba Social
-                </div>
-                <b>Classificação Gerada em: </b>${generatedAt}
-              </div>
-              
-            </div>
-
-            <!-- 🔹 Legenda -->
-            <div style="font-size:10px;line-height:1.4;margin-top:12px;color:#555;">
-              <b>Legenda:</b> 
-              cad = CadÚnico · ind/quil/trad = Indígena/Quilombola/Tradicional · 
-              neg = Negro · mul = Mulher · ass = Assentado · pesc = Pescador · 
-              jov = Jovem (18-29) · prod = a partir de 3 produtos · mix = Vegetal e Animal (Alimentos processados)
-            </div>
-
-            ${renderTable("Classificados", g.classificados, g.cols)}
-            ${
-              includeEspera
-                ? renderTable("Lista de Espera", g.espera, g.cols)
-                : ""
-            }
-          </div>
-        `
-      )
-      .join("");
-
-        
-    return `<!doctype html><html><head><meta charSet="utf-8" /><title>Relatório PAA</title>${style}</head><body>${content}</body></html>`;
+  const renderTable = (title: string, rows: TableData[], cols: string[]) => {
+    const thead = cols.map((c) => `<th>${columnDisplayNames[c] || c}</th>`).join("");
+    const tbody =
+      rows.length === 0
+        ? `<tr><td colspan="${cols.length}" style="color:#6b7280">Sem registros</td></tr>`
+        : rows
+            .map(
+              (r) =>
+                `<tr>${cols
+                  .map((c) => {
+                    let value = r[c] ?? "";
+                    if (c === "CPF" && maskCPF) {
+                      value = maskCpfValue(String(value));
+                    }
+                    return `<td>${value}</td>`;
+                  })
+                  .join("")}</tr>`
+            )
+            .join("");
+    return `<h3>${title}</h3><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
   };
+
+  const generatedAt = new Date().toLocaleString();
+
+  // Cabeçalho único
+  const header = `
+   <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
+    <!-- LADO ESQUERDO -->
+    <div style="display:flex;flex-direction:column;gap:6px;">
+      <div style="font-size:22px;font-weight:700;">Inscrição PAA - Classificação</div>
+      ${grupos[0]?.criterioOrdenacao ? `<div><b>Ordenação:</b> ${grupos[0].criterioOrdenacao}</div>` : ""}
+      ${grupos[0]?.criterioDesempate ? `<div><b>Desempate:</b> ${grupos[0].criterioDesempate}</div>` : ""}
+    </div>
+
+    <!-- LADO DIREITO -->
+    <div class="badge" style="align-self:flex-start;text-align:left;">
+      <div style="font-size:12px;color:#555;font-weight:600;">
+        Plataforma Paraíba Social
+      </div>
+      <div>
+        <b>Classificação Gerada em:</b> ${generatedAt}
+      </div>
+    </div>
+
+  </div>
+
+
+    <!-- 🔹 Legenda -->
+    <div style="font-size:10px;line-height:1.4;margin-top:12px;color:#555;">
+      <b>Legenda:</b> 
+      cad = CadÚnico · ind/quil/trad = Indígena/Quilombola/Tradicional · 
+      neg = Negro · mul = Mulher · ass = Assentado · pesc = Pescador · 
+      jov = Jovem (18-29) · prod = a partir de 3 produtos · mix = Vegetal e Animal (Alimentos processados)
+    </div>
+  `;
+
+  // Para cada município → apenas o subtítulo e as tabelas
+  const content = grupos
+    .map(
+      (g) => `
+        <div class="section">
+          <h2>Município: ${g.municipio}</h2>
+          ${renderTable("Classificados", g.classificados, g.cols)}
+          ${includeEspera ? renderTable("Lista de Espera", g.espera, g.cols) : ""}
+        </div>
+      `
+    )
+    .join("");
+
+  return `<!doctype html><html><head><meta charSet="utf-8" /><title>Relatório PAA</title>${style}</head><body>${header}${content}</body></html>`;
+};
+
 
   /* ---------- reset do wizard ---------- */
   const resetReportState = () => {
@@ -508,26 +502,18 @@ export default function OdeListPage() {
 
   /* ---------- gerar PDF ---------- */
   const handleGeneratePDF = () => {
-    try {
-      if (!selectedMunicipio) {
-        toast.error("Selecione um município.");
-        setReportStep(1);
-        return;
-      }
-      const vagas = vagasByMunicipio[selectedMunicipio];
-      if (vagas === undefined || vagas < 0) {
-        toast.error("Informe um número de vagas válido.");
-        setReportStep(1);
-        return;
-      }
+  try {
+    if (Object.keys(vagasByMunicipio).length === 0) {
+      toast.error("Nenhum município selecionado.");
+      setReportStep(1);
+      return;
+    }
 
-      const base = [...data];
-      const cols = ["Classificação", ...reportColumns.filter((c) => c !== "Classificação")];
+    const base = [...data];
+    const cols = ["Classificação", ...reportColumns.filter((c) => c !== "Classificação")];
 
-      const mun = selectedMunicipio;
+    const grupos = Object.entries(vagasByMunicipio).map(([mun, vagas]) => {
       const rows = base.filter((r) => String(r["Município"] ?? "") === mun);
-
-      // ordenação correta
       rows.sort(compareForReport);
 
       const classificados: TableData[] = [];
@@ -538,7 +524,6 @@ export default function OdeListPage() {
         else espera.push(clone);
       });
 
-      // textos claros para cabeçalho
       const criterioOrdenacao =
         reportOrderBy === "Pontuação"
           ? `Pontuação ${reportOrderDir === "desc" ? "(maior primeiro)" : "(menor primeiro)"}`
@@ -552,34 +537,32 @@ export default function OdeListPage() {
         if (parts.length) criterioDesempate = parts.join(" + ");
       }
 
-      const html = buildReportHTML(
-        [
-          {
-            municipio: mun,
-            classificados,
-            espera,
-            cols,
-            criterioOrdenacao,
-            criterioDesempate,
-          },
-        ],
-        includeEspera
-      );
+      return {
+        municipio: mun,
+        classificados,
+        espera,
+        cols,
+        criterioOrdenacao,
+        criterioDesempate,
+      };
+    });
 
-      const ok = openPrintView(html);
-      if (!ok) {
-        toast.error("Não foi possível abrir/emitir o PDF. Verifique bloqueador de pop-ups.");
-        return;
-      }
+    const html = buildReportHTML(grupos, includeEspera);
 
-      toast.success("Relatório aberto para impressão (Salvar como PDF).");
-      setReportOpen(false);
-      resetReportState();
-    } catch (e) {
-      console.error(e);
-      toast.error("Falha ao gerar o PDF.");
+    const ok = openPrintView(html);
+    if (!ok) {
+      toast.error("Não foi possível abrir/emitir o PDF. Verifique bloqueador de pop-ups.");
+      return;
     }
-  };
+
+    toast.success("Relatório aberto para impressão (Salvar como PDF).");
+    setReportOpen(false);
+    resetReportState();
+  } catch (e) {
+    console.error(e);
+    toast.error("Falha ao gerar o PDF.");
+  }
+};
 
   /* ---------- render ---------- */
   if (!isLoaded || isVerifying) {
@@ -590,6 +573,68 @@ export default function OdeListPage() {
     );
   }
   if (!hasPermission) return null;
+
+  const handleGenerateExcel = () => {
+  try {
+    if (Object.keys(vagasByMunicipio).length === 0) {
+      toast.error("Nenhum município selecionado.");
+      setReportStep(1);
+      return;
+    }
+
+    const base = [...data];
+    const cols = ["Classificação", ...reportColumns.filter((c) => c !== "Classificação")];
+
+    const grupos = Object.entries(vagasByMunicipio).map(([mun, vagas]) => {
+      const rows = base.filter((r) => String(r["Município"] ?? "") === mun);
+      rows.sort(compareForReport);
+
+      const classificados: TableData[] = [];
+      const espera: TableData[] = [];
+      rows.forEach((row, idx) => {
+        const clone = { ...row, Classificação: idx + 1 };
+        if (idx < (vagas ?? 0)) classificados.push(clone);
+        else espera.push(clone);
+      });
+
+      return {
+        municipio: mun,
+        classificados,
+        espera,
+      };
+    });
+
+    // Montar workbook
+    const wb = XLSX.utils.book_new();
+
+    grupos.forEach((g) => {
+      // Sheet de classificados
+      const wsClassificados = XLSX.utils.json_to_sheet(g.classificados, {
+        header: reportColumns,
+      });
+      XLSX.utils.book_append_sheet(wb, wsClassificados, `${g.municipio}-Classificados`);
+
+      if (includeEspera) {
+        // Sheet de espera
+        const wsEspera = XLSX.utils.json_to_sheet(g.espera, {
+          header: reportColumns,
+        });
+        XLSX.utils.book_append_sheet(wb, wsEspera, `${g.municipio}-Espera`);
+      }
+    });
+
+    // Gerar arquivo Excel
+    const wbout = XLSX.write(wb, { bookType: "xlsx", type: "array" });
+    saveAs(new Blob([wbout], { type: "application/octet-stream" }), "relatorio-paa.xlsx");
+
+    toast.success("Excel gerado com sucesso.");
+    setReportOpen(false);
+    resetReportState();
+  } catch (e) {
+    console.error(e);
+    toast.error("Falha ao gerar Excel.");
+  }
+};
 
   return (
     <ProtectedRoute>
@@ -726,7 +771,7 @@ export default function OdeListPage() {
                       }}
                     >
                       <FileDown className="h-4 w-4" />
-                      Relatório (PDF)
+                      Relatório
                     </Button>
                   </div>
                 </div>
@@ -831,71 +876,82 @@ export default function OdeListPage() {
 
           {/* STEP 1 — Município & Vagas */}
           {reportStep === 1 && (
-            <div className="p-1 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Município
-                </label>
-                <select
-                  className="w-full border rounded-md p-2 text-sm"
-                  value={selectedMunicipio}
-                  onChange={(e) => {
-                    const m = e.target.value;
-                    setSelectedMunicipio(m);
-                    setVagasByMunicipio({ [m]: 0 });
-                  }}
-                >
-                  <option value="">Selecione…</option>
-                  {uniqueMunicipios.map((m) => (
-                    <option key={m} value={m}>
-                      {m}
-                    </option>
-                  ))}
-                </select>
-              </div>
+    <div className="p-1 space-y-4">
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Adicionar Município
+        </label>
+        <div className="flex gap-2">
+          <select
+            className="w-full border rounded-md p-2 text-sm"
+            value={""}
+            onChange={(e) => {
+              const m = e.target.value;
+              if (m && !vagasByMunicipio[m]) {
+                setVagasByMunicipio((prev) => ({ ...prev, [m]: 0 }));
+              }
+            }}
+          >
+            <option value="">Selecione…</option>
+            {uniqueMunicipios
+              .filter((m) => !Object.keys(vagasByMunicipio).includes(m))
+              .map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+          </select>
+        </div>
+      </div>
 
-              {selectedMunicipio && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Número de vagas
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <span className="min-w-[120px] text-sm">{selectedMunicipio}</span>
-                    <Input
-                      type="number"
-                      min={0}
-                      placeholder="0"
-                      value={String(vagasByMunicipio[selectedMunicipio] ?? 0)}
-                      onChange={(e) =>
-                        setVagasByMunicipio({
-                          [selectedMunicipio]: Number(e.target.value),
-                        })
-                      }
-                    />
-                  </div>
-                </div>
-              )}
+      {/* Lista de municípios adicionados */}
+      <div className="space-y-2">
+        {Object.entries(vagasByMunicipio).map(([mun, vagas]) => (
+          <div key={mun} className="flex items-center gap-2">
+            <span className="min-w-[120px] text-sm font-semibold">{mun}</span>
+            <Input
+              type="number"
+              min={0}
+              placeholder="0"
+              value={String(vagas)}
+              onChange={(e) =>
+                setVagasByMunicipio((prev) => ({
+                  ...prev,
+                  [mun]: Number(e.target.value),
+                }))
+              }
+            />
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setVagasByMunicipio((prev) => {
+                  const newObj = { ...prev };
+                  delete newObj[mun];
+                  return newObj;
+                });
+              }}
+            >
+              Remover
+            </Button>
+          </div>
+        ))}
+      </div>
 
-              <div className="flex justify-end gap-2 pt-2">
-                <Button
-                  onClick={() => {
-                    if (!selectedMunicipio) {
-                      toast.error("Selecione um município.");
-                      return;
-                    }
-                    const v = vagasByMunicipio[selectedMunicipio];
-                    if (v === undefined || v < 0) {
-                      toast.error("Informe um número de vagas válido.");
-                      return;
-                    }
-                    setReportStep(2);
-                  }}
-                >
-                  Próximo
-                </Button>
-              </div>
-            </div>
-          )}
+      <div className="flex justify-end gap-2 pt-2">
+        <Button
+          onClick={() => {
+            if (Object.keys(vagasByMunicipio).length === 0) {
+              toast.error("Adicione pelo menos um município.");
+              return;
+            }
+            setReportStep(2);
+          }}
+        >
+          Próximo
+        </Button>
+      </div>
+    </div>
+  )}
+
 
           {/* STEP 2 — Ordenação & desempate */}
           {reportStep === 2 && (
@@ -1021,11 +1077,18 @@ export default function OdeListPage() {
                 <Button variant="outline" onClick={() => setReportStep(2)}>
                   Voltar
                 </Button>
-                <Button onClick={handleGeneratePDF}>
-                  <FileDown className="h-4 w-4 mr-2" />
-                  Gerar PDF
-                </Button>
+                <div className="flex gap-2">
+                  <Button onClick={handleGeneratePDF}>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Gerar PDF
+                  </Button>
+                  <Button onClick={handleGenerateExcel}>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Gerar Excel
+                  </Button>
+                </div>
               </div>
+
             </div>
           )}
         </DialogContent>
