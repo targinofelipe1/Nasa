@@ -117,6 +117,8 @@ export default function OdeListPage() {
   const [nomeFilter, setNomeFilter] = useState("");
   const [isVerifying, setIsVerifying] = useState(true);
   const [hasPermission, setHasPermission] = useState(false);
+  const [maskCPF, setMaskCPF] = useState(true);
+
   // logo com os outros states de relatório
   const [includeEspera, setIncludeEspera] = useState(false);
 
@@ -150,6 +152,15 @@ export default function OdeListPage() {
   const [vagasByMunicipio, setVagasByMunicipio] = useState<Record<string, number>>(
     {}
   );
+
+  const maskCpfValue = (cpf: string): string => {
+    if (!cpf) return "";
+    const digits = cpf.replace(/\D/g, ""); 
+    if (digits.length !== 11) return cpf;  
+
+    return `${digits.slice(0, 3)}.***.***-${digits.slice(-2)}`;
+  };
+
 
   const redirectedRef = useRef(false);
   const toastShownRef = useRef(false);
@@ -410,11 +421,20 @@ export default function OdeListPage() {
           : rows
               .map(
                 (r) =>
-                  `<tr>${cols.map((c) => `<td>${r[c] ?? ""}</td>`).join("")}</tr>`
+                  `<tr>${cols
+                    .map((c) => {
+                      let value = r[c] ?? "";
+                      if (c === "CPF" && maskCPF) {
+                        value = maskCpfValue(String(value));
+                      }
+                      return `<td>${value}</td>`;
+                    })
+                    .join("")}</tr>`
               )
               .join("");
       return `<h2>${title}</h2><table><thead><tr>${thead}</tr></thead><tbody>${tbody}</tbody></table>`;
     };
+
 
     const generatedAt = new Date().toLocaleString();
 
@@ -618,7 +638,8 @@ export default function OdeListPage() {
                       />
                     </div>
                   </div>
-                  <div className="mt-2 mb-3 flex items-center gap-2">
+                 <div className="mt-2 mb-3 flex flex-col gap-2">
+                  <label className="flex items-center gap-2 text-sm">
                     <input
                       type="checkbox"
                       id="includeEspera"
@@ -626,10 +647,21 @@ export default function OdeListPage() {
                       onChange={(e) => setIncludeEspera(e.target.checked)}
                       className="h-4 w-4"
                     />
-                    <label htmlFor="includeEspera" className="text-sm">
-                      Incluir Lista de Espera no PDF
-                    </label>
-                  </div>
+                    Incluir Lista de Espera no PDF
+                  </label>
+
+                  <label className="flex items-center gap-2 text-sm">
+                    <input
+                      type="checkbox"
+                      id="maskCpf"
+                      checked={maskCPF}
+                      onChange={(e) => setMaskCPF(e.target.checked)}
+                      className="h-4 w-4"
+                    />
+                    Mascarar CPF no PDF 
+                  </label>
+                </div>
+
                   {/* ações direita */}
                   <div className="flex items-center gap-2">
                     {/* seletor de colunas */}
