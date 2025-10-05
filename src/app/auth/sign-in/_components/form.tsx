@@ -11,22 +11,13 @@ import { isClerkAPIResponseError } from "@clerk/nextjs/errors";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { ChevronLeft } from "lucide-react";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components-antigo/Form";
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/Form";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
-import {
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-} from "@/components/ui/Input-otp";
+import { Button } from "@/app/components-antigo/Button";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/app/components-antigo/Input-otp";
+import { Input } from "@/app/components-antigo/Input";
+
+
 
 const formSchema = z.object({
   email: z.string().email({ message: "Digite um e-mail válido." }),

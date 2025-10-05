@@ -9,19 +9,13 @@ import { useUser } from "@clerk/nextjs";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { CircleUserRound, Loader2, ImageIcon } from "lucide-react";
-
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/Form";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
-import Sidebar from "@/components/ui/Sidebar";
+import Sidebar from "../components-antigo/Sidebar";
+import { Input } from "../components-antigo/Input";
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "../components-antigo/Form";
+import { Button } from "../components-antigo/Button";
+
+
 
 const formSchema = z.object({
   firstName: z.string().min(2, {

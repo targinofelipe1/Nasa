@@ -16,7 +16,7 @@ export default function AuthLayout({
               alt="Ícone do Paraíba Social"
               className="h-10 w-10 rounded-md"
             />
-            Paraíba Social
+            VMAP
           </a>
         </div>
 

@@ -22,18 +22,6 @@ import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
 import ProtectedRoute from "@/components/ui/auth/ProtectedRoute";
-import Sidebar from "@/components/ui/Sidebar";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger, // ✅ necessário para o botão "Adicionar Novo Usuário"
-} from "@/components/ui/Dialog";
-import CreateUserForm from "@/components/ui/CreateUserForm";
-import EditUserForm from "@/components/ui/EditUserForm";
 import UserDetails from "@/components/ui/UserDetailsModal";
 import UserBlockToggle from "@/components/ui/UserBlockToggle";
 import AdminAuditLogModal from "@/components/ui/AdminAuditLogModal";
@@ -46,6 +34,13 @@ import {
   DataTableHeader,
   DataTableRow,
 } from "@/components/ui/DataTable";
+import Sidebar from "../components-antigo/Sidebar";
+import { Button } from "../components-antigo/Button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "../components-antigo/Dialog";
+import { Input } from "../components-antigo/Input";
+import CreateUserForm from "../components-antigo/CreateUserForm";
+import EditUserForm from "../components-antigo/EditUserForm";
+
 
 interface UserData {
   id: string;
