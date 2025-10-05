@@ -30,7 +30,7 @@ async function sendWelcomeEmailWithLink(email: string, fullName: string) {
         <div style="padding: 20px;">
           <h2>Olá, ${fullName}!</h2>
           <p style="margin-top: 20px;">Seja bem-vindo(a)!</p>
-          <p>Seu cadastro na plataforma Paraíba Social foi realizado com sucesso.</p>
+          <p>Seu cadastro na plataforma VMAP foi realizado com sucesso.</p>
           <p>Este e-mail foi enviado automaticamente. Por favor, não responda.</p>
           <p>Para acessar sua conta, copie e cole o link abaixo no seu navegador:</p>
           <div style="margin: 20px 0; background-color: #f0f0f0; padding: 15px; border-radius: 5px; text-align: center;">

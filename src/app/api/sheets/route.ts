@@ -2,161 +2,113 @@
 import { NextResponse } from 'next/server';
 import { getSheetData, updateSheetData, appendSheetData } from '@/services/sheetService';
 
-const SPREADSHEET_ID = '1leIjFeNdyyXmhCedOHhGnZaYSM7K7G9ima2Qxr3YEE0';
+// ID da Planilha permanece o mesmo
+const SPREADSHEET_ID = '1uypGmBtki6qSKcF_jEpv_0jpLHVyPsYtFlJYoX0aswU';
 
-const SHEET_RANGE = 'dados!A:DT';
-const AUDIT_LOG_SHEET = 'log-auditoria!A:G';
+// Definição dos RANGES usando os nomes das abas da imagem
+const SHEET_DETALHADOS = 'Dados_Detalhados!A:AU';
+const SHEET_MUNICIPIOS = 'Municipios_Consolidado!A:BE'; 
+const SHEET_ESTADOS = 'Resumo_Estados!A:AN';
+const AUDIT_LOG_SHEET = 'log-auditoria!A:G'; 
 
+// Colunas dos anos para reuso
+const YEAR_COLUMNS = [
+  '1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993', '1994', '1495', 
+  '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', 
+  '2007', '2008', '2009', '2010', '2011', '2012', '2013', '2014', '2015', '2016', '2017', 
+  '2018', '2019', '2020', '2021', '2022', '2023'
+];
+
+// Mapa de colunas para os novos programas/abas
 const programColumnsMap = {
-  'paa-cds': ['CÓDIGO IBGE', 'Município', 'Segurança Alimentar - PAA CDS (municípios)'],
-  'bolsa-familia': [
-    'Município',
-    'PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família 06/2024',
-    'PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Renda per capita até R$218,00 06/2024',
-    'PROGRAMA BOLSA FAMÍLIA - Total de FAMÍLIAS no Programa Bolsa Família - Baixa renda 06/2024',
-    'PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família 06/2024',
-    'PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Renda per capita até R$218',
-    'PROGRAMA BOLSA FAMÍLIA - Total de PESSOAS no Programa Bolsa Família - Baixa renda 06/2024',
-    'PROGRAMA BOLSA FAMÍLIA -  Famílias Indígenas beneficiárias do Programa Bolsa Família',
-    'PROGRAMA BOLSA FAMÍLIA -  Famílias Quilombolas beneficiárias do Programa Bolsa Família',
-    'PROGRAMA BOLSA FAMÍLIA - Famílias em Situação de rua beneficiárias do Programa Bolsa Família',
-    'PROGRAMA BOLSA FAMÍLIA -  Famílias em GPTE beneficiárias do Programa Bolsa Família',
-
+  'dados-detalhados': [
+    'pais', 'estado', 'cidade', 'codigo_ibge', 'nivel_1', 'nivel_2', 'transicao', 
+    ...YEAR_COLUMNS
   ],
-  'cadastro-unico': [
-    'Município',
-    'CADASTRO ÚNICO - Famílias em situação de Pobreza - Renda per capita (R$) de 0,00 a 218,00 ',
-    'CADASTRO ÚNICO - Famílias em situação de Baixa Renda - Renda per capita (R$) de  218,01 até 1/2 S.M. ',
-    'CADASTRO ÚNICO - Famílias com Renda mensal acima de Meio Salário Mínimo ',
-    'CADASTRO ÚNICO - Total de Familias CadÚnico',
-    'CADASTRO ÚNICO - Total de Pessoas CadÚnico',
-    'CADASTRO ÚNICO - Pessoas em situação de Pobreza - Renda per capita (R$) de 0,00 a 218,00 ',
-    'CADASTRO ÚNICO - Pessoas em em situação de Baixa Renda - Renda per capita (R$) de  218,01 até 1/2 S.M. ',
-    'CADASTRO ÚNICO - Pessoas com Renda mensal acima de Meio Salário Mínimo ',
-    'CADASTRO ÚNICO - Famílias UNIPESSOAIS no CadÚnico',
-    'CADASTRO ÚNICO - Pessoas no Cadastro  Único de 0 a 6 anos',
-    'CADASTRO ÚNICO - Pessoas no Cadastro  Único com 60 anos ou mais',
-    'CADASTRO ÚNICO - Pessoas Com deficiência no Cadastro Único',
-    'CADASTRO ÚNICO - Famílias Indígenas inscritas no Cadastro Único',
-    'CADASTRO ÚNICO - Famílias Quilombolas inscritas no Cadastro Único',
-    'CADASTRO ÚNICO - Famílias em Situação de rua inscritas no Cadastro Único',
-    'CADASTRO ÚNICO - Famílias em GPTE no Cadastro Único',
-    'Grau de Instrução - CADASTRO ÚNICO - Pessoas no CadÚnico com Ensino fundamental (incompleto/completo)',
-    'Grau de Instrução - CADASTRO ÚNICO - Pessoas no CadÚnico com Ensino médio (incompleto/completo)',
-    'Grau de Instrução - CADASTRO ÚNICO - Pessoas no CadÚnico com Ensino superior (incompleto ou mais)',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico que não exerceram trabalho remunerado nos últimos 12 meses',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico que Exerceram trabalho remunerado nos últimos 12 meses',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico  por função principal - Trabalhador por conta própria',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador temporário em área rural',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Empregado sem carteira de trabalho assinada',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Empregado com carteira de trabalho assinada',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador doméstico c/ carteira de trabalho assinada',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Trabalhador não-remunerado',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Militar ou servidor público',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Empregador',
-    'Trabalho - CADASTRO ÚNICO - Pessoas de 14 anos ou mais no Cadúnico por função principal - Estagiário ou aprendiz'
+  'municipios-consolidado': [
+    'estado', 'cidade', 
+    'População (1985)', 'População (1991)', 'População (2000)', 
+    'População (2010)', 'População (2022)', 'População (2024)', 
+    'População residente (1985)', 'População residente (2010)', 'População residente (2022)', 
+    'Área Territorial (1985)', 'Área Territorial (2010)', 'Área Territorial (2022)', 
+    'Densidade Demográfica (1985)', 'Densidade Demográfica (2010)', 'Densidade Demográfica (2022)', 
+    'codigo_ibge',
+    ...YEAR_COLUMNS
   ],
-  'auditoria': [ 
-    'timestamp',
-    'userId',
-    'programa',
-    'municipio',
-    'campo',
-  ],
-  'protecao-basica': [
-    'Município',
-    'Proteção Social Básica - Unidade de CRAS',
-    'Proteção Social Básica - Primeira Infância no SUAS',
-    'Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe',
-    'Proteção Social Básica - ÓRFÃOS do Programa Paraíba que Acolhe (valor investido em 2024/2025)',
-    'Proteção Social Básica - Acessuas Trabalho',
-    'Proteção Social Básica - Residenciais Cidade Madura',
-    'Proteção Social Básica - Residenciais Cidade Madura (valor investido em 2025)',
-    'Proteção Social Básica - Centros Sociais Urbanos - CSUs',
-    'Proteção Social Básica -  Centros Sociais Urbanos - CSUs (valor investido em 2025)',
-    'Proteção Social Básica - Centros de Convivência',
-  ],
-  'protecao-especial': [
-    'Município',
-    'Proteção Social Especial - Unidade de CREAS',
-    'Proteção Social Especial - Tipo de CREAS',
-    'Proteção Social Especial - Unidade de Centro Pop',
-    'Proteção Social Especial - Unidade de Centro Dia',
-    'Proteção Social Especial - Unidades de Acolhimento (Estadual )',
-    'Proteção Social Especial - Unidades de Acolhimento (Municipal)',
-    'Proteção Social Especial - Municípios com Serviço de Família Acolhedora',
-    'Proteção Social Especial - Projeto Acolher (municípios)',
-    'Proteção Social Especial - Projeto Acolher (valor investido em 2025)',
-],
-'seguranca-alimentar': [
-  'Município',
-  'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/dia',
-  'Segurança Alimentar -  Programa "Tá na mesa" - Quant de refeição/anual',
-  'Segurança Alimentar - Programa "Tá na mesa" - Valor por município anual',
-  'Segurança Alimentar - Programa "Novo Tá na mesa"  (Quant de refeição/dia)',
-  'Segurança Alimentar - Programa "Novo Tá na mesa" - Valor por município anual',
-  'Segurança Alimentar - Cartão Alimentação  (municípios)',
-  'Segurança Alimentar - Cartão Alimentação  (beneficiários)',
-  'Segurança Alimentar - Cartão Alimentação - valor por município',
-  'Segurança Alimentar - Restaurante Popular (municípios)',
-  'Segurança Alimentar - PAA LEITE (municípios)',
-  'Segurança Alimentar - PAA LEITE (beneficiários)',
-  'Segurança Alimentar - PAA LEITE (investimento)',
-  'Segurança Alimentar - PAA CDS (municípios)',
-  'Segurança Alimentar - PAA CDS (beneficiários)',
-  'Segurança Alimentar - PAA CDS (investimento anual)',
-  'Segurança Alimentar - Cisternas (quantidade no município)',
-  'Segurança Alimentar - Cisternas (valor investido em 2025',
-  'Segurança Alimentar - Insegurança Alimentar - Índice de INSAN',
-  'Segurança Alimentar - Insegurança Alimentar - Categorias de INSAN',
-],
-"casa-da-cidadania-e-sine": [
-  'Município',
-  'Quantidade de Casa da Cidadania ',
-  'Posto do SINE',
-],
-"bpc-rmv": [
-  'Município',
-  'BPC/RMV  - Total de beneficiários BPC/RMV',
-  'BPC/RMV  - Total de beneficiários BPC/RMV no Cadastro Único',
-],
-"saude": [
-  'Município',
-  'Saúde - Vacinas (doses aplicadas)',
-  'Saúde - Hospital Geral',
-  'Saúde - Centro de Saúde/Unidade Básica de Saúde',
-   'Saúde - Posto de Saúde',
+  'resumo-estados': [
+    'estado',
+    ...YEAR_COLUMNS
+  ],
+  'auditoria': [ 
+    'timestamp',
+    'userId',
+    'programa',
+    'municipio',
+    'campo',
+  ],
+  // NOVO PROGRAMA: Comunidade (Não usa planilha)
+  'comunidade': [
+    'postId', 'usuario', 'conteudo', 'curtidas', 'comentarios'
+  ]
+};
 
-
-],
-
-
+// Mapeamento de programas para as abas (ranges)
+const sheetRanges = {
+    'dados-detalhados': SHEET_DETALHADOS,
+    'municipios-consolidado': SHEET_MUNICIPIOS,
+    'resumo-estados': SHEET_ESTADOS,
+    'auditoria': AUDIT_LOG_SHEET,
+    // Note: 'comunidade' não está aqui pois usa lógica interna
 };
 
 const getColumnLetter = (index: number): string => {
-  let letter = '';
-  while (index >= 0) {
-    letter = String.fromCharCode(65 + (index % 26)) + letter;
-    index = Math.floor(index / 26) - 1;
-  }
-  return letter;
+  let letter = '';
+  while (index >= 0) {
+    letter = String.fromCharCode(65 + (index % 26)) + letter;
+    index = Math.floor(index / 26) - 1;
+  }
+  return letter;
 };
 
+// --- SIMULAÇÃO DE DADOS DA COMUNIDADE ---
+const mockCommunityData = [
+    { postId: 1, usuario: 'Usuario_A', conteudo: 'Ótima análise dos dados florestais!', curtidas: 15, comentarios: 3, timestamp: '2025-05-01' },
+    { postId: 2, usuario: 'Geo_Norte', conteudo: 'Alerta de crescimento urbano em Natal.', curtidas: 42, comentarios: 11, timestamp: '2025-05-02' },
+    { postId: 3, usuario: 'Plan_PB', conteudo: 'Curioso sobre a variação populacional de João Pessoa.', curtidas: 8, comentarios: 2, timestamp: '2025-05-03' },
+];
+
+// ------------------------------------
+// Função GET (Expandida para 'comunidade')
+// ------------------------------------
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const programName = searchParams.get('programa') as keyof typeof programColumnsMap;
     const spreadsheetId = SPREADSHEET_ID;
 
-    if (!spreadsheetId) {
-      return NextResponse.json(
-        { success: false, message: 'Programa não encontrado.' },
-        { status: 404 }
-      );
-    }
+    // Lógica Específica para a Comunidade
+    if (programName === 'comunidade') {
+        // Retorna dados simulados de posts e engajamento
+        return NextResponse.json({ 
+            success: true, 
+            data: mockCommunityData,
+            message: 'Dados simulados da comunidade retornados com sucesso.'
+        });
+    }
 
-    // ✅ Lógica corrigida para buscar a aba correta
-    const sheetRange = programName === 'auditoria' ? AUDIT_LOG_SHEET : SHEET_RANGE;
+    // Lógica Padrão para Planilhas
+    if (!spreadsheetId) {
+      return NextResponse.json({ success: false, message: 'ID da planilha não configurado.' }, { status: 500 });
+    }
+    
+    const sheetRange = sheetRanges[programName];
+
+    if (!sheetRange) {
+        return NextResponse.json({ success: false, message: 'Programa ou aba não encontrado.' }, { status: 404 });
+    }
+    
+    console.log(`[GET] Tentando buscar dados do range: ${sheetRange} na planilha ${spreadsheetId}`);
+
     const data = await getSheetData(spreadsheetId, sheetRange);
 
     if (!data || data.length === 0) {
@@ -168,7 +120,7 @@ export async function GET(request: Request) {
       const programHeaders = programColumnsMap[programName];
 
       const headerIndices = programHeaders.map(h => headers.indexOf(h)).filter(index => index !== -1);
-      
+      
       const filteredData = data.slice(1).map(row => {
         const rowData: any = {};
         headerIndices.forEach((index, i) => {
@@ -182,68 +134,101 @@ export async function GET(request: Request) {
 
     return NextResponse.json({ success: true, data });
   } catch (error: any) {
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    console.error("Erro CRÍTICO na API GET (Planilha):", error);
+    return NextResponse.json({ 
+        success: false, 
+        message: error.message || 'Ocorreu um erro interno ao buscar os dados da planilha.' 
+    }, { status: 500 });
   }
 }
 
+// ------------------------------------
+// Função PATCH (Limpada e Expandida para 'comunidade')
+// ------------------------------------
 export async function PATCH(request: Request) {
-  try {
-    const { updates, programa, userId, municipio } = await request.json();
+  try {
+    const body = await request.json();
+    const { updates, programa, userId, municipio } = body;
 
-    if (!updates || !Array.isArray(updates) || !programa || !userId || !municipio) {
-      return NextResponse.json(
-        { success: false, message: 'Dados insuficientes para a atualização.' },
-        { status: 400 }
-      );
+    // Lógica Específica para a Comunidade (simula curtir/comentar)
+    if (programa === 'comunidade') {
+        const { postId, action } = body;
+        
+        if (!postId || !action) {
+            return NextResponse.json({ success: false, message: 'Ação ou ID do post não fornecido.' }, { status: 400 });
+        }
+
+        // SIMULAÇÃO: Se a ação for 'curtir'
+        if (action === 'curtir') {
+            return NextResponse.json({ success: true, message: `Post ${postId} curtido com sucesso! (Simulação)` });
+        }
+        
+        // SIMULAÇÃO: Se a ação for 'comentar'
+        if (action === 'comentar') {
+            return NextResponse.json({ success: true, message: `Novo comentário adicionado ao Post ${postId}. (Simulação)` });
+        }
+        
+        return NextResponse.json({ success: false, message: 'Ação de comunidade não reconhecida.' }, { status: 400 });
     }
+
+    // Lógica Padrão para Planilhas (Continuação do PATCH)
+    if (!updates || !Array.isArray(updates) || !programa || !userId || !municipio) {
+      return NextResponse.json({ success: false, message: 'Dados insuficientes para a atualização.' }, { status: 400 });
+    }
     
-    const spreadsheetId = SPREADSHEET_ID;
-    
-    const data = await getSheetData(spreadsheetId, SHEET_RANGE);
-    if (!data || data.length === 0) {
-      return NextResponse.json({ success: false, message: 'Dados da planilha não encontrados.' }, { status: 404 });
-    }
-    const headers = data[0];
+    // ... (restante da lógica de Sheets, log de auditoria e retorno) ...
+    const spreadsheetId = SPREADSHEET_ID;
+    const sheetRange = sheetRanges[programa as keyof typeof sheetRanges];
+    
+    if (!sheetRange) {
+        return NextResponse.json({ success: false, message: 'Programa ou aba não encontrado para atualização.' }, { status: 404 });
+    }
 
-    const updatedFieldsSummary: string[] = [];
+    const data = await getSheetData(spreadsheetId, sheetRange);
+    if (!data || data.length === 0) {
+      return NextResponse.json({ success: false, message: 'Dados da planilha não encontrados.' }, { status: 404 });
+    }
+    const headers = data[0];
 
-    for (const update of updates) {
-      const columnIndex = headers.indexOf(update.key);
-      if (columnIndex === -1) {
-        console.warn(`Aviso: A coluna com a chave '${update.key}' não foi encontrada.`);
-        continue;
-      }
-      
-      const columnLetter = getColumnLetter(columnIndex);
-      const range = `${SHEET_RANGE.split('!')[0]}!${columnLetter}${update.row}`;
-      
-      await updateSheetData(spreadsheetId, range, [[update.value]]);
+    const updatedFieldsSummary: string[] = [];
 
-      if (update.originalValue !== update.value) {
-        updatedFieldsSummary.push(
-          `Campo '${update.key}' de '${update.originalValue || ''}' para '${update.value}'`
-        );
-      }
-    }
-    
-    if (updatedFieldsSummary.length > 0) {
-      const timestamp = new Date().toISOString();
-      const logEntry = [
-        timestamp,
-        userId,
-        programa,
-        municipio,
-        updatedFieldsSummary.join('; '),
-      ];
-      await appendSheetData(spreadsheetId, AUDIT_LOG_SHEET, [logEntry]);
-    }
+    for (const update of updates) {
+      const columnIndex = headers.indexOf(update.key);
+      if (columnIndex === -1) {
+        console.warn(`Aviso: A coluna com a chave '${update.key}' não foi encontrada.`);
+        continue;
+      }
+      
+      const columnLetter = getColumnLetter(columnIndex);
+      const range = `${sheetRange.split('!')[0]}!${columnLetter}${update.row}`;
+      
+      await updateSheetData(spreadsheetId, range, [[update.value]]);
 
-    return NextResponse.json({ success: true, message: 'Dados atualizados com sucesso!' });
-  } catch (error: any) {
-    console.error("Erro na API de atualização:", error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
-  }
+      if (update.originalValue !== update.value) {
+        updatedFieldsSummary.push(
+          `Campo '${update.key}' de '${update.originalValue || ''}' para '${update.value}'`
+        );
+      }
+    }
+    
+    if (updatedFieldsSummary.length > 0) {
+      const timestamp = new Date().toISOString();
+      const logEntry = [
+        timestamp,
+        userId,
+        programa,
+        municipio,
+        updatedFieldsSummary.join('; '),
+      ];
+      await appendSheetData(spreadsheetId, AUDIT_LOG_SHEET, [logEntry]);
+    }
+
+    return NextResponse.json({ success: true, message: 'Dados atualizados com sucesso!' });
+  } catch (error: any) {
+    console.error("Erro na API de atualização (Planilha):", error);
+    return NextResponse.json(
+      { success: false, message: error.message || 'Ocorreu um erro interno na atualização.' },
+      { status: 500 }
+    );
+  }
 }
