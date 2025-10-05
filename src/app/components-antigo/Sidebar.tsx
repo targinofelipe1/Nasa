@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { useUser, useAuth } from "@clerk/nextjs";
+import { usePathname } from "next/navigation";
 import {
   BarChart2,
   Building2,
@@ -11,70 +11,126 @@ import {
   Lightbulb,
   AlertTriangle,
   Users,
-  Menu,
-  X,
   Settings,
+  Home,
+  Coins,
 } from "lucide-react";
+import React from "react";
+import { RewardCoins } from "@/components/ui/RewardCoins";
+
 
 export default function Sidebar() {
   const { user } = useUser();
   const { signOut } = useAuth();
-  const [active, setActive] = useState("Dashboard");
-  const [menuOpen, setMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   const menuItems = [
-    { name: "Dashboard", icon: <BarChart2 size={18} />, href: "/" },
+    { name: "Home", icon: <Home  size={18} />, href: "/" },
+    { name: "Dashboard", icon: <BarChart2 size={18} />, href: "/dash" },
     { name: "Cidades", icon: <Building2 size={18} />, href: "/cidades" },
     { name: "Métricas", icon: <LineChart size={18} />, href: "/metricas" },
     { name: "Mapa", icon: <Globe2 size={18} />, href: "/mapa" },
-    { name: "Iniciativas", icon: <Lightbulb size={18} />, href: "/iniciativas" },
-    { name: "Desafios", icon: <AlertTriangle size={18} />, href: "/desafios" },
-    { name: "Comunidade", icon: <Users size={18} />, href: "/comunidade" },
+    { name: "Relatos", icon: <Lightbulb size={18} />, href: "/relatos" },
+    { name: "Contribuições", icon: <AlertTriangle size={18} />, href: "/contribuicoes" },
+    { name: "Empreendimentos", icon: <Users size={18} />, href: "/empreendimentos" },
+    { name: "Recompensas", icon: <Coins size={18} />, href: "/recompensas" },
     { name: "Configurações", icon: <Settings size={18} />, href: "/config" },
   ];
 
   return (
-    <header className="w-full border-b border-gray-200 bg-white shadow-sm fixed top-0 left-0 z-50">
-      {/* 🔹 Top bar principal */}
-      <div className="flex items-center justify-between px-4 md:px-6 py-3">
-        {/* 🔹 Logo e nome do sistema */}
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-tr from-green-400 to-blue-500 w-9 h-9 flex items-center justify-center rounded-lg">
-            <Globe2 size={20} className="text-white" />
+    <header
+      style={{
+        width: "100%",
+        borderBottom: "1px solid #E0E0E0",
+        backgroundColor: "#FFFFFF",
+        boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
+        position: "fixed",
+        top: 0,
+        left: 0,
+        zIndex: 50,
+      }}
+    >
+
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          padding: "12px 24px",
+        }}
+      >
+      
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <div
+            style={{
+              width: "36px",
+              height: "36px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: "8px",
+              boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+            }}
+          >
+            <img src="/img/logonasa.png" alt="Logo" />
           </div>
           <div>
-            <h1 className="text-base font-semibold text-gray-900 leading-tight">
-              Data Pathways
+            <h1 style={{ fontSize: "16px", fontWeight: 600, color: "#2E7D32", lineHeight: 1.1 }}>
+              GlobalLifeCities
             </h1>
-            <p className="text-xs text-gray-500">
-              Healthy Cities and Human Settlements
+            <p style={{ fontSize: "12px", color: "#0277BD", fontWeight: 500 }}>
+              Dados para um futuro sustentável
             </p>
           </div>
         </div>
 
-        {/* 🔹 Botão do menu mobile */}
-        <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="md:hidden p-2 rounded-md hover:bg-gray-100"
-        >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
-        </button>
-
-        {/* 🔹 Avatar, nome e botão sair (desktop) */}
+      
         {user && (
-          <div className="hidden md:flex items-center space-x-3">
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "12px",
+              minWidth: "200px",
+              justifyContent: "flex-end",
+            }}
+          >
             <img
               src={user.imageUrl}
               alt="User Avatar"
-              className="w-9 h-9 rounded-full border"
+              style={{
+                width: "40px",
+                height: "40px",
+                borderRadius: "50%",
+                border: "2px solid #A5D6A7",
+              }}
             />
-            <div className="flex flex-col text-right">
-              <span className="text-sm font-medium text-gray-800">
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                justifyContent: "center",
+                lineHeight: 1.3,
+              }}
+            >
+              <span style={{ fontSize: "14px", fontWeight: 600, color: "#2E7D32" }}>
                 {user.fullName}
               </span>
+              <div style={{ margin: "4px 0" }}>
+                <RewardCoins />
+              </div>
               <button
                 onClick={() => signOut({ redirectUrl: "/auth/sign-in" })}
-                className="text-xs text-red-600 hover:text-red-800 font-medium transition-colors"
+                style={{
+                  fontSize: "12px",
+                  color: "#0277BD",
+                  fontWeight: 500,
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  padding: 0,
+                }}
               >
                 Sair
               </button>
@@ -83,74 +139,51 @@ export default function Sidebar() {
         )}
       </div>
 
-      {/* 🔹 Menu horizontal (desktop) */}
-      <nav className="hidden md:flex justify-center border-t border-gray-100 py-2 bg-white">
-        <div className="flex items-center space-x-6">
-          {menuItems.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              onClick={() => setActive(item.name)}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium transition-all ${
-                active === item.name
-                  ? "text-emerald-700 bg-emerald-100 border border-emerald-200"
-                  : "text-gray-600 hover:text-emerald-700 hover:bg-emerald-50"
-              }`}
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </Link>
-          ))}
-        </div>
-      </nav>
+      
+      <nav
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          borderTop: "1px solid #E0E0E0",
+          padding: "8px 0",
+          backgroundColor: "#FFFFFF",
+        }}
+        className="hidden md:flex"
+      >
+        <div style={{ display: "flex", gap: "24px", alignItems: "center" }}>
+          {menuItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname.startsWith(item.href + "/"); 
 
-      {/* 🔹 Menu mobile colapsável */}
-      {menuOpen && (
-        <div className="md:hidden border-t border-gray-200 bg-white shadow-inner animate-slide-down">
-          <nav className="flex flex-col py-3 space-y-2 px-4">
-            {menuItems.map((item) => (
+            return (
               <Link
                 key={item.name}
                 href={item.href}
-                onClick={() => {
-                  setActive(item.name);
-                  setMenuOpen(false);
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "8px",
+                  padding: "6px 12px",
+                  borderRadius: "8px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                  color: isActive ? "#2E7D32" : "#555",
+                  backgroundColor: isActive ? "#A5D6A7" : "transparent",
+                  border: isActive ? "1px solid #2E7D32" : "none",
+                  transition: "all 0.2s",
                 }}
-                className={`flex items-center gap-3 px-2 py-2 rounded-md text-sm font-medium transition-all ${
-                  active === item.name
-                    ? "text-emerald-700 bg-emerald-100 border border-emerald-200"
-                    : "text-gray-700 hover:text-emerald-700 hover:bg-emerald-50"
-                }`}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#A5D6A7")}
+                onMouseLeave={(e) =>
+                  (e.currentTarget.style.backgroundColor = isActive ? "#A5D6A7" : "transparent")
+                }
               >
                 {item.icon}
                 <span>{item.name}</span>
               </Link>
-            ))}
-
-            {/* 🔹 Avatar, nome e botão sair (mobile) */}
-            {user && (
-              <div className="flex items-center gap-3 mt-3 border-t pt-3 border-gray-100">
-                <img
-                  src={user.imageUrl}
-                  alt="User Avatar"
-                  className="w-9 h-9 rounded-full border"
-                />
-                <div className="flex flex-col">
-                  <p className="text-sm font-medium text-gray-800">
-                    {user.fullName}
-                  </p>
-                  <button
-                    onClick={() => signOut({ redirectUrl: "/auth/sign-in" })}
-                    className="text-xs text-red-600 hover:text-red-800 font-medium transition-colors"
-                  >
-                    Sair
-                  </button>
-                </div>
-              </div>
-            )}
-          </nav>
+            );
+          })}
         </div>
-      )}
+      </nav>
     </header>
   );
 }
