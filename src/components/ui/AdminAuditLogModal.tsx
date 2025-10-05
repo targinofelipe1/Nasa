@@ -12,14 +12,9 @@ import {
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { useAuth } from "@clerk/nextjs";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Button } from "@/app/components-antigo/Button";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
 
 interface AdminAuditLogModalProps {
   open: boolean;

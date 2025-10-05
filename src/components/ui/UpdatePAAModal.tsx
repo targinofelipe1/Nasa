@@ -5,17 +5,9 @@ import { toast } from "sonner";
 import { Loader2, SquarePen } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 
-import {
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/Dialog"; // Ajuste o caminho conforme sua estrutura
-import { Button } from "@/components/ui/Button"; // Ajuste o caminho conforme sua estrutura
-import { Input } from "@/components/ui/Input"; // Ajuste o caminho conforme sua estrutura
-// Assumindo que você tem um componente TextArea para Critérios/Avaliação
-// Se você não tiver, use um <textarea> HTML simples.
-// import { Textarea } from "@/components/ui/Textarea"; 
-
+import { Button } from "@/app/components-antigo/Button";
+import { DialogDescription, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Input } from "@/app/components-antigo/Input";
 
 interface TableData {
   [key: string]: any;

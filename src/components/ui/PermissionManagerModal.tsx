@@ -3,16 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-  DialogFooter,
-} from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
-import { Checkbox } from "@/components/ui/Checkbox";
+import { Button } from "@/app/components-antigo/Button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Input } from "@/app/components-antigo/Input";
+import { Checkbox } from "@/app/components-antigo/Checkbox";
+
 
 interface PermissionManagerModalProps {
   open: boolean;

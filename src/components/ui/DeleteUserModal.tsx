@@ -5,15 +5,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Loader2, Trash } from "lucide-react";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Button } from "@/app/components-antigo/Button";
 
 interface DeleteUserModalProps {
   user: {

@@ -7,13 +7,9 @@ import { Loader2, Laptop, ChevronLeft, ChevronRight } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/app/components-antigo/Button";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Input } from "@/app/components-antigo/Input";
 
 interface UserDetailsProps {
   userId: string;

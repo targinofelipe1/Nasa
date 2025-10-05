@@ -1,13 +1,14 @@
 "use client";
 
 import ChartDisplay from "@/components/ui/ChartDisplay";
-import { Button } from "./Button";
+
 import { Download, FileDown, BarChart2, LineChart, PieChart } from "lucide-react";
 import { useRef, useCallback, useMemo } from "react";
 import { toPng } from "html-to-image";
 import jsPDF from "jspdf";
 import { toast } from "sonner";
 import { columnDisplayNames } from "@/lib/column-display-names";
+import { Button } from "@/app/components-antigo/Button";
 
 interface ChartCardProps {
   title: string;

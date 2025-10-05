@@ -5,7 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Lock, Unlock, Loader2 } from "lucide-react";
 
-import { Button } from "@/components/ui/Button";
+import { Button } from "@/app/components-antigo/Button";
 import { ConfirmModal } from "@/components/ui/ConfirmModal";
 
 interface UserBlockToggleProps {

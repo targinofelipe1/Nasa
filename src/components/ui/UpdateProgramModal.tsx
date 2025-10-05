@@ -5,13 +5,9 @@ import { toast } from "sonner";
 import { Loader2, SquarePen, ArrowLeft, ArrowRight } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
 
-import {
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/Dialog";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
+import { Button } from "@/app/components-antigo/Button";
+import { DialogDescription, DialogHeader, DialogTitle } from "@/app/components-antigo/Dialog";
+import { Input } from "@/app/components-antigo/Input";
 
 interface TableData {
   [key: string]: any;

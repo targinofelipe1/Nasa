@@ -1,9 +1,10 @@
 "use client";
 
-import { Label } from "./Label";
+
 import { BarChart, LineChart, PieChart } from "lucide-react";
 import CustomSelect from "./CustomSelect";
 import CustomRadioGroup from "./CustomRadioGroup";
+import { Label } from "@/app/components-antigo/Label";
 
 interface ChartOptionsProps {
   headers: string[];

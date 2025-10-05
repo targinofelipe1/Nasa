@@ -9,16 +9,10 @@ import { z } from "zod";
 import { toast } from "sonner";
 import { Loader2, PlusCircle } from "lucide-react";
 
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/Form";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/app/components-antigo/Form";
+import { Input } from "./input";
+import { Button } from "@/app/components-antigo/Button";
 
 // Esquema de validação atualizado para usar apenas 'fullName'
 const formSchema = z.object({

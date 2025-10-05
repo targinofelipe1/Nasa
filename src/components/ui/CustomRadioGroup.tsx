@@ -1,5 +1,6 @@
+import { Label } from "@/app/components-antigo/Label";
 import React, { ReactNode } from "react";
-import { Label } from "./Label";
+
 
 // A interface agora usa um tipo genérico T que estende string
 interface CustomRadioGroupProps<T extends string> {
