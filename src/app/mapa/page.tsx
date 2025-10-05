@@ -15,9 +15,7 @@ import { GoogleMap, LoadScript, Marker, Libraries } from '@react-google-maps/api
 import ProtectedRoute from '@/components/ui/auth/ProtectedRoute';
 import Sidebar from '../components-antigo/Sidebar';
 
-// ====================================================================
-// 1️⃣ DEFINIÇÕES DE TIPOS E SIMULAÇÃO DE DADOS
-// ====================================================================
+
 type ExtendedMapTypeId = 'roadmap' | 'satellite' | 'hybrid' | 'terrain' | 'vegetation';
 
 interface CityMetric {

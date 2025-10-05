@@ -98,7 +98,7 @@ export default function UserSettingsPage() {
 
   return (
     <ProtectedRoute>
-      <div className="flex bg-gray-50 min-h-screen w-full" style={{ zoom: "80%" }}>
+      <div className="flex bg-gray-50 min-h-screen w-full">
         <Sidebar />
         <main className="flex-1 flex justify-center items-center p-8">
           <div className="w-full max-w-sm p-8 bg-white rounded-lg shadow-md">
