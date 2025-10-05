@@ -218,7 +218,8 @@ export default function LoginPage() {
               />
               <Button
                 type="submit"
-                className="w-full"
+                className="w-full text-white hover:opacity-90"
+                style={{ backgroundColor: "#2E7D32" }} 
                 disabled={loading}
               >
                 {loading ? "Verificando..." : "Continuar"}
@@ -226,11 +227,10 @@ export default function LoginPage() {
               <div className="text-center text-sm">
                 <span className="mr-1">Ainda não possui uma conta?</span>
                 <Link
-                  href="https://servidor.pbdoc-forms.gedes.rke.codatahml.pb.gov.br/servico/1318"
-                  className="underline font-medium text-primary"
-                  target="_blank"
+                  href="/auth/sign-up"
+                  className="underline font-medium text-blue-600 hover:text-blue-800 transition-colors"
                 >
-                  Solicitar cadastro
+                  Criar conta
                 </Link>
               </div>
             </>
@@ -274,16 +274,17 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full"
+                style={{ backgroundColor: "#2E7D32" }} 
                 disabled={loading || form.watch("code")?.length !== 6}
               >
                 {loading ? "Verificando..." : "Verificar Código"}
               </Button>
               <Button
                 type="button"
-                className="w-full"
+                className="w-full text-white hover:opacity-90"
+                style={{ backgroundColor: "#0277BD" }} // 💙 Azul-urbano (secundário)
                 onClick={reenviarCodigo}
                 disabled={loading || reenviarDisabled}
-                variant="outline"
               >
                 {reenviarDisabled
                   ? `Aguarde ${Math.floor(tempoRestante / 60)
@@ -293,6 +294,7 @@ export default function LoginPage() {
                       .padStart(2, "0")} para reenviar`
                   : "Solicitar novo código"}
               </Button>
+
             </>
           )}
         </form>
