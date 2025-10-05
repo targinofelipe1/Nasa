@@ -1,102 +1,92 @@
-"use client";
+import * as React from "react";
 
-import { useState, useEffect, ReactNode, FC } from "react";
-import Modal from "@/components/ui/Modal";
-import Select from "@/components/ui/Select";
-import { FaExternalLinkAlt } from "react-icons/fa";
+import { cn } from "./utils";
 
-interface CardProps {
-  value: number;
-  label: string;
-  modalContent?: ReactNode;
-  setIsModalOpen: (state: boolean) => void;
-  selectOptions?: { id: string; label: string; value: number }[];
-  icon?: ReactNode;
-  iconColor?: string;
-  bgColor?: string;
-}
-
-const Card: FC<CardProps> = ({
-  value,
-  label,
-  modalContent,
-  setIsModalOpen,
-  selectOptions,
-  icon,
-  iconColor,
-  bgColor,
-}) => {
-  const [isModalOpen, setLocalModalOpen] = useState(false);
-  const [selectedOption, setSelectedOption] = useState<{ id: string; label: string; value: number } | undefined>(
-    selectOptions && selectOptions.length > 0 ? selectOptions[0] : undefined
-  );
-
-  useEffect(() => {
-    if (selectOptions && selectOptions.length > 0) {
-      setSelectedOption(selectOptions[0]);
-    } else {
-      setSelectedOption(undefined);
-    }
-  }, [selectOptions]);
-
-  const openModal = () => {
-    setLocalModalOpen(true);
-    setIsModalOpen(true);
-  };
-
-  const closeModal = () => {
-    setLocalModalOpen(false);
-    setIsModalOpen(false);
-  };
-
-  const handleSelectChange = (selectedLabel: string) => {
-    const option = selectOptions?.find(opt => opt.label === selectedLabel);
-    setSelectedOption(option);
-  };
-
-  const displayValue = selectOptions ? selectedOption?.value : value;
- const displayLabel = label;
-
+function Card({ className, ...props }: React.ComponentProps<"div">) {
   return (
     <div
-      className={`p-4 shadow-md rounded-xl text-center transition-all hover:shadow-lg flex flex-col items-center justify-between ${bgColor || 'bg-white'}`}
-    >
-      <div className="flex flex-col items-center justify-center min-h-[140px]">
-        {icon && (
-          <div className={`text-3xl mb-2 ${iconColor}`}>
-            {icon}
-          </div>
-        )}
-        <h2 className="text-xl font-bold text-gray-900">{displayValue?.toLocaleString("pt-BR") || "N/A"}</h2>
-        <p className="text-sm text-gray-500 mt-1">{displayLabel}</p>
-      </div>
-
-      <div className="w-full mt-auto">
-        {selectOptions && (
-          <div className="mt-2">
-            <Select
-              options={selectOptions}
-              onChange={handleSelectChange}
-              defaultValue={selectedOption?.label || ""}
-            />
-          </div>
-        )}
-
-        {modalContent && (
-          <button
-            onClick={openModal}
-            className="mt-2 text-blue-600 hover:text-blue-700 no-underline cursor-pointer flex items-center justify-center mx-auto"
-          >
-            <FaExternalLinkAlt className="mr-1 text-sm" /> Detalhes
-          </button>
-        )}
-      </div>
-
-      <Modal isOpen={isModalOpen} onClose={closeModal} title={`Detalhes de ${label}`}>
-        {modalContent}
-      </Modal>
-    </div>
+      data-slot="card"
+      className={cn(
+        "bg-card text-card-foreground flex flex-col gap-6 rounded-xl border",
+        className,
+      )}
+      {...props}
+    />
   );
-};
+}
 
-export default Card;
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-header"
+      className={cn(
+        "@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-1.5 px-6 pt-6 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardTitle({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <h4
+      data-slot="card-title"
+      className={cn("leading-none", className)}
+      {...props}
+    />
+  );
+}
+
+function CardDescription({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <p
+      data-slot="card-description"
+      className={cn("text-muted-foreground", className)}
+      {...props}
+    />
+  );
+}
+
+function CardAction({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-action"
+      className={cn(
+        "col-start-2 row-span-2 row-start-1 self-start justify-self-end",
+        className,
+      )}
+      {...props}
+    />
+  );
+}
+
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-content"
+      className={cn("px-6 [&:last-child]:pb-6", className)}
+      {...props}
+    />
+  );
+}
+
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return (
+    <div
+      data-slot="card-footer"
+      className={cn("flex items-center px-6 pb-6 [.border-t]:pt-6", className)}
+      {...props}
+    />
+  );
+}
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardAction,
+  CardDescription,
+  CardContent,
+};
