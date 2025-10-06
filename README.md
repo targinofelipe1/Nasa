@@ -5,6 +5,14 @@
 🌐 **Demonstração da Plataforma:**  
 ➡️ [https://globallifecities.vercel.app](https://globallifecities.vercel.app)
 
+## 🧪 Credenciais de Teste
+
+Para explorar a demonstração do projeto e testar as funcionalidades de login, utilize as credenciais abaixo:
+
+| Tipo de Acesso | E-mail | Código |
+|----------------|--------|--------|
+| **Usuário Comum** | your_email+clerk_test@example.com | 424242 |
+
 📘 **Repositório no GitHub:**  
 ➡️ [https://github.com/targinofelipe1/Nasa.git](https://github.com/targinofelipe1/Nasa.git)
 
@@ -120,3 +128,4 @@ Mais do que um sistema de monitoramento, é uma **plataforma viva** que une pess
 
 📍 *Equipe Pindorama — Nordeste do Brasil, 2025*  
 🌱 *Unindo ciência, cultura e tecnologia para cidades mais sustentáveis.*
+
