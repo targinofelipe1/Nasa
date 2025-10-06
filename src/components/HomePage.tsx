@@ -77,7 +77,7 @@ export function HomePage() {
                   e comunidades conscientes.
                 </p>
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  Os dados utilizados são provenientes do MapBiomas, IDEMA, SEMAM, CPRH, ICMBio e WWF-Brasil.                
+                  Os dados utilizados são provenientes do MapBiomas, IDEMA, SEMAM, CPRH, ICMBio, WWF-Brasil, INMET e INPE.                
                 </p>
               </div>
 

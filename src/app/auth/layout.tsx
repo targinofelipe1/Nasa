@@ -14,14 +14,15 @@ export default function AuthLayout({
           <img
             src="/img/nasa.png"
             alt="Logo GlobalLifeCities"
-            className="h-24 w-24 md:h-32 md:w-32 rounded-xl"
+            className="h-32 w-32 md:h-40 md:w-40 rounded-xl"
           />
         </div>
 
 
 
 
-        <div className="flex flex-1 items-center justify-center">
+
+        <div className="flex flex-1 items-start justify-center mt-[-100px]">
           <div className="w-full max-w-xs">{children}</div>
         </div>
       </div>
