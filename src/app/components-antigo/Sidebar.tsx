@@ -83,7 +83,7 @@ export default function Sidebar() {
                 whiteSpace: "nowrap",
               }}
             >
-              GlobalLifeCities
+              Global Life Cities
             </h1>
             <p
               style={{
