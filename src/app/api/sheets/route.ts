@@ -2,16 +2,13 @@
 import { NextResponse } from 'next/server';
 import { getSheetData, updateSheetData, appendSheetData } from '@/services/sheetService';
 
-// ID da Planilha permanece o mesmo
 const SPREADSHEET_ID = '1uypGmBtki6qSKcF_jEpv_0jpLHVyPsYtFlJYoX0aswU';
 
-// Definição dos RANGES usando os nomes das abas da imagem
 const SHEET_DETALHADOS = 'Dados_Detalhados!A:AU';
 const SHEET_MUNICIPIOS = 'Municipios_Consolidado!A:BE'; 
 const SHEET_ESTADOS = 'Resumo_Estados!A:AN';
 const AUDIT_LOG_SHEET = 'log-auditoria!A:G'; 
 
-// Colunas dos anos para reuso
 const YEAR_COLUMNS = [
   '1985', '1986', '1987', '1988', '1989', '1990', '1991', '1992', '1993', '1994', '1495', 
   '1996', '1997', '1998', '1999', '2000', '2001', '2002', '2003', '2004', '2005', '2006', 
@@ -19,7 +16,6 @@ const YEAR_COLUMNS = [
   '2018', '2019', '2020', '2021', '2022', '2023'
 ];
 
-// Mapa de colunas para os novos programas/abas
 const programColumnsMap = {
   'dados-detalhados': [
     'pais', 'estado', 'cidade', 'codigo_ibge', 'nivel_1', 'nivel_2', 'transicao', 

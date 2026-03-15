@@ -1,10 +1,7 @@
 // src/services/sheetService.ts
 import { google } from 'googleapis';
 
-/**
- * Função auxiliar para criar o cliente autenticado do Google Sheets
- * usando as variáveis de ambiente configuradas na Vercel.
- */
+
 function getGoogleClient() {
   const clientEmail = process.env.GOOGLE_CLIENT_EMAIL;
   const privateKey = process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n');
@@ -21,9 +18,7 @@ function getGoogleClient() {
   );
 }
 
-/**
- * 📥 Lê dados de uma planilha do Google Sheets.
- */
+
 export async function getSheetData(spreadsheetId: string, range: string) {
   try {
     const client = getGoogleClient();
@@ -43,9 +38,7 @@ export async function getSheetData(spreadsheetId: string, range: string) {
   }
 }
 
-/**
- * ✏️ Atualiza células específicas de uma planilha do Google Sheets.
- */
+
 export async function updateSheetData(
   spreadsheetId: string,
   range: string,
@@ -68,9 +61,7 @@ export async function updateSheetData(
   }
 }
 
-/**
- * ➕ Adiciona novas linhas ao final da planilha (append).
- */
+
 export async function appendSheetData(
   spreadsheetId: string,
   range: string,
