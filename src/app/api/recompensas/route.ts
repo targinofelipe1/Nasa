@@ -85,7 +85,8 @@ function getColumnLetter(index: number): string {
 }
 
 function toBool(value: string | undefined) {
-  return String(value || "").trim().toLowerCase() === "true";
+  const normalized = String(value || "").trim().toLowerCase();
+  return ["true", "1", "sim", "yes", "ativo"].includes(normalized);
 }
 
 function toNumber(value: string | undefined, fallback = 0) {
@@ -238,6 +239,7 @@ function calcularNivel(pontos: number) {
 function nivelParaOrdem(nome: string) {
   const mapa: Record<string, number> = {
     "Iniciante Verde": 0,
+    "Participante Verde": 0,
     "Verde Expert": 1,
     "Eco Warrior": 2,
     "Verde Master": 3,
@@ -263,16 +265,16 @@ export async function GET(request: Request) {
     const userId = searchParams.get("userId") || "";
 
     const [usuarioConsolidado, recompensasData, resgatesData, configMap] = await Promise.all([
-    userId ? getUsuarioConsolidado(userId) : Promise.resolve(null),
-    getAllRows<RecompensaRow>(SHEET_RECOMPENSAS),
-    getAllRows<ResgateRow>(SHEET_RESGATES),
-    getConfigMap(),
-  ]);
+      userId ? getUsuarioConsolidado(userId) : Promise.resolve(null),
+      getAllRows<RecompensaRow>(SHEET_RECOMPENSAS),
+      getAllRows<ResgateRow>(SHEET_RESGATES),
+      getConfigMap(),
+    ]);
 
-  const pontosUsuario = usuarioConsolidado?.pontos || 0;
-  const coinsUsuario = usuarioConsolidado?.coins || 0;
-
+    const pontosUsuario = usuarioConsolidado?.pontos || 0;
+    const coinsUsuario = usuarioConsolidado?.coins || 0;
     const nivelAtual = calcularNivel(pontosUsuario);
+
     const limiteEstoqueZeroTornaIndisponivel =
       configMap.get("esgotar_desativa_recompensa") !== "false";
 
@@ -295,12 +297,36 @@ export async function GET(request: Request) {
         const estoque = toNumber(r.estoque, 0);
         const disponivelSheet = toBool(r.disponivel);
         const nivelMinimo = r.nivelMinimo || "Iniciante Verde";
+
         const podePorNivel =
           nivelParaOrdem(nivelAtual) >= nivelParaOrdem(nivelMinimo);
 
         const disponivelCalculado = limiteEstoqueZeroTornaIndisponivel
           ? disponivelSheet && estoque > 0
           : disponivelSheet;
+
+        const podeResgatar =
+          !!usuarioConsolidado &&
+          r.status !== "excluido" &&
+          disponivelCalculado &&
+          coinsUsuario >= custo &&
+          podePorNivel;
+
+        let motivoBloqueio: string | null = null;
+
+        if (!usuarioConsolidado) {
+          motivoBloqueio = "Usuário não identificado.";
+        } else if (r.status === "excluido") {
+          motivoBloqueio = "Recompensa removida.";
+        } else if (!disponivelSheet) {
+          motivoBloqueio = "Recompensa indisponível.";
+        } else if (estoque <= 0) {
+          motivoBloqueio = "Recompensa esgotada.";
+        } else if (!podePorNivel) {
+          motivoBloqueio = `Nível mínimo: ${nivelMinimo}.`;
+        } else if (coinsUsuario < custo) {
+          motivoBloqueio = "Coins insuficientes.";
+        }
 
         return {
           id: r.recompensaId,
@@ -312,12 +338,8 @@ export async function GET(request: Request) {
           disponivel: disponivelCalculado,
           estoque,
           nivelMinimo,
-         podeResgatar:
-          !!usuarioConsolidado &&
-          r.status !== "excluido" &&
-          disponivelCalculado &&
-          coinsUsuario >= custo &&
-          podePorNivel,
+          podeResgatar,
+          motivoBloqueio,
           createdAt: r.createdAt,
           updatedAt: r.updatedAt,
           status: r.status,
@@ -328,18 +350,18 @@ export async function GET(request: Request) {
     return NextResponse.json({
       success: true,
       data: {
-       usuario: usuarioConsolidado
-        ? {
-            userId: usuarioConsolidado.userId,
-            nome: usuarioConsolidado.nome,
-            email: usuarioConsolidado.email,
-            cidade: usuarioConsolidado.cidade,
-            avatar: usuarioConsolidado.avatar,
-            coins: coinsUsuario,
-            pontos: pontosUsuario,
-            nivelAtual,
-          }
-        : null,
+        usuario: usuarioConsolidado
+          ? {
+              userId: usuarioConsolidado.userId,
+              nome: usuarioConsolidado.nome,
+              email: usuarioConsolidado.email,
+              cidade: usuarioConsolidado.cidade,
+              avatar: usuarioConsolidado.avatar,
+              coins: coinsUsuario,
+              pontos: pontosUsuario,
+              nivelAtual,
+            }
+          : null,
         recompensas,
         resgates: resgatesUsuario,
       },
@@ -402,10 +424,7 @@ export async function POST(request: Request) {
       );
     }
 
-   const usuario = usuarioFound.user;
     const recompensa = recompensaFound.recompensa;
-
-    const coinsUsuarioLocal = toNumber(usuario.coins, 0);
     const coinsUsuarioConsolidado = usuarioConsolidado.coins || 0;
     const pontosUsuario = usuarioConsolidado.pontos || 0;
     const custo = toNumber(recompensa.custo, 0);
@@ -506,7 +525,8 @@ export async function POST(request: Request) {
       data: {
         resgateId,
         recompensaId,
-        coinsRestantes: Math.max(0, coinsUsuarioConsolidado - custo),      },
+        coinsRestantes: Math.max(0, coinsUsuarioConsolidado - custo),
+      },
     });
   } catch (error: any) {
     console.error("Erro POST /api/recompensas:", error);

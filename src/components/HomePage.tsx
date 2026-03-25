@@ -72,7 +72,7 @@ export function HomePage() {
                 </h1>
 
                 <p className="text-lg text-gray-700 leading-relaxed">
-                  O GlobalLifeCities integra dados sobre clima,
+                  O Global Life Cities integra dados sobre clima,
                   vegetação e população para apoiar políticas públicas, negócios
                   e comunidades conscientes.
                 </p>

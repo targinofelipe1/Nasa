@@ -13,7 +13,7 @@ export default function AuthLayout({
         <div className="flex flex-col items-center justify-center p-10">
           <img
             src="/img/nasa.png"
-            alt="Logo GlobalLifeCities"
+            alt="Logo Global Life Cities"
             className="h-32 w-32 md:h-40 md:w-40 rounded-xl"
           />
         </div>

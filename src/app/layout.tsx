@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GlobalLifeCities",
+  title: "Global Life Cities",
   description: "Plataforma de dados sustentáveis e urbanos",
 };
 
